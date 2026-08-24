@@ -20,10 +20,16 @@ from .rules.cpython.cpy004_tomllib           import TomllibRule
 from .rules.cpython.cpy005_match_case        import MatchCaseRule
 from .rules.cpython.cpy006_asyncio_timeout   import AsyncioTimeoutRule
 from .rules.cpython.cpy007_removed_modules   import RemovedModulesRule
+from .rules.cpython.cpy008_slots_dict        import SlotsDictRule
+from .rules.cpython.cpy009_exception_group   import ExceptionGroupRule
+from .rules.cpython.cpy010_dataclass_slots   import DataclassSlotsRule
 from .rules.pypy.ppy001_gc_finalizer         import GcFinalizerRule
 from .rules.pypy.ppy002_ctypes               import CtypesRule
 from .rules.pypy.ppy003_getrefcount          import GetRefcountRule
 from .rules.pypy.ppy004_weakref_proxy        import WeakrefProxyRule
+from .rules.pypy.ppy005_io_buffering         import IoBufferingRule
+from .rules.pypy.ppy006_builtin_monkey_patch import BuiltinMonkeyPatchRule
+from .rules.pypy.ppy007_sys_intern           import SysInternRule
 
 ALL_RULES: list[BaseRule] = [
     DictOrderingRule(),
@@ -33,10 +39,16 @@ ALL_RULES: list[BaseRule] = [
     MatchCaseRule(),
     AsyncioTimeoutRule(),
     RemovedModulesRule(),
+    SlotsDictRule(),
+    ExceptionGroupRule(),
+    DataclassSlotsRule(),
     GcFinalizerRule(),
     CtypesRule(),
     GetRefcountRule(),
     WeakrefProxyRule(),
+    IoBufferingRule(),
+    BuiltinMonkeyPatchRule(),
+    SysInternRule(),
 ]
 
 SKIP_DIRS = {

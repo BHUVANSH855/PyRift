@@ -18,10 +18,16 @@ from pyrift.rules.cpython.cpy004_tomllib          import TomllibRule
 from pyrift.rules.cpython.cpy005_match_case       import MatchCaseRule
 from pyrift.rules.cpython.cpy006_asyncio_timeout  import AsyncioTimeoutRule
 from pyrift.rules.cpython.cpy007_removed_modules  import RemovedModulesRule
+from pyrift.rules.cpython.cpy008_slots_dict       import SlotsDictRule
+from pyrift.rules.cpython.cpy009_exception_group  import ExceptionGroupRule
+from pyrift.rules.cpython.cpy010_dataclass_slots  import DataclassSlotsRule
 from pyrift.rules.pypy.ppy001_gc_finalizer        import GcFinalizerRule
 from pyrift.rules.pypy.ppy002_ctypes              import CtypesRule
 from pyrift.rules.pypy.ppy003_getrefcount         import GetRefcountRule
 from pyrift.rules.pypy.ppy004_weakref_proxy       import WeakrefProxyRule
+from pyrift.rules.pypy.ppy005_io_buffering        import IoBufferingRule
+from pyrift.rules.pypy.ppy006_builtin_monkey_patch import BuiltinMonkeyPatchRule
+from pyrift.rules.pypy.ppy007_sys_intern          import SysInternRule
 from pyrift.reporter import to_json, to_markdown, to_text
 
 
@@ -199,6 +205,115 @@ class TestCPY007:
         assert len(findings) == 3
 
 
+# ── CPY008 ────────────────────────────────────────────────────────────────
+
+class TestCPY008:
+    rule = SlotsDictRule()
+
+    def test_detects_slots_with_base(self):
+        src = """
+class Base:
+    pass
+
+class Child(Base):
+    __slots__ = ['x', 'y']
+"""
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY008"
+        assert findings[0].severity == Severity.INFO
+
+    def test_clean_slots_no_base(self):
+        src = """
+class MyClass:
+    __slots__ = ['x', 'y']
+"""
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 0
+
+    def test_clean_object_base(self):
+        src = """
+class MyClass(object):
+    __slots__ = ['x']
+"""
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 0
+
+
+# ── CPY009 ────────────────────────────────────────────────────────────────
+
+class TestCPY009:
+    rule = ExceptionGroupRule()
+
+    def test_detects_exception_group(self):
+        findings = run_rule(self.rule, "eg = ExceptionGroup('errors', [e1, e2])")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY009"
+        assert findings[0].severity == Severity.ERROR
+
+    def test_detects_base_exception_group(self):
+        findings = run_rule(self.rule, "eg = BaseExceptionGroup('errors', [e])")
+        assert len(findings) == 1
+
+    def test_clean_regular_exception(self):
+        findings = run_rule(self.rule, "raise ValueError('oops')")
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_backport(self):
+        findings = run_rule(self.rule, "ExceptionGroup('x', [])")
+        assert "exceptiongroup" in findings[0].suggestion.lower()
+
+
+# ── CPY010 ────────────────────────────────────────────────────────────────
+
+class TestCPY010:
+    rule = DataclassSlotsRule()
+
+    def test_detects_dataclass_slots(self):
+        src = """
+from dataclasses import dataclass
+
+@dataclass(slots=True)
+class Point:
+    x: float
+    y: float
+"""
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY010"
+        assert findings[0].severity == Severity.ERROR
+
+    def test_clean_dataclass_no_slots(self):
+        src = """
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: float
+    y: float
+"""
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 0
+
+    def test_clean_dataclass_slots_false(self):
+        src = """
+@dataclass(slots=False)
+class Point:
+    x: float
+"""
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_requires_python(self):
+        src = """
+@dataclass(slots=True)
+class X:
+    a: int
+"""
+        findings = run_rule(self.rule, src)
+        assert "pyproject" in findings[0].suggestion.lower()
+
+
 # ── PPY001 ────────────────────────────────────────────────────────────────
 
 class TestPPY001:
@@ -295,6 +410,79 @@ class TestPPY004:
     def test_suggestion_mentions_ref(self):
         findings = run_rule(self.rule, "weakref.proxy(obj)")
         assert "ref()" in findings[0].suggestion
+
+
+# ── PPY005 ────────────────────────────────────────────────────────────────
+
+class TestPPY005:
+    rule = IoBufferingRule()
+
+    def test_detects_write_mode_open(self):
+        findings = run_rule(self.rule, "f = open('file.txt', 'w')")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY005"
+        assert findings[0].severity == Severity.WARNING
+
+    def test_detects_append_mode(self):
+        findings = run_rule(self.rule, "f = open('log.txt', 'a')")
+        assert len(findings) == 1
+
+    def test_clean_read_mode(self):
+        findings = run_rule(self.rule, "f = open('file.txt', 'r')")
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_context_manager(self):
+        findings = run_rule(self.rule, "f = open('file.txt', 'w')")
+        assert "with" in findings[0].suggestion.lower()
+
+
+# ── PPY006 ────────────────────────────────────────────────────────────────
+
+class TestPPY006:
+    rule = BuiltinMonkeyPatchRule()
+
+    def test_detects_list_patch(self):
+        findings = run_rule(self.rule, "list.custom = lambda self: None")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY006"
+        assert findings[0].severity == Severity.WARNING
+
+    def test_detects_dict_patch(self):
+        findings = run_rule(self.rule, "dict.merge = lambda self, other: None")
+        assert len(findings) == 1
+
+    def test_clean_subclass(self):
+        src = """
+class MyList(list):
+    def custom(self):
+        pass
+"""
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_subclass(self):
+        findings = run_rule(self.rule, "str.shout = lambda self: self.upper()")
+        assert "subclass" in findings[0].suggestion.lower()
+
+
+# ── PPY007 ────────────────────────────────────────────────────────────────
+
+class TestPPY007:
+    rule = SysInternRule()
+
+    def test_detects_sys_intern(self):
+        findings = run_rule(self.rule, "import sys\ns = sys.intern('hello')")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY007"
+        assert findings[0].severity == Severity.WARNING
+
+    def test_clean_sys_version(self):
+        findings = run_rule(self.rule, "import sys\nprint(sys.version)")
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_equality(self):
+        findings = run_rule(self.rule, "sys.intern('x')")
+        assert "==" in findings[0].suggestion
 
 
 # ── Scanner ───────────────────────────────────────────────────────────────
