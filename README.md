@@ -178,6 +178,24 @@ pyrift does not replace any of these tools. It catches what they all miss.
 
 ---
 
+## Roadmap
+
+Planned for upcoming versions — contributions welcome:
+
+- `CPY011` — `typing.Self` requires Python 3.11+
+- `CPY012` — `typing.LiteralString` requires Python 3.11+
+- `CPY013` — `@override` decorator requires Python 3.12+
+- `PPY008` — `array.array` behaviour differences on PyPy
+- `PPY009` — `decimal` module precision differences on PyPy
+- Pre-commit hook native support
+- VS Code extension
+- GitHub Action marketplace listing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to add a rule yourself — rule IDs
+`CPY011+` and `PPY008+` are open for community contributions.
+
+---
+
 ## Contributing
 
 Contributions are very welcome — especially new rules for behaviour differences
