@@ -1,6 +1,6 @@
 # pyrift — Rule Reference
 
-Complete documentation for all pyrift rules.
+Complete documentation for all 17 pyrift rules.
 
 ---
 
@@ -12,28 +12,17 @@ These rules detect code that behaves differently across CPython versions.
 
 ### CPY001 — Dict ordering assumption
 
-**Severity:** Warning
-**Affects:** CPython < 3.7, PyPy < 7.3
-
-#### What it detects
-
-Code that compares `dict.keys()`, `dict.values()`, or `dict.items()` directly
-to an ordered sequence (list or tuple), implicitly assuming insertion order.
-
-#### Why it matters
+**Severity:** Warning | **Affects:** CPython < 3.7, PyPy < 7.3
 
 Dict insertion order is only guaranteed from CPython 3.7+ and PyPy 7.3+.
-On older runtimes, this comparison silently returns `False` even when the
-contents are identical — a wrong result with no error raised.
-
-#### Example
+Comparing `dict.keys()`, `dict.values()`, or `dict.items()` directly to
+an ordered sequence silently returns wrong results on older runtimes.
 
 ```python
-# Bad — assumes dict is ordered
-d = {'a': 1, 'b': 2}
-assert d.keys() == ['a', 'b']  # may silently fail on older runtimes
+# Bad
+assert d.keys() == ['a', 'b']   # may silently fail
 
-# Good — order-independent comparison
+# Good
 assert set(d.keys()) == {'a', 'b'}
 ```
 
@@ -41,116 +30,73 @@ assert set(d.keys()) == {'a', 'b'}
 
 ### CPY002 — Exception.add_note() requires Python 3.11+
 
-**Severity:** Error
-**Affects:** CPython ≤ 3.10
+**Severity:** Error | **Affects:** CPython ≤ 3.10
 
-#### What it detects
-
-Calls to `exception.add_note()` introduced in PEP 678 (Python 3.11).
-
-#### Why it matters
-
-On Python 3.10 and below, calling `add_note()` raises `AttributeError`
-at runtime — crashing the except block that was meant to handle the error.
-
-#### Example
+`Exception.add_note()` was introduced in PEP 678 (Python 3.11).
+On 3.10 and below, calling it raises `AttributeError` inside the
+except block that was meant to handle the error.
 
 ```python
 # Bad
-try:
-    connect()
-except ConnectionError as e:
-    e.add_note("Check your network settings")  # AttributeError on 3.10
-    raise
+except ValueError as e:
+    e.add_note("hint")   # AttributeError on 3.10
 
 # Good
-try:
-    connect()
-except ConnectionError as e:
-    if sys.version_info >= (3, 11):
-        e.add_note("Check your network settings")
-    raise
+if sys.version_info >= (3, 11):
+    e.add_note("hint")
 ```
 
 ---
 
 ### CPY003 — X | Y union type syntax requires Python 3.10+
 
-**Severity:** Error
-**Affects:** CPython ≤ 3.9
+**Severity:** Error | **Affects:** CPython ≤ 3.9
 
-#### What it detects
-
-Use of `X | Y` as a runtime type expression inside `isinstance()` or
-`issubclass()` — introduced in PEP 604 (Python 3.10).
-
-#### Why it matters
-
-On Python 3.9 and below, `isinstance(x, int | str)` raises `TypeError`
-at runtime. This is distinct from using `X | Y` in type annotations,
-which is handled by `from __future__ import annotations`.
-
-#### Example
+Using `X | Y` as a runtime type expression inside `isinstance()` or
+`issubclass()` raises `TypeError` on Python 3.9 and below.
 
 ```python
-# Bad — raises TypeError on 3.9
-if isinstance(value, int | str):
-    process(value)
+# Bad
+isinstance(x, int | str)   # TypeError on 3.9
 
-# Good — works on all Python 3 versions
-if isinstance(value, (int, str)):
-    process(value)
+# Good
+isinstance(x, (int, str))
 ```
 
 ---
 
 ### CPY004 — tomllib requires Python 3.11+
 
-**Severity:** Error
-**Affects:** CPython ≤ 3.10
+**Severity:** Error | **Affects:** CPython ≤ 3.10
 
-#### What it detects
-
-Direct import of `tomllib` from the standard library (added in PEP 680,
-Python 3.11).
-
-#### Example
+`tomllib` was added to the standard library in PEP 680 (Python 3.11).
+On 3.10 and below, `import tomllib` raises `ModuleNotFoundError`.
 
 ```python
-# Bad — ModuleNotFoundError on 3.10
-import tomllib
+# Bad
+import tomllib   # ModuleNotFoundError on 3.10
 
-# Good — with fallback
+# Good
 try:
     import tomllib
 except ModuleNotFoundError:
-    import tomli as tomllib  # pip install tomli
+    import tomli as tomllib   # pip install tomli
 ```
 
 ---
 
 ### CPY005 — match/case requires Python 3.10+
 
-**Severity:** Error
-**Affects:** CPython ≤ 3.9
+**Severity:** Error | **Affects:** CPython ≤ 3.9
 
-#### What it detects
-
-Use of structural pattern matching (`match`/`case`) introduced in PEP 634
-(Python 3.10).
-
-#### Why it matters
-
-On Python 3.9 and below, `match` statements are a `SyntaxError` — the
-entire module fails to import, not just the code path that uses `match`.
-
-#### Example
+Structural pattern matching (`match`/`case`) was introduced in PEP 634
+(Python 3.10). On 3.9 and below it is a `SyntaxError` — the entire
+module fails to import, not just the path using `match`.
 
 ```python
-# Bad — SyntaxError on 3.9, entire file fails to import
+# Bad — entire file fails to import on 3.9
 match command:
-    case "quit":
-        sys.exit()
+    case "quit": sys.exit()
 
 # Good
 if command == "quit":
@@ -161,43 +107,100 @@ if command == "quit":
 
 ### CPY006 — asyncio.timeout() / TaskGroup requires Python 3.11+
 
-**Severity:** Error
-**Affects:** CPython ≤ 3.10
+**Severity:** Error | **Affects:** CPython ≤ 3.10
 
-#### What it detects
-
-Use of `asyncio.timeout()`, `asyncio.timeout_at()`, or `asyncio.TaskGroup`
-— all added in Python 3.11.
-
-#### Example
+`asyncio.timeout()`, `asyncio.timeout_at()`, and `asyncio.TaskGroup`
+were all added in Python 3.11. On 3.10, they raise `AttributeError`.
 
 ```python
-# Bad — AttributeError on 3.10
-async with asyncio.timeout(5.0):
-    await fetch_data()
+# Bad
+async with asyncio.timeout(5.0):   # AttributeError on 3.10
+    await fetch()
 
 # Good
-await asyncio.wait_for(fetch_data(), timeout=5.0)
+await asyncio.wait_for(fetch(), timeout=5.0)
 ```
 
 ---
 
 ### CPY007 — Module removed in Python 3.13
 
-**Severity:** Error
-**Affects:** CPython ≥ 3.13
+**Severity:** Error | **Affects:** CPython ≥ 3.13
 
-#### What it detects
+PEP 594 removed 21 legacy modules from the standard library in Python 3.13.
+Importing them raises `ModuleNotFoundError`.
 
-Import of any of the 21 modules removed from the standard library in
-Python 3.13 per PEP 594.
+**Removed modules:** `aifc`, `audioop`, `cgi`, `cgitb`, `chunk`, `crypt`,
+`imghdr`, `mailcap`, `msilib`, `nis`, `nntplib`, `ossaudiodev`, `pipes`,
+`sndhdr`, `spwd`, `sunau`, `telnetlib`, `uu`, `xdrlib`, `asynchat`,
+`asyncore`, `smtpd`
 
-#### Removed modules
+---
 
-`aifc`, `audioop`, `cgi`, `cgitb`, `chunk`, `crypt`, `imghdr`,
-`mailcap`, `msilib`, `nis`, `nntplib`, `ossaudiodev`, `pipes`,
-`sndhdr`, `spwd`, `sunau`, `telnetlib`, `uu`, `xdrlib`,
-`asynchat`, `asyncore`, `smtpd`
+### CPY008 — __slots__ may not prevent __dict__ with base classes
+
+**Severity:** Info | **Affects:** CPython all versions
+
+When a class defines `__slots__` but inherits from a class that has
+`__dict__`, the subclass will also have `__dict__` — `__slots__` does
+not prevent it. This is a commonly misunderstood behaviour.
+
+```python
+# Risky — Child still has __dict__ because Base does
+class Base: pass
+class Child(Base):
+    __slots__ = ['x']   # does NOT prevent __dict__
+
+# Safe — all classes in hierarchy define __slots__
+class Base:
+    __slots__ = ()
+class Child(Base):
+    __slots__ = ['x']
+```
+
+---
+
+### CPY009 — ExceptionGroup requires Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.10
+
+`ExceptionGroup` and `BaseExceptionGroup` are built-ins added in
+PEP 654 (Python 3.11). On 3.10 and below they raise `NameError`.
+
+```python
+# Bad — NameError on 3.10
+raise ExceptionGroup("errors", [e1, e2])
+
+# Good
+try:
+    import exceptiongroup   # pip install exceptiongroup
+except ImportError:
+    pass   # guard for 3.11+
+```
+
+---
+
+### CPY010 — @dataclass(slots=True) requires Python 3.10+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.9
+
+The `slots` parameter for `@dataclass` was added in Python 3.10.
+On 3.9 and below, `@dataclass(slots=True)` raises `TypeError` at
+class definition time — before any instance is created.
+
+```python
+# Bad — TypeError on 3.9
+@dataclass(slots=True)
+class Point:
+    x: float
+
+# Good for 3.9 compatibility
+@dataclass
+class Point:
+    __slots__ = ('x', 'y')
+    x: float
+    y: float
+```
 
 ---
 
@@ -209,93 +212,57 @@ These rules detect code that behaves differently on PyPy vs CPython.
 
 ### PPY001 — Relying on __del__ for resource cleanup
 
-**Severity:** Error
-**Affects:** PyPy all versions
-
-#### What it detects
-
-`__del__` methods that call resource-cleanup methods such as `close()`,
-`flush()`, `release()`, `shutdown()`, or `disconnect()`.
-
-#### Why it matters
+**Severity:** Error | **Affects:** PyPy all versions
 
 CPython uses reference counting — `__del__` is called immediately when
 the last reference drops. PyPy uses a tracing GC — `__del__` may be
 called much later or never, silently leaking file handles, sockets,
-database connections, and locks.
-
-#### Example
+locks, and database connections.
 
 ```python
-# Bad — leaks resources on PyPy
-class DatabaseConnection:
+# Bad — leaks on PyPy
+class Conn:
     def __del__(self):
-        self.conn.close()  # may never be called on PyPy
+        self.socket.close()   # may never run on PyPy
 
-# Good — guaranteed cleanup on all runtimes
-class DatabaseConnection:
-    def close(self):
-        self.conn.close()
+# Good — guaranteed on all runtimes
+class Conn:
+    def __enter__(self): return self
+    def __exit__(self, *a): self.socket.close()
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.close()
-
-# Usage
-with DatabaseConnection() as db:
-    db.query("SELECT 1")
+with Conn() as c:
+    c.query()
 ```
 
 ---
 
 ### PPY002 — ctypes usage may silently fail on PyPy
 
-**Severity:** Warning
-**Affects:** PyPy all versions
-
-#### What it detects
-
-Use of dangerous `ctypes` members: `CDLL`, `WinDLL`, `CFUNCTYPE`,
-`cast`, `pointer`, `byref`, `Structure`, `Union`, and others.
-
-#### Why it matters
+**Severity:** Warning | **Affects:** PyPy all versions
 
 PyPy's ctypes implementation is incomplete. Pointer arithmetic, callbacks,
 and bit-field structures may silently produce wrong results or segfault
-on PyPy while working correctly on CPython.
+on PyPy while working on CPython.
 
-#### Suggestion
-
-Use `cffi` instead — it is fully supported on both CPython and PyPy.
+**Suggestion:** Use `cffi` — fully supported on both CPython and PyPy.
 
 ---
 
 ### PPY003 — sys.getrefcount() is meaningless on PyPy
 
-**Severity:** Error
-**Affects:** PyPy all versions
+**Severity:** Error | **Affects:** PyPy all versions
 
-#### What it detects
-
-Calls to `sys.getrefcount()`.
-
-#### Why it matters
-
-`sys.getrefcount()` relies on CPython's reference-counting GC. PyPy uses
-a tracing GC with no reference counting — `sys.getrefcount()` always
-returns a dummy constant value on PyPy (typically 0 or 65536). Any logic
-based on this value silently produces wrong results.
-
-#### Example
+`sys.getrefcount()` relies on CPython's reference-counting GC. PyPy
+uses a tracing GC — `sys.getrefcount()` always returns a dummy constant
+(typically 0 or 65536). Any logic based on this value silently produces
+wrong results on PyPy.
 
 ```python
 # Bad — always wrong on PyPy
 if sys.getrefcount(obj) == 1:
     cleanup(obj)
 
-# Good — use gc.get_referrers() instead
+# Good
 import gc
 if len(gc.get_referrers(obj)) == 1:
     cleanup(obj)
@@ -305,27 +272,15 @@ if len(gc.get_referrers(obj)) == 1:
 
 ### PPY004 — weakref.proxy() raises ReferenceError unpredictably on PyPy
 
-**Severity:** Warning
-**Affects:** PyPy all versions
-
-#### What it detects
-
-Calls to `weakref.proxy()`.
-
-#### Why it matters
+**Severity:** Warning | **Affects:** PyPy all versions
 
 On CPython, `weakref.proxy()` raises `ReferenceError` only when the
-proxied object is accessed after it has been collected. On PyPy, due to
-GC differences, `ReferenceError` may be raised at unpredictable points —
-even before the object appears dead from CPython's perspective.
-
-#### Example
+proxied object is accessed after collection. On PyPy, `ReferenceError`
+may be raised at unpredictable points due to GC timing differences.
 
 ```python
-# Bad — ReferenceError timing unpredictable on PyPy
+# Bad
 p = weakref.proxy(obj)
-do_something()
-p.method()  # may raise ReferenceError on PyPy at unexpected times
 
 # Good — explicit null check
 ref = weakref.ref(obj)
@@ -336,7 +291,69 @@ if target is not None:
 
 ---
 
+### PPY005 — File write without explicit flush may lose data on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+On PyPy, file buffering behaviour differs from CPython due to GC timing.
+Data written to files may not be flushed to disk even after `close()`,
+silently losing writes.
+
+```python
+# Bad — may lose data on PyPy
+f = open('out.txt', 'w')
+f.write(data)
+f.close()
+
+# Good — context manager guarantees flush + close
+with open('out.txt', 'w') as f:
+    f.write(data)
+```
+
+---
+
+### PPY006 — Monkey-patching built-in types behaves differently on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+PyPy's JIT makes aggressive assumptions about built-in types. Patching
+them may silently produce wrong results or bypass JIT optimisations
+without raising any error.
+
+```python
+# Bad
+list.custom = lambda self: None
+
+# Good — subclass instead
+class MyList(list):
+    def custom(self):
+        pass
+```
+
+---
+
+### PPY007 — sys.intern() identity guarantees differ on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+On CPython, interned strings are guaranteed to share identity — `is`
+returns `True` for equal interned strings. On PyPy, the JIT may not
+preserve this identity guarantee.
+
+```python
+# Bad — identity not guaranteed on PyPy
+a = sys.intern('hello')
+b = sys.intern('hello')
+assert a is b   # may fail on PyPy
+
+# Good — always use == for string equality
+assert a == b
+```
+
+---
+
 ## Adding your own rules
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for the complete guide on
-writing and submitting new rules.
+writing and submitting new rules. Rule IDs `CPY011+` and `PPY008+`
+are available for community contributions.

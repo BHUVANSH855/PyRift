@@ -114,6 +114,9 @@ findings = pyrift.scan_file("./src/utils.py")
 | CPY005 | `match/case` requires Python 3.10+ | Error | CPython ≤ 3.9 |
 | CPY006 | `asyncio.timeout()` / `TaskGroup` requires Python 3.11+ | Error | CPython ≤ 3.10 |
 | CPY007 | Module removed in Python 3.13 (21 modules) | Error | CPython ≥ 3.13 |
+| CPY008 | `__slots__` may not prevent `__dict__` with base classes | Info | All versions |
+| CPY009 | `ExceptionGroup` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY010 | `@dataclass(slots=True)` requires Python 3.10+ | Error | CPython ≤ 3.9 |
 
 ### PyPy rules — runtime differences
 
@@ -123,6 +126,9 @@ findings = pyrift.scan_file("./src/utils.py")
 | PPY002 | `ctypes` usage may silently fail | Warning | PyPy all versions |
 | PPY003 | `sys.getrefcount()` is meaningless on PyPy | Error | PyPy all versions |
 | PPY004 | `weakref.proxy()` raises `ReferenceError` unpredictably | Warning | PyPy all versions |
+| PPY005 | File write without explicit flush may lose data | Warning | PyPy all versions |
+| PPY006 | Monkey-patching built-in types behaves differently | Warning | PyPy all versions |
+| PPY007 | `sys.intern()` identity guarantees differ on PyPy | Warning | PyPy all versions |
 
 Full rule documentation: [docs/rules.md](docs/rules.md)
 
@@ -183,9 +189,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## Project status
 
-- **Version:** 0.2.0
-- **Rules:** 11 (7 CPython + 4 PyPy)
-- **Tests:** 45 passing
+- **Version:** 0.3.0
+- **Rules:** 17 (10 CPython + 7 PyPy)
+- **Tests:** 67 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
