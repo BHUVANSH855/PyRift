@@ -8,7 +8,7 @@ version = "0.3.0"
 description = "Detect silent Python behaviour differences across CPython versions and CPython vs PyPy"
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "Bhuvansh Kataria", email = "your@email.com" }]
+authors = [{ name = "Bhuvansh Kataria", email = "bhuvanshkataria@email.com" }]
 requires-python = ">=3.10"
 keywords = [
   "cpython", "pypy", "compatibility", "static-analysis",
