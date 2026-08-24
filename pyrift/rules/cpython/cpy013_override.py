@@ -5,9 +5,11 @@ typing.override was added in Python 3.12 (PEP 698).
 Using it on 3.11 or below raises ImportError at runtime.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class OverrideRule(BaseRule):

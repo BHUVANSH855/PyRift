@@ -5,9 +5,11 @@ locale.resetlocale() was deprecated in Python 3.11 and removed
 in Python 3.13. Calling it raises AttributeError on 3.13+.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class LocaleResetlocaleRule(BaseRule):

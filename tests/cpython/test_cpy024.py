@@ -1,6 +1,9 @@
-import ast, textwrap
+import ast
+import textwrap
+
 from pyrift.finding import Severity
 from pyrift.rules.cpython.cpy024_typeguard import TypeGuardRule
+
 
 def parse(src): return ast.parse(textwrap.dedent(src))
 def run(rule, src): return rule.check(parse(src), "<test>")

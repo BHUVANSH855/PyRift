@@ -5,9 +5,11 @@ asyncio.timeout() and asyncio.timeout_at() were added in 3.11.
 Using them on 3.10 raises AttributeError at runtime.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 ASYNCIO_311 = {"timeout", "timeout_at", "TaskGroup"}
 

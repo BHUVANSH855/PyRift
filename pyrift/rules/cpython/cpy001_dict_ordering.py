@@ -14,9 +14,11 @@ The real risk pattern is:
     d.keys() == ['a', 'b']        # always False (type mismatch) but misleading intent
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class DictOrderingRule(BaseRule):

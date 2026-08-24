@@ -8,9 +8,11 @@ the JIT — code relying on interned string identity may silently
 produce wrong results.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class SysInternRule(BaseRule):

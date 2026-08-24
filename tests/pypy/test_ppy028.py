@@ -1,5 +1,8 @@
-import ast, textwrap
+import ast
+import textwrap
+
 from pyrift.rules.pypy.ppy028_readline_parse_bind import ReadlineParseBindRule
+
 
 def parse(src): return ast.parse(textwrap.dedent(src))
 def run(rule, src): return rule.check(parse(src), "<test>")

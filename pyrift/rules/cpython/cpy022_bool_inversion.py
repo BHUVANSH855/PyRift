@@ -6,9 +6,11 @@ unintuitive. This behaviour is deprecated since Python 3.12 and
 will produce a DeprecationWarning. Use 'not x' for logical negation.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class BoolInversionRule(BaseRule):

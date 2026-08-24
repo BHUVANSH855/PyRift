@@ -1,6 +1,8 @@
-import ast, textwrap
-from pyrift.finding import Severity
+import ast
+import textwrap
+
 from pyrift.rules.cpython.cpy006_asyncio_timeout import AsyncioTimeoutRule
+
 
 def parse(src): return ast.parse(textwrap.dedent(src))
 def run(rule, src): return rule.check(parse(src), "<test>")

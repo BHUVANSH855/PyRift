@@ -7,9 +7,11 @@ succeed but produce inconsistent or broken behaviour due to how
 PyPy's JIT optimises built-in types.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 BUILTIN_TYPES = {
     "list", "dict", "str", "int", "float", "tuple",

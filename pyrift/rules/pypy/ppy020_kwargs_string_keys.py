@@ -7,9 +7,11 @@ passed as **kwargs must have only string keys — non-string keys
 raise TypeError.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class KwargsStringKeysRule(BaseRule):

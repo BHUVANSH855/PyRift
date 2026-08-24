@@ -6,9 +6,11 @@ it has already been defined, the __del__ will NOT be called.
 PyPy emits a RuntimeWarning. On CPython, this works silently.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class DelExistingClassRule(BaseRule):

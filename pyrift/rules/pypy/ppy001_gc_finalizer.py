@@ -6,9 +6,11 @@ PyPy uses a tracing GC — __del__ may never be called or called
 much later. Code relying on __del__ silently leaks on PyPy.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class GcFinalizerRule(BaseRule):

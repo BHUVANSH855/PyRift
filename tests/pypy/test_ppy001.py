@@ -1,6 +1,9 @@
-import ast, textwrap
-from pyrift.finding import Severity, Runtime
+import ast
+import textwrap
+
+from pyrift.finding import Runtime
 from pyrift.rules.pypy.ppy001_gc_finalizer import GcFinalizerRule
+
 
 def parse(src): return ast.parse(textwrap.dedent(src))
 def run(rule, src): return rule.check(parse(src), "<test>")

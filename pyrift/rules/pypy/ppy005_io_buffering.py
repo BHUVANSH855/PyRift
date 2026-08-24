@@ -7,9 +7,11 @@ buffering differences, data written to files may not be flushed
 even when the file appears to be closed — silently losing data.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 # open() modes that involve writing
 WRITE_MODES = {"w", "wb", "a", "ab", "w+", "wb+", "a+", "ab+", "x", "xb"}
@@ -30,9 +32,7 @@ class IoBufferingRule(BaseRule):
 
             func = n.func
             is_open = False
-            if isinstance(func, ast.Name) and func.id == "open":
-                is_open = True
-            elif (isinstance(func, ast.Attribute) and
+            if isinstance(func, ast.Name) and func.id == "open" or (isinstance(func, ast.Attribute) and
                   func.attr == "open" and
                   isinstance(func.value, ast.Name) and
                   func.value.id in ("io", "builtins")):

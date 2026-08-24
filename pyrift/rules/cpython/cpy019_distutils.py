@@ -6,9 +6,11 @@ Python 3.12 (PEP 632). Importing it raises ModuleNotFoundError.
 It was deprecated in Python 3.10.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 DISTUTILS_MODULES = {
     "distutils",

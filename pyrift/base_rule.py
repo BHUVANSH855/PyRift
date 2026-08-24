@@ -4,8 +4,10 @@ pyrift.base_rule
 Every rule inherits from BaseRule.
 """
 from __future__ import annotations
+
 import ast
 from abc import ABC, abstractmethod
+
 from .finding import Finding
 
 

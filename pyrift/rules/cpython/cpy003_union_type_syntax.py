@@ -5,9 +5,11 @@ PEP 604 introduced int | str as a replacement for Union[int, str].
 Using it at runtime inside isinstance() raises TypeError on 3.9-.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class UnionTypeSyntaxRule(BaseRule):

@@ -7,9 +7,11 @@ and environment handling have different defaults or meanings on
 PyPy due to PyPy's different startup behaviour.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 PYPY_DIFFERENT_FLAGS = {
     "hash_randomization",

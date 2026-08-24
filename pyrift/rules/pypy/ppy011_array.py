@@ -7,9 +7,11 @@ in Python 3.3 and removed in Python 3.13. PyPy follows the CPython
 Code using array.array('u', ...) silently fails on newer runtimes.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class ArrayTypeCodeRule(BaseRule):
@@ -27,9 +29,7 @@ class ArrayTypeCodeRule(BaseRule):
             if (isinstance(func, ast.Attribute) and
                     func.attr == "array" and
                     isinstance(func.value, ast.Name) and
-                    func.value.id == "array"):
-                is_array = True
-            elif isinstance(func, ast.Name) and func.id == "array":
+                    func.value.id == "array") or isinstance(func, ast.Name) and func.id == "array":
                 is_array = True
 
             if not is_array:

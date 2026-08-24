@@ -1,5 +1,8 @@
-import ast, textwrap
+import ast
+import textwrap
+
 from pyrift.rules.pypy.ppy019_nan_identity import NanIdentityRule
+
 
 def parse(src): return ast.parse(textwrap.dedent(src))
 def run(rule, src): return rule.check(parse(src), "<test>")

@@ -1,73 +1,3 @@
-# pyrift
-
-**Detect silent Python behaviour differences across CPython versions and CPython vs PyPy.**
-
-[![PyPI version](https://img.shields.io/pypi/v/pyrift.svg)](https://pypi.org/project/pyrift/)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Tests](https://github.com/BHUVANSH855/pyrift/actions/workflows/tests.yml/badge.svg)](https://github.com/BHUVANSH855/pyrift/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![PyPI Downloads](https://img.shields.io/pypi/dm/pyrift)](https://pypi.org/project/pyrift/)
-
----
-
-## What is pyrift?
-
-Python upgrades and cross-runtime compatibility (CPython vs PyPy) introduce
-**silent behaviour differences** — code that runs without errors but produces
-wrong results, leaks resources, or crashes only in certain environments.
-
-These are not syntax errors. Linters won't catch them.
-They are not CVEs. Security scanners won't catch them.
-They only appear at **runtime**, often in production.
-
-`pyrift` statically detects these patterns before they become bugs.
-
----
-
-## Install
-
-```bash
-pip install pyrift
-```
-
-Zero external dependencies. Pure Python. Works on Python 3.10+.
-
----
-
-## Quick start — CLI
-
-```bash
-# Scan current directory
-pyrift scan .
-
-# Scan a specific path
-pyrift scan ./src
-
-# JSON output (for CI integration)
-pyrift scan . --format json
-
-# Markdown report saved to file
-pyrift scan . --format markdown --output report.md
-
-# Check version
-pyrift --version
-```
-
-### Example output
-
-```
-[ERROR] src/server.py:42 CPY002: Exception.add_note() requires Python 3.11+
-→ Guard with: if sys.version_info >= (3, 11): e.add_note(...)
-
-[ERROR] src/compat.py:17 CPY007: Module removed in Python 3.13
-→ Find a third-party replacement for 'cgi' on PyPI
-
-[WARNING] src/resource.py:88 PPY001: Relying on del for resource cleanup breaks on PyPy
-→ Use context managers (with statement) or try/finally blocks
-
-Scanned 23 file(s). Found 2 error(s), 1 warning(s). Score: 77/100
-```
-
 
 ---
 
@@ -117,6 +47,41 @@ findings = pyrift.scan_file("./src/utils.py")
 | CPY008 | `__slots__` may not prevent `__dict__` with base classes | Info | All versions |
 | CPY009 | `ExceptionGroup` requires Python 3.11+ | Error | CPython ≤ 3.10 |
 | CPY010 | `@dataclass(slots=True)` requires Python 3.10+ | Error | CPython ≤ 3.9 |
+| CPY011 | `typing.Self` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY012 | `typing.LiteralString` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY013 | `typing.override` requires Python 3.12+ | Error | CPython ≤ 3.11 |
+| CPY014 | `typing.TypeAlias` requires Python 3.10+ | Error | CPython ≤ 3.9 |
+| CPY015 | `typing.Never` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY016 | `typing.TypeVarTuple` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY017 | `typing.Unpack` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY018 | `typing.Required` / `NotRequired` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY019 | `distutils` removed in Python 3.12+ | Error | CPython ≥ 3.12 |
+| CPY020 | `datetime.UTC` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY021 | `asyncio.iscoroutinefunction()` deprecated since 3.12 | Warning | CPython ≥ 3.12 |
+| CPY022 | Bitwise inversion on bool deprecated in 3.12 | Warning | CPython ≥ 3.12 |
+| CPY023 | `multiprocessing` default start method changing in 3.14 | Warning | CPython ≥ 3.14 |
+| CPY024 | `typing.TypeGuard` requires Python 3.10+ | Error | CPython ≤ 3.9 |
+| CPY025 | `typing.ParamSpec` requires Python 3.10+ | Error | CPython ≤ 3.9 |
+| CPY026 | `typing.io` and `typing.re` removed in Python 3.13 | Error | CPython ≥ 3.13 |
+| CPY027 | `locale.resetlocale()` removed in Python 3.13 | Error | CPython ≥ 3.13 |
+| CPY028 | `lib2to3` removed in Python 3.13 | Error | CPython ≥ 3.13 |
+| CPY029 | `locals()` semantics changed in Python 3.13 | Warning | CPython ≥ 3.13 |
+| CPY030 | `sys.path` no longer accepts bytes in Python 3.11+ | Error | CPython ≥ 3.11 |
+| CPY031 | `typing.assert_never` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY032 | `typing.reveal_type` requires Python 3.11+ | Error | CPython ≤ 3.10 |
+| CPY033 | `pathlib.Path.is_relative_to()` requires Python 3.9+ | Error | CPython ≤ 3.8 |
+| CPY034 | `int.bit_count()` requires Python 3.10+ | Error | CPython ≤ 3.9 |
+| CPY035 | `str.removeprefix/removesuffix` requires Python 3.9+ | Error | CPython ≤ 3.8 |
+| CPY036 | `datetime.utcnow()` deprecated since Python 3.12 | Warning | CPython ≥ 3.12 |
+| CPY037 | `datetime.utcfromtimestamp()` deprecated since Python 3.12 | Warning | CPython ≥ 3.12 |
+| CPY038 | `asyncio.get_event_loop()` raises RuntimeError in 3.12+ | Error | CPython ≥ 3.12 |
+| CPY039 | `zoneinfo` module requires Python 3.9+ | Error | CPython ≤ 3.8 |
+| CPY040 | `graphlib` module requires Python 3.9+ | Error | CPython ≤ 3.8 |
+| CPY041 | dict `\|` merge operator requires Python 3.9+ | Error | CPython ≤ 3.8 |
+| CPY042 | `aiter()` and `anext()` builtins require Python 3.10+ | Error | CPython ≤ 3.9 |
+| CPY043 | `math.lcm()` requires Python 3.9+ | Error | CPython ≤ 3.8 |
+| CPY044 | `math.gcd()` multi-arg form requires Python 3.9+ | Error | CPython ≤ 3.8 |
+| CPY045 | NaN hash behaviour changed in Python 3.10 | Warning | CPython ≥ 3.10 |
 
 ### PyPy rules — runtime differences
 
@@ -129,6 +94,44 @@ findings = pyrift.scan_file("./src/utils.py")
 | PPY005 | File write without explicit flush may lose data | Warning | PyPy all versions |
 | PPY006 | Monkey-patching built-in types behaves differently | Warning | PyPy all versions |
 | PPY007 | `sys.intern()` identity guarantees differ on PyPy | Warning | PyPy all versions |
+| PPY008 | `threading.local()` cleanup timing differs on PyPy | Warning | PyPy all versions |
+| PPY009 | `id()` values not stable across GC cycles on PyPy | Warning | PyPy all versions |
+| PPY010 | `gc.collect()` behaviour differs on PyPy | Warning | PyPy all versions |
+| PPY011 | `array.array('u')` type code removed in Python 3.13 | Error | CPython ≥ 3.13 |
+| PPY012 | Overriding built-in methods behaves differently on PyPy | Warning | PyPy all versions |
+| PPY013 | `sys.getsizeof()` raises `TypeError` on PyPy | Error | PyPy all versions |
+| PPY014 | String concatenation in loops is O(n²) on PyPy | Warning | PyPy all versions |
+| PPY015 | Generator cleanup timing differs on PyPy | Warning | PyPy all versions |
+| PPY016 | Instance `__dict__` ordering not guaranteed on PyPy | Warning | PyPy all versions |
+| PPY017 | Adding `__del__` to existing class not called on PyPy | Error | PyPy all versions |
+| PPY018 | `sys.setrecursionlimit()` behaviour differs on PyPy | Warning | PyPy all versions |
+| PPY019 | `float('nan')` identity differs between CPython and PyPy | Warning | PyPy all versions |
+| PPY020 | `dict(**kwargs)` requires string keys on PyPy | Error | PyPy all versions |
+| PPY021 | Socket not closed promptly on PyPy | Warning | PyPy all versions |
+| PPY022 | `PYTHONHASHSEED=0` has no effect on PyPy | Warning | PyPy all versions |
+| PPY023 | `inspect.ismethod()` returns different results on PyPy | Warning | PyPy all versions |
+| PPY024 | `timeit` reports average not minimum on PyPy | Info | PyPy all versions |
+| PPY025 | Set iteration order differs between CPython and PyPy | Warning | PyPy all versions |
+| PPY026 | `__builtins__` is always a module on PyPy | Warning | PyPy all versions |
+| PPY027 | Deleting module/class attributes is slower on PyPy | Warning | PyPy all versions |
+| PPY028 | `readline.parse_and_bind()` silently ignored on PyPy | Warning | PyPy all versions |
+| PPY029 | Assigning to `__builtins__` has no effect on PyPy | Warning | PyPy all versions |
+| PPY030 | `sys.flags` values may differ between CPython and PyPy | Warning | PyPy all versions |
+| PPY031 | Integer `is` identity semantics differ on PyPy | Info | PyPy all versions |
+| PPY032 | Mutating dict keys raises `RuntimeError` on PyPy | Warning | PyPy all versions |
+| PPY033 | Exceptions in `__del__` appear at unpredictable times | Warning | PyPy all versions |
+| PPY034 | `hash()` values may differ between CPython and PyPy | Info | PyPy all versions |
+| PPY035 | C extension packages may not work correctly on PyPy | Warning | PyPy all versions |
+| PPY036 | `open()` line buffering behaves differently on PyPy | Warning | PyPy all versions |
+| PPY037 | `os.urandom()` source may differ on PyPy | Info | PyPy all versions |
+| PPY038 | `decimal` module uses different backend on PyPy | Info | PyPy all versions |
+| PPY039 | `os.fork()` may not work correctly on all PyPy platforms | Warning | PyPy all versions |
+| PPY040 | `subprocess.PIPE` buffering may cause deadlocks on PyPy | Warning | PyPy all versions |
+| PPY041 | dict `\|` operator requires PyPy 7.3.7+ | Info | PyPy < 7.3.7 |
+| PPY042 | `print(flush=True)` may not flush immediately on PyPy | Info | PyPy all versions |
+| PPY043 | `__slots__` memory savings differ on PyPy | Info | PyPy all versions |
+| PPY044 | Exception variable cleanup timing differs on PyPy | Info | PyPy all versions |
+| PPY045 | `sys.settrace()` disables JIT on PyPy | Warning | PyPy all versions |
 
 Full rule documentation: [docs/rules.md](docs/rules.md)
 
@@ -157,7 +160,7 @@ Use `--exit-zero` to report without failing.
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/BHUVANSH855/pyrift
-    rev: v0.4.0
+    rev: v0.5.0
     hooks:
       - id: pyrift
 ```
@@ -182,16 +185,14 @@ pyrift does not replace any of these tools. It catches what they all miss.
 
 Planned for upcoming versions — contributions welcome:
 
-- `CPY014` — `typing.TypeAlias` requires Python 3.10+
-- `CPY015` — `typing.Never` requires Python 3.11+
-- `PPY008` — `array.array` behaviour differences on PyPy
-- `PPY009` — `decimal` module precision differences on PyPy
+- `CPY046` — `typing.TypeIs` requires Python 3.13+
+- `CPY047` — `typing.ReadOnly` requires Python 3.13+
 - Pre-commit hook native support
 - VS Code extension
 - GitHub Action marketplace listing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to add a rule yourself — rule IDs
-`CPY011+` and `PPY008+` are open for community contributions.
+`CPY046+` and `PPY046+` are open for community contributions.
 
 ---
 
@@ -206,9 +207,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## Project status
 
-- **Version:** 0.4.0
-- **Rules:** 20 (13 CPython + 7 PyPy)
-- **Tests:** 79 passing
+- **Version:** 0.5.0
+- **Rules:** 90 (45 CPython + 45 PyPy)
+- **Tests:** 316 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 

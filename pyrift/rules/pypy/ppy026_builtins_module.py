@@ -7,9 +7,11 @@ always the module, never a dict. Code that checks type(__builtins__)
 or accesses __builtins__ as a dict will behave differently on PyPy.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class BuiltinsModuleRule(BaseRule):

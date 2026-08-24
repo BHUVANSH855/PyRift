@@ -9,13 +9,14 @@ Command-line interface.
     pyrift --version
 """
 from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
 
 from . import __version__
-from .scanner  import scan
-from .reporter import to_text, to_json, to_markdown
+from .reporter import to_json, to_markdown, to_text
+from .scanner import scan
 
 
 def _build_parser() -> argparse.ArgumentParser:

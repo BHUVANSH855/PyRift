@@ -7,9 +7,11 @@ on __slots__ to prevent __dict__ creation silently fails on older
 versions when a parent class has __dict__.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class SlotsDictRule(BaseRule):

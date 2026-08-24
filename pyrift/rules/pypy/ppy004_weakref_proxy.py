@@ -7,9 +7,11 @@ at unpredictable times due to GC differences — even before the object
 appears to be dead from CPython's perspective.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class WeakrefProxyRule(BaseRule):

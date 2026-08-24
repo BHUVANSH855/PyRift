@@ -5,9 +5,11 @@ asyncio.iscoroutinefunction() was deprecated in Python 3.12 and will
 be removed in Python 3.16. Use inspect.iscoroutinefunction() instead.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class AsyncioIsCoroutineRule(BaseRule):

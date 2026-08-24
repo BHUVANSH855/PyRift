@@ -5,9 +5,11 @@ datetime.UTC was added as a convenience alias for datetime.timezone.utc
 in Python 3.11. Using it on 3.10 or below raises AttributeError.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class DatetimeUTCRule(BaseRule):

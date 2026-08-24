@@ -7,9 +7,11 @@ block, the finally/cleanup may run much later than expected on PyPy,
 silently leaking resources.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class GeneratorGCRule(BaseRule):

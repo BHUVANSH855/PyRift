@@ -8,9 +8,11 @@ CPython. Code that frequently deletes module-level attributes in
 hot paths will silently degrade performance on PyPy.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class ModuleAttrDeleteRule(BaseRule):

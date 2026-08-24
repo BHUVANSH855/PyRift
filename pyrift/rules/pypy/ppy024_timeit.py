@@ -8,9 +8,11 @@ means the minimum is often misleading (JIT warmup skews results).
 Code parsing timeit output may silently get different values on PyPy.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class TimeitRule(BaseRule):

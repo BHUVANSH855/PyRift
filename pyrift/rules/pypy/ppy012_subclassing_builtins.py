@@ -8,9 +8,11 @@ methods on CPython but not on PyPy, or vice versa — leading to
 silent behaviour differences.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 # Built-in types where internal method dispatch differs
 DANGEROUS_BASES = {

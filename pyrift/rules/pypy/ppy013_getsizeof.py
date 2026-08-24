@@ -7,9 +7,11 @@ profiling based on this function gives results inconsistent with
 reality on PyPy.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class GetSizeofRule(BaseRule):

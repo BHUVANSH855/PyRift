@@ -7,9 +7,11 @@ in simple loops run in O(n) time. PyPy does not have this optimisation
 degrading performance on large inputs.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class StringConcatLoopRule(BaseRule):

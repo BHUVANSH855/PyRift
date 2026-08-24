@@ -7,9 +7,11 @@ no effect — PyPy ignores it silently. Code that monkey-patches
 builtins via __builtins__ assignment will silently fail on PyPy.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class BuiltinsAssignRule(BaseRule):

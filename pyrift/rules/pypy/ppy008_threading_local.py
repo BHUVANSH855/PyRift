@@ -7,9 +7,11 @@ storage may not be released until the GC runs — leaking memory
 in long-running servers that create and destroy many threads.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class ThreadingLocalRule(BaseRule):

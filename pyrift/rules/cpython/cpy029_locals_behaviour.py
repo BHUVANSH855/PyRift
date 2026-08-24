@@ -8,9 +8,11 @@ semantics: the returned mapping is a snapshot and modifying it
 never affects the actual local variables.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class LocalsBehaviourRule(BaseRule):

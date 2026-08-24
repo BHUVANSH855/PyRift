@@ -5,9 +5,11 @@ ExceptionGroup and BaseExceptionGroup were introduced in Python 3.11
 (PEP 654). Using them on 3.10 or below raises NameError at runtime.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 EXCEPTION_GROUP_NAMES = {"ExceptionGroup", "BaseExceptionGroup"}
 

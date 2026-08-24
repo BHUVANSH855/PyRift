@@ -4,7 +4,8 @@ pyrift.finding
 The Finding dataclass — every rule returns a list of these.
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+
+from dataclasses import dataclass
 from enum import Enum
 
 

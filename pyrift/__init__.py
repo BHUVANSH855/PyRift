@@ -16,24 +16,24 @@ Quick start::
         print(finding)
 
 """
-from .scanner  import scan, scan_file, ScanResult, ALL_RULES
-from .finding  import Finding, Severity, Runtime
+from .finding import Finding, Runtime, Severity
 from .reporter import to_json, to_markdown, to_text
+from .scanner import ALL_RULES, ScanResult, scan, scan_file
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 __author__  = "Bhuvansh Kataria"
 __license__ = "MIT"
 
 __all__ = [
-    "scan",
-    "scan_file",
-    "ScanResult",
     "ALL_RULES",
     "Finding",
-    "Severity",
     "Runtime",
+    "ScanResult",
+    "Severity",
+    "__version__",
+    "scan",
+    "scan_file",
     "to_json",
     "to_markdown",
     "to_text",
-    "__version__",
 ]

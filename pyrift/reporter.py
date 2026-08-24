@@ -4,9 +4,11 @@ pyrift.reporter
 Formats ScanResult into JSON, Markdown, or plain text.
 """
 from __future__ import annotations
+
 import json
-from .scanner import ScanResult
+
 from .finding import Severity
+from .scanner import ScanResult
 
 
 def to_json(result: ScanResult, indent: int = 2) -> str:

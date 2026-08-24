@@ -6,6 +6,85 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.5.0] — 2026-08-25
+
+### Added — CPython rules
+- `CPY019` — `distutils` removed in Python 3.12+
+- `CPY020` — `datetime.UTC` requires Python 3.11+
+- `CPY021` — `asyncio.iscoroutinefunction()` deprecated since 3.12
+- `CPY022` — Bitwise inversion on bool deprecated in 3.12
+- `CPY023` — `multiprocessing` default fork start method changing in 3.14
+- `CPY024` — `typing.TypeGuard` requires Python 3.10+
+- `CPY025` — `typing.ParamSpec` requires Python 3.10+
+- `CPY026` — `typing.io` and `typing.re` removed in Python 3.13
+- `CPY027` — `locale.resetlocale()` removed in Python 3.13
+- `CPY028` — `lib2to3` removed in Python 3.13
+- `CPY029` — `locals()` semantics changed in Python 3.13
+- `CPY030` — `sys.path` no longer accepts bytes in Python 3.11+
+- `CPY031` — `typing.assert_never` requires Python 3.11+
+- `CPY032` — `typing.reveal_type` requires Python 3.11+
+- `CPY033` — `pathlib.Path.is_relative_to()` requires Python 3.9+
+- `CPY034` — `int.bit_count()` requires Python 3.10+
+- `CPY035` — `str.removeprefix/removesuffix` requires Python 3.9+
+- `CPY036` — `datetime.utcnow()` deprecated since Python 3.12
+- `CPY037` — `datetime.utcfromtimestamp()` deprecated since Python 3.12
+- `CPY038` — `asyncio.get_event_loop()` raises RuntimeError in Python 3.12+
+- `CPY039` — `zoneinfo` module requires Python 3.9+
+- `CPY040` — `graphlib` module requires Python 3.9+
+- `CPY041` — dict `|` merge operator requires Python 3.9+
+- `CPY042` — `aiter()` and `anext()` builtins require Python 3.10+
+- `CPY043` — `math.lcm()` requires Python 3.9+
+- `CPY044` — `math.gcd()` multi-arg form requires Python 3.9+
+- `CPY045` — NaN hash behaviour changed in Python 3.10
+
+### Added — PyPy rules
+- `PPY008` — `threading.local()` cleanup timing differs on PyPy
+- `PPY009` — `id()` values not stable across GC cycles on PyPy
+- `PPY010` — `gc.collect()` behaviour differs on PyPy
+- `PPY011` — `array.array('u')` type code removed in Python 3.13
+- `PPY012` — Overriding built-in methods behaves differently on PyPy
+- `PPY013` — `sys.getsizeof()` raises `TypeError` on PyPy
+- `PPY014` — String concatenation in loops is O(n²) on PyPy
+- `PPY015` — Generator cleanup timing differs on PyPy
+- `PPY016` — Instance `__dict__` ordering not guaranteed on PyPy
+- `PPY017` — Adding `__del__` to existing class not called on PyPy
+- `PPY018` — `sys.setrecursionlimit()` behaviour differs on PyPy
+- `PPY019` — `float('nan')` identity differs between CPython and PyPy
+- `PPY020` — `dict(**kwargs)` requires string keys on PyPy and Python 3
+- `PPY021` — Socket not closed promptly on PyPy
+- `PPY022` — `PYTHONHASHSEED=0` has no effect on PyPy
+- `PPY023` — `inspect.ismethod()` returns different results on PyPy
+- `PPY024` — `timeit` reports average not minimum on PyPy
+- `PPY025` — Set iteration order differs between CPython and PyPy
+- `PPY026` — `__builtins__` is always a module on PyPy
+- `PPY027` — Deleting module/class attributes is slower on PyPy
+- `PPY028` — `readline.parse_and_bind()` silently ignored on PyPy
+- `PPY029` — Assigning to `__builtins__` has no effect on PyPy
+- `PPY030` — `sys.flags` values may differ between CPython and PyPy
+- `PPY031` — Integer `is` identity semantics differ on PyPy
+- `PPY032` — Mutating dict keys raises `RuntimeError` on PyPy
+- `PPY033` — Exceptions in `__del__` appear at unpredictable times on PyPy
+- `PPY034` — `hash()` values may differ between CPython and PyPy
+- `PPY035` — C extension packages may not work correctly on PyPy
+- `PPY036` — `open()` line buffering behaves differently on PyPy
+- `PPY037` — `os.urandom()` source may differ on PyPy
+- `PPY038` — `decimal` module uses different backend on PyPy
+- `PPY039` — `os.fork()` may not work correctly on all PyPy platforms
+- `PPY040` — `subprocess.PIPE` buffering may cause deadlocks on PyPy
+- `PPY041` — dict `|` operator requires PyPy 7.3.7+
+- `PPY042` — `print(flush=True)` may not flush immediately on PyPy
+- `PPY043` — `__slots__` memory savings differ on PyPy
+- `PPY044` — Exception variable cleanup timing differs on PyPy
+- `PPY045` — `sys.settrace()` disables JIT on PyPy
+
+### Changed
+- Version bumped to 0.5.0
+- Test suite restructured — one file per rule in `tests/cpython/` and `tests/pypy/`
+- 316 tests total
+- `scanner.py` updated — now 90 rules in `ALL_RULES`
+
+---
+
 ## [0.4.0] — 2026-08-24
 
 ### Added

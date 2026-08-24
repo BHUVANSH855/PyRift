@@ -1,6 +1,9 @@
-import ast, textwrap
+import ast
+import textwrap
+
 from pyrift.finding import Severity
 from pyrift.rules.pypy.ppy020_kwargs_string_keys import KwargsStringKeysRule
+
 
 def parse(src): return ast.parse(textwrap.dedent(src))
 def run(rule, src): return rule.check(parse(src), "<test>")

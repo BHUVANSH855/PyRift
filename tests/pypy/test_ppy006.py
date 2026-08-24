@@ -1,5 +1,8 @@
-import ast, textwrap
+import ast
+import textwrap
+
 from pyrift.rules.pypy.ppy006_builtin_monkey_patch import BuiltinMonkeyPatchRule
+
 
 def parse(src): return ast.parse(textwrap.dedent(src))
 def run(rule, src): return rule.check(parse(src), "<test>")

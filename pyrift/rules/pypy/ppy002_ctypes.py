@@ -6,9 +6,11 @@ callbacks, and structures with bit fields may silently produce
 wrong results or crash on PyPy while working on CPython.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 CTYPES_DANGEROUS = {
     "CDLL", "WinDLL", "OleDLL", "PyDLL",

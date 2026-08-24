@@ -6,9 +6,11 @@ Python 3.12 and removed in Python 3.13. They were undocumented
 aliases. Importing from them raises ImportError on 3.13+.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 REMOVED_NAMESPACES = {"typing.io", "typing.re"}
 

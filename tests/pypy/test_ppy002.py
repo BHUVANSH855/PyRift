@@ -1,5 +1,8 @@
-import ast, textwrap
+import ast
+import textwrap
+
 from pyrift.rules.pypy.ppy002_ctypes import CtypesRule
+
 
 def parse(src): return ast.parse(textwrap.dedent(src))
 def run(rule, src): return rule.check(parse(src), "<test>")

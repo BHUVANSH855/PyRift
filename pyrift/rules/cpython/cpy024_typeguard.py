@@ -5,9 +5,11 @@ typing.TypeGuard was added in Python 3.10 (PEP 647).
 Using it on 3.9 or below raises ImportError at runtime.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class TypeGuardRule(BaseRule):

@@ -2,8 +2,9 @@
 Scanner and Reporter integration tests.
 """
 import json
-from pyrift.scanner import scan_file, scan, ScanResult
+
 from pyrift.reporter import to_json, to_markdown, to_text
+from pyrift.scanner import ScanResult, scan, scan_file
 
 
 class TestScanner:

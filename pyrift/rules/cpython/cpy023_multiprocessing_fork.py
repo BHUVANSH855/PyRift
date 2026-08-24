@@ -6,9 +6,11 @@ from 'fork' to a safer method in Python 3.14. Code relying on the
 default 'fork' behaviour may silently break.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class MultiprocessingForkRule(BaseRule):

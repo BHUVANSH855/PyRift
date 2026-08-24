@@ -7,9 +7,11 @@ after Python 3.10.0. Adding bytes to sys.path silently fails or
 raises TypeError on newer versions.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class SysPathBytesRule(BaseRule):

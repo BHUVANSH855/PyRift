@@ -7,9 +7,11 @@ random/unspecified may produce different results across runtimes.
 Also noted: on CPython 3.7+ dicts are ordered but sets still are not.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class SetOrderingRule(BaseRule):

@@ -5,9 +5,11 @@ The slots parameter for @dataclass was added in Python 3.10.
 Using it on 3.9 or below raises TypeError at class definition time.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class DataclassSlotsRule(BaseRule):
@@ -29,9 +31,7 @@ class DataclassSlotsRule(BaseRule):
 
                 func = decorator.func
                 is_dataclass = False
-                if isinstance(func, ast.Name) and func.id == "dataclass":
-                    is_dataclass = True
-                elif (isinstance(func, ast.Attribute) and
+                if isinstance(func, ast.Name) and func.id == "dataclass" or (isinstance(func, ast.Attribute) and
                       func.attr == "dataclass"):
                     is_dataclass = True
 

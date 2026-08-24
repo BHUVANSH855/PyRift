@@ -7,9 +7,11 @@ ignored on PyPy. Code that configures readline keybindings will
 appear to work but have no effect on PyPy.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class ReadlineParseBindRule(BaseRule):

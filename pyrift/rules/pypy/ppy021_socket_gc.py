@@ -7,9 +7,11 @@ closed promptly — the OS limit on open file descriptors can be
 reached silently before the GC runs.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class SocketGCRule(BaseRule):
@@ -27,9 +29,7 @@ class SocketGCRule(BaseRule):
             if (isinstance(func, ast.Attribute) and
                     func.attr == "socket" and
                     isinstance(func.value, ast.Name) and
-                    func.value.id == "socket"):
-                is_socket = True
-            elif (isinstance(func, ast.Name) and
+                    func.value.id == "socket") or (isinstance(func, ast.Name) and
                     func.id == "socket"):
                 is_socket = True
             if is_socket:

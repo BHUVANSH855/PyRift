@@ -5,9 +5,11 @@ Exception.add_note() was added in CPython 3.11 (PEP 678).
 Code using it silently fails with AttributeError on 3.10 and below.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class ExceptionNotesRule(BaseRule):

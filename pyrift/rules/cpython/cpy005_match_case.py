@@ -5,9 +5,11 @@ PEP 634 introduced match/case in 3.10. Using it on 3.9 or below
 is a SyntaxError — the file won't even import.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class MatchCaseRule(BaseRule):

@@ -5,9 +5,11 @@ tomllib was added to the stdlib in Python 3.11 (PEP 680).
 Importing it on 3.10 or below raises ModuleNotFoundError.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class TomllibRule(BaseRule):

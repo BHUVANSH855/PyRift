@@ -5,9 +5,11 @@ PEP 594 removed many legacy stdlib modules in 3.13.
 Importing them on 3.13+ raises ModuleNotFoundError.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 # Modules removed in Python 3.13 per PEP 594
 REMOVED_313 = {

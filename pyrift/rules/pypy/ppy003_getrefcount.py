@@ -7,9 +7,11 @@ sys.getrefcount() always returns a dummy value (typically 0 or 65536).
 Code that makes decisions based on sys.getrefcount() breaks silently.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class GetRefcountRule(BaseRule):

@@ -5,74 +5,104 @@ Core scanning engine.
 Parses Python files into ASTs and runs all registered rules.
 """
 from __future__ import annotations
+
 import ast
 import os
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
-from .finding import Finding
 from .base_rule import BaseRule
-
-from .rules.cpython.cpy001_dict_ordering     import DictOrderingRule
-from .rules.cpython.cpy002_exception_notes   import ExceptionNotesRule
+from .finding import Finding
+from .rules.cpython.cpy001_dict_ordering import DictOrderingRule
+from .rules.cpython.cpy002_exception_notes import ExceptionNotesRule
 from .rules.cpython.cpy003_union_type_syntax import UnionTypeSyntaxRule
-from .rules.cpython.cpy004_tomllib           import TomllibRule
-from .rules.cpython.cpy005_match_case        import MatchCaseRule
-from .rules.cpython.cpy006_asyncio_timeout   import AsyncioTimeoutRule
-from .rules.cpython.cpy007_removed_modules   import RemovedModulesRule
-from .rules.cpython.cpy008_slots_dict        import SlotsDictRule
-from .rules.cpython.cpy009_exception_group   import ExceptionGroupRule
-from .rules.cpython.cpy010_dataclass_slots   import DataclassSlotsRule
-from .rules.pypy.ppy001_gc_finalizer         import GcFinalizerRule
-from .rules.pypy.ppy002_ctypes               import CtypesRule
-from .rules.pypy.ppy003_getrefcount          import GetRefcountRule
-from .rules.pypy.ppy004_weakref_proxy        import WeakrefProxyRule
-from .rules.pypy.ppy005_io_buffering         import IoBufferingRule
-from .rules.pypy.ppy006_builtin_monkey_patch import BuiltinMonkeyPatchRule
-from .rules.pypy.ppy007_sys_intern           import SysInternRule
-from .rules.cpython.cpy011_typing_self    import TypingSelfRule
+from .rules.cpython.cpy004_tomllib import TomllibRule
+from .rules.cpython.cpy005_match_case import MatchCaseRule
+from .rules.cpython.cpy006_asyncio_timeout import AsyncioTimeoutRule
+from .rules.cpython.cpy007_removed_modules import RemovedModulesRule
+from .rules.cpython.cpy008_slots_dict import SlotsDictRule
+from .rules.cpython.cpy009_exception_group import ExceptionGroupRule
+from .rules.cpython.cpy010_dataclass_slots import DataclassSlotsRule
+from .rules.cpython.cpy011_typing_self import TypingSelfRule
 from .rules.cpython.cpy012_literal_string import LiteralStringRule
-from .rules.cpython.cpy013_override       import OverrideRule
-from .rules.cpython.cpy014_type_alias      import TypeAliasRule
-from .rules.cpython.cpy015_never           import NeverRule
-from .rules.cpython.cpy016_typevartuple    import TypeVarTupleRule
-from .rules.cpython.cpy017_unpack          import UnpackRule
-from .rules.cpython.cpy018_required        import RequiredRule
-from .rules.pypy.ppy008_threading_local    import ThreadingLocalRule
-from .rules.pypy.ppy009_id_stability       import IdStabilityRule
-from .rules.pypy.ppy010_gc_collect         import GcCollectRule
-from .rules.pypy.ppy011_array              import ArrayTypeCodeRule
-from .rules.pypy.ppy012_subclassing_builtins import SubclassingBuiltinsRule
-from .rules.cpython.cpy019_distutils          import DistutilsRule
-from .rules.cpython.cpy020_datetime_utc       import DatetimeUTCRule
-from .rules.pypy.ppy013_getsizeof             import GetSizeofRule
-from .rules.pypy.ppy014_string_concat         import StringConcatLoopRule
-from .rules.pypy.ppy015_generator_gc          import GeneratorGCRule
-from .rules.pypy.ppy016_instance_dict_order   import InstanceDictOrderRule
-from .rules.pypy.ppy017_del_existing_class    import DelExistingClassRule
-from .rules.pypy.ppy018_recursion_limit       import RecursionLimitRule
-from .rules.pypy.ppy019_nan_identity          import NanIdentityRule
-from .rules.pypy.ppy020_kwargs_string_keys    import KwargsStringKeysRule
-from .rules.cpython.cpy021_asyncio_coroutine    import AsyncioIsCoroutineRule
-from .rules.cpython.cpy022_bool_inversion       import BoolInversionRule
+from .rules.cpython.cpy013_override import OverrideRule
+from .rules.cpython.cpy014_type_alias import TypeAliasRule
+from .rules.cpython.cpy015_never import NeverRule
+from .rules.cpython.cpy016_typevartuple import TypeVarTupleRule
+from .rules.cpython.cpy017_unpack import UnpackRule
+from .rules.cpython.cpy018_required import RequiredRule
+from .rules.cpython.cpy019_distutils import DistutilsRule
+from .rules.cpython.cpy020_datetime_utc import DatetimeUTCRule
+from .rules.cpython.cpy021_asyncio_coroutine import AsyncioIsCoroutineRule
+from .rules.cpython.cpy022_bool_inversion import BoolInversionRule
 from .rules.cpython.cpy023_multiprocessing_fork import MultiprocessingForkRule
-from .rules.cpython.cpy024_typeguard            import TypeGuardRule
-from .rules.cpython.cpy025_paramspec            import ParamSpecRule
-from .rules.pypy.ppy021_socket_gc               import SocketGCRule
-from .rules.pypy.ppy022_hash_randomisation      import HashRandomisationRule
-from .rules.pypy.ppy023_inspect_ismethod        import InspectIsMethodRule
-from .rules.pypy.ppy024_timeit                  import TimeitRule
-from .rules.pypy.ppy025_set_ordering            import SetOrderingRule
-from .rules.cpython.cpy026_typing_io_re        import TypingIoReRule
-from .rules.cpython.cpy027_locale_resetlocale  import LocaleResetlocaleRule
-from .rules.cpython.cpy028_lib2to3             import Lib2to3Rule
-from .rules.cpython.cpy029_locals_behaviour    import LocalsBehaviourRule
-from .rules.cpython.cpy030_sys_path_bytes      import SysPathBytesRule
-from .rules.pypy.ppy026_builtins_module        import BuiltinsModuleRule
-from .rules.pypy.ppy027_module_attr_delete     import ModuleAttrDeleteRule
-from .rules.pypy.ppy028_readline_parse_bind    import ReadlineParseBindRule
-from .rules.pypy.ppy029_dict_kwargs_nonstring  import BuiltinsAssignRule
-from .rules.pypy.ppy030_sys_flags              import SysFlagsRule
+from .rules.cpython.cpy024_typeguard import TypeGuardRule
+from .rules.cpython.cpy025_paramspec import ParamSpecRule
+from .rules.cpython.cpy026_typing_io_re import TypingIoReRule
+from .rules.cpython.cpy027_locale_resetlocale import LocaleResetlocaleRule
+from .rules.cpython.cpy028_lib2to3 import Lib2to3Rule
+from .rules.cpython.cpy029_locals_behaviour import LocalsBehaviourRule
+from .rules.cpython.cpy030_sys_path_bytes import SysPathBytesRule
+from .rules.cpython.cpy031_assert_never import AssertNeverRule
+from .rules.cpython.cpy032_reveal_type import RevealTypeRule
+from .rules.cpython.cpy033_is_relative_to import IsRelativeToRule
+from .rules.cpython.cpy034_bit_count import BitCountRule
+from .rules.cpython.cpy035_removeprefix import RemovePrefixRule
+from .rules.cpython.cpy036_datetime_utcnow import DatetimeUtcnowRule
+from .rules.cpython.cpy037_datetime_utcfromtimestamp import DatetimeUtcfromtimestampRule
+from .rules.cpython.cpy038_asyncio_get_event_loop import AsyncioGetEventLoopRule
+from .rules.cpython.cpy039_zoneinfo import ZoneInfoRule
+from .rules.cpython.cpy040_graphlib import GraphlibRule
+from .rules.cpython.cpy041_dict_merge_operator import DictMergeOperatorRule
+from .rules.cpython.cpy042_aiter_anext import AiterAnextRule
+from .rules.cpython.cpy043_math_lcm import MathLcmRule
+from .rules.cpython.cpy044_math_gcd_multi import MathGcdMultiRule
+from .rules.cpython.cpy045_nan_hash import NanHashRule
+from .rules.pypy.ppy001_gc_finalizer import GcFinalizerRule
+from .rules.pypy.ppy002_ctypes import CtypesRule
+from .rules.pypy.ppy003_getrefcount import GetRefcountRule
+from .rules.pypy.ppy004_weakref_proxy import WeakrefProxyRule
+from .rules.pypy.ppy005_io_buffering import IoBufferingRule
+from .rules.pypy.ppy006_builtin_monkey_patch import BuiltinMonkeyPatchRule
+from .rules.pypy.ppy007_sys_intern import SysInternRule
+from .rules.pypy.ppy008_threading_local import ThreadingLocalRule
+from .rules.pypy.ppy009_id_stability import IdStabilityRule
+from .rules.pypy.ppy010_gc_collect import GcCollectRule
+from .rules.pypy.ppy011_array import ArrayTypeCodeRule
+from .rules.pypy.ppy012_subclassing_builtins import SubclassingBuiltinsRule
+from .rules.pypy.ppy013_getsizeof import GetSizeofRule
+from .rules.pypy.ppy014_string_concat import StringConcatLoopRule
+from .rules.pypy.ppy015_generator_gc import GeneratorGCRule
+from .rules.pypy.ppy016_instance_dict_order import InstanceDictOrderRule
+from .rules.pypy.ppy017_del_existing_class import DelExistingClassRule
+from .rules.pypy.ppy018_recursion_limit import RecursionLimitRule
+from .rules.pypy.ppy019_nan_identity import NanIdentityRule
+from .rules.pypy.ppy020_kwargs_string_keys import KwargsStringKeysRule
+from .rules.pypy.ppy021_socket_gc import SocketGCRule
+from .rules.pypy.ppy022_hash_randomisation import HashRandomisationRule
+from .rules.pypy.ppy023_inspect_ismethod import InspectIsMethodRule
+from .rules.pypy.ppy024_timeit import TimeitRule
+from .rules.pypy.ppy025_set_ordering import SetOrderingRule
+from .rules.pypy.ppy026_builtins_module import BuiltinsModuleRule
+from .rules.pypy.ppy027_module_attr_delete import ModuleAttrDeleteRule
+from .rules.pypy.ppy028_readline_parse_bind import ReadlineParseBindRule
+from .rules.pypy.ppy029_dict_kwargs_nonstring import BuiltinsAssignRule
+from .rules.pypy.ppy030_sys_flags import SysFlagsRule
+from .rules.pypy.ppy031_integer_identity import IntegerIdentityRule
+from .rules.pypy.ppy032_dict_key_mutation import DictKeyMutationRule
+from .rules.pypy.ppy033_del_ignored_exceptions import DelIgnoredExceptionsRule
+from .rules.pypy.ppy034_hash_minus_one import HashMinusOneRule
+from .rules.pypy.ppy035_c_extensions import CExtensionsRule
+from .rules.pypy.ppy036_open_flush import OpenFlushRule
+from .rules.pypy.ppy037_os_urandom import OsUrandomRule
+from .rules.pypy.ppy038_decimal import DecimalBackendRule
+from .rules.pypy.ppy039_os_fork import OsForkRule
+from .rules.pypy.ppy040_subprocess_pipe import SubprocessPipeRule
+from .rules.pypy.ppy041_dict_merge_pypy import DictMergePypyRule
+from .rules.pypy.ppy042_print_flush import PrintFlushRule
+from .rules.pypy.ppy043_slots_memory import SlotsMemorypyRule
+from .rules.pypy.ppy044_exception_chaining import ExceptionChainingRule
+from .rules.pypy.ppy045_sys_settrace import SysSettraceRule
 
 ALL_RULES: list[BaseRule] = [
     DictOrderingRule(),
@@ -135,6 +165,36 @@ ALL_RULES: list[BaseRule] = [
     ReadlineParseBindRule(),
     BuiltinsAssignRule(),
     SysFlagsRule(),
+    AssertNeverRule(),
+    RevealTypeRule(),
+    IsRelativeToRule(),
+    BitCountRule(),
+    RemovePrefixRule(),
+    IntegerIdentityRule(),
+    DictKeyMutationRule(),
+    DelIgnoredExceptionsRule(),
+    HashMinusOneRule(),
+    CExtensionsRule(),
+    DatetimeUtcnowRule(),
+    DatetimeUtcfromtimestampRule(),
+    AsyncioGetEventLoopRule(),
+    ZoneInfoRule(),
+    GraphlibRule(),
+    OpenFlushRule(),
+    OsUrandomRule(),
+    DecimalBackendRule(),
+    OsForkRule(),
+    SubprocessPipeRule(),
+    DictMergeOperatorRule(),
+    AiterAnextRule(),
+    MathLcmRule(),
+    MathGcdMultiRule(),
+    NanHashRule(),
+    DictMergePypyRule(),
+    PrintFlushRule(),
+    SlotsMemorypyRule(),
+    ExceptionChainingRule(),
+    SysSettraceRule(),
 ]
 
 SKIP_DIRS = {
@@ -196,7 +256,7 @@ def scan_file(filepath: str | Path,
         source = filepath.read_text(encoding="utf-8", errors="replace")
         tree   = ast.parse(source, filename=str(filepath))
     except SyntaxError as exc:
-        from .finding import Severity, Runtime
+        from .finding import Runtime, Severity
         findings.append(Finding(
             file=str(filepath),
             line=exc.lineno or 0,

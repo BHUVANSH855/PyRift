@@ -6,9 +6,11 @@ and removed in Python 3.13. Importing lib2to3 raises ModuleNotFoundError
 on Python 3.13+.
 """
 from __future__ import annotations
+
 import ast
+
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Severity, Runtime
+from pyrift.finding import Finding, Runtime, Severity
 
 
 class Lib2to3Rule(BaseRule):
