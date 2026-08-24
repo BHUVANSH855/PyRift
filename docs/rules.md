@@ -1,10 +1,10 @@
 # pyrift — Rule Reference
 
-Complete documentation for all 17 pyrift rules.
+Complete documentation for all 90 pyrift rules.
 
 ---
 
-## CPython rules
+## CPython rules — version compatibility
 
 These rules detect code that behaves differently across CPython versions.
 
@@ -14,13 +14,12 @@ These rules detect code that behaves differently across CPython versions.
 
 **Severity:** Warning | **Affects:** CPython < 3.7, PyPy < 7.3
 
-Dict insertion order is only guaranteed from CPython 3.7+ and PyPy 7.3+.
-Comparing `dict.keys()`, `dict.values()`, or `dict.items()` directly to
-an ordered sequence silently returns wrong results on older runtimes.
+Comparing `dict.keys()`, `dict.values()`, or `dict.items()` to a list or
+tuple assumes insertion order. Only guaranteed on CPython 3.7+ and PyPy 7.3+.
 
 ```python
 # Bad
-assert d.keys() == ['a', 'b']   # may silently fail
+assert d.keys() == ['a', 'b']
 
 # Good
 assert set(d.keys()) == {'a', 'b'}
@@ -32,9 +31,8 @@ assert set(d.keys()) == {'a', 'b'}
 
 **Severity:** Error | **Affects:** CPython ≤ 3.10
 
-`Exception.add_note()` was introduced in PEP 678 (Python 3.11).
-On 3.10 and below, calling it raises `AttributeError` inside the
-except block that was meant to handle the error.
+Added in PEP 678. Raises `AttributeError` on 3.10 and below inside the
+except block.
 
 ```python
 # Bad
@@ -52,12 +50,11 @@ if sys.version_info >= (3, 11):
 
 **Severity:** Error | **Affects:** CPython ≤ 3.9
 
-Using `X | Y` as a runtime type expression inside `isinstance()` or
-`issubclass()` raises `TypeError` on Python 3.9 and below.
+PEP 604. Using `X | Y` inside `isinstance()` raises `TypeError` on 3.9 and below.
 
 ```python
 # Bad
-isinstance(x, int | str)   # TypeError on 3.9
+isinstance(x, int | str)
 
 # Good
 isinstance(x, (int, str))
@@ -69,18 +66,14 @@ isinstance(x, (int, str))
 
 **Severity:** Error | **Affects:** CPython ≤ 3.10
 
-`tomllib` was added to the standard library in PEP 680 (Python 3.11).
-On 3.10 and below, `import tomllib` raises `ModuleNotFoundError`.
+Added in PEP 680. Raises `ModuleNotFoundError` on 3.10 and below.
 
 ```python
-# Bad
-import tomllib   # ModuleNotFoundError on 3.10
-
 # Good
 try:
     import tomllib
 except ModuleNotFoundError:
-    import tomli as tomllib   # pip install tomli
+    import tomli as tomllib
 ```
 
 ---
@@ -89,19 +82,7 @@ except ModuleNotFoundError:
 
 **Severity:** Error | **Affects:** CPython ≤ 3.9
 
-Structural pattern matching (`match`/`case`) was introduced in PEP 634
-(Python 3.10). On 3.9 and below it is a `SyntaxError` — the entire
-module fails to import, not just the path using `match`.
-
-```python
-# Bad — entire file fails to import on 3.9
-match command:
-    case "quit": sys.exit()
-
-# Good
-if command == "quit":
-    sys.exit()
-```
+PEP 634. Entire file fails to import on 3.9 — not just the path using `match`.
 
 ---
 
@@ -109,16 +90,11 @@ if command == "quit":
 
 **Severity:** Error | **Affects:** CPython ≤ 3.10
 
-`asyncio.timeout()`, `asyncio.timeout_at()`, and `asyncio.TaskGroup`
-were all added in Python 3.11. On 3.10, they raise `AttributeError`.
+Both added in Python 3.11. Raise `AttributeError` on 3.10 and below.
 
 ```python
-# Bad
-async with asyncio.timeout(5.0):   # AttributeError on 3.10
-    await fetch()
-
 # Good
-await asyncio.wait_for(fetch(), timeout=5.0)
+await asyncio.wait_for(coro(), timeout=5.0)
 ```
 
 ---
@@ -127,31 +103,22 @@ await asyncio.wait_for(fetch(), timeout=5.0)
 
 **Severity:** Error | **Affects:** CPython ≥ 3.13
 
-PEP 594 removed 21 legacy modules from the standard library in Python 3.13.
-Importing them raises `ModuleNotFoundError`.
-
-**Removed modules:** `aifc`, `audioop`, `cgi`, `cgitb`, `chunk`, `crypt`,
-`imghdr`, `mailcap`, `msilib`, `nis`, `nntplib`, `ossaudiodev`, `pipes`,
-`sndhdr`, `spwd`, `sunau`, `telnetlib`, `uu`, `xdrlib`, `asynchat`,
-`asyncore`, `smtpd`
+PEP 594 removed 21 legacy modules: `aifc`, `audioop`, `cgi`, `cgitb`,
+`chunk`, `crypt`, `imghdr`, `mailcap`, `msilib`, `nis`, `nntplib`,
+`ossaudiodev`, `pipes`, `sndhdr`, `spwd`, `sunau`, `telnetlib`, `uu`,
+`xdrlib`, `asynchat`, `asyncore`, `smtpd`.
 
 ---
 
 ### CPY008 — __slots__ may not prevent __dict__ with base classes
 
-**Severity:** Info | **Affects:** CPython all versions
+**Severity:** Info | **Affects:** All versions
 
-When a class defines `__slots__` but inherits from a class that has
-`__dict__`, the subclass will also have `__dict__` — `__slots__` does
-not prevent it. This is a commonly misunderstood behaviour.
+If any ancestor class has `__dict__`, `__slots__` on a subclass will NOT
+prevent `__dict__` creation.
 
 ```python
-# Risky — Child still has __dict__ because Base does
-class Base: pass
-class Child(Base):
-    __slots__ = ['x']   # does NOT prevent __dict__
-
-# Safe — all classes in hierarchy define __slots__
+# Safe — all ancestors define __slots__
 class Base:
     __slots__ = ()
 class Child(Base):
@@ -164,19 +131,8 @@ class Child(Base):
 
 **Severity:** Error | **Affects:** CPython ≤ 3.10
 
-`ExceptionGroup` and `BaseExceptionGroup` are built-ins added in
-PEP 654 (Python 3.11). On 3.10 and below they raise `NameError`.
-
-```python
-# Bad — NameError on 3.10
-raise ExceptionGroup("errors", [e1, e2])
-
-# Good
-try:
-    import exceptiongroup   # pip install exceptiongroup
-except ImportError:
-    pass   # guard for 3.11+
-```
+PEP 654. Both `ExceptionGroup` and `BaseExceptionGroup` raise `NameError`
+on 3.10 and below.
 
 ---
 
@@ -184,29 +140,347 @@ except ImportError:
 
 **Severity:** Error | **Affects:** CPython ≤ 3.9
 
-The `slots` parameter for `@dataclass` was added in Python 3.10.
-On 3.9 and below, `@dataclass(slots=True)` raises `TypeError` at
-class definition time — before any instance is created.
+The `slots` parameter raises `TypeError` at class definition time on 3.9.
+
+---
+
+### CPY011 — typing.Self requires Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.10
+
+PEP 673. Raises `ImportError` on 3.10 and below.
 
 ```python
-# Bad — TypeError on 3.9
-@dataclass(slots=True)
-class Point:
-    x: float
-
-# Good for 3.9 compatibility
-@dataclass
-class Point:
-    __slots__ = ('x', 'y')
-    x: float
-    y: float
+# Good
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 ```
 
 ---
 
-## PyPy rules
+### CPY012 — typing.LiteralString requires Python 3.11+
 
-These rules detect code that behaves differently on PyPy vs CPython.
+**Severity:** Error | **Affects:** CPython ≤ 3.10 | PEP 675
+
+---
+
+### CPY013 — typing.override requires Python 3.12+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.11 | PEP 698
+
+---
+
+### CPY014 — typing.TypeAlias requires Python 3.10+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.9 | PEP 613
+
+---
+
+### CPY015 — typing.Never requires Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.10 | PEP 673
+
+---
+
+### CPY016 — typing.TypeVarTuple requires Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.10 | PEP 646
+
+---
+
+### CPY017 — typing.Unpack requires Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.10 | PEP 646
+
+---
+
+### CPY018 — typing.Required / NotRequired requires Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.10 | PEP 655
+
+---
+
+### CPY019 — distutils removed in Python 3.12+
+
+**Severity:** Error | **Affects:** CPython ≥ 3.12 | PEP 632
+
+```python
+# Good
+from setuptools import setup
+```
+
+---
+
+### CPY020 — datetime.UTC requires Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.10
+
+```python
+# Good — works on all Python 3
+datetime.timezone.utc
+```
+
+---
+
+### CPY021 — asyncio.iscoroutinefunction() deprecated since 3.12
+
+**Severity:** Warning | **Affects:** CPython ≥ 3.12
+
+Removed in 3.16. Use `inspect.iscoroutinefunction()` instead.
+
+---
+
+### CPY022 — Bitwise inversion on bool deprecated in 3.12
+
+**Severity:** Warning | **Affects:** CPython ≥ 3.12
+
+`~True` produces `-2`, not `False`. Removed in 3.16.
+
+```python
+# Good
+not True   # False
+```
+
+---
+
+### CPY023 — multiprocessing default start method changing in 3.14
+
+**Severity:** Warning | **Affects:** CPython ≥ 3.14
+
+Default changes from `fork` to a safer method on Linux/BSD.
+
+```python
+# Good — explicit
+multiprocessing.set_start_method('fork')
+```
+
+---
+
+### CPY024 — typing.TypeGuard requires Python 3.10+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.9 | PEP 647
+
+---
+
+### CPY025 — typing.ParamSpec requires Python 3.10+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.9 | PEP 612
+
+---
+
+### CPY026 — typing.io and typing.re removed in Python 3.13
+
+**Severity:** Error | **Affects:** CPython ≥ 3.13
+
+```python
+# Good
+from typing import IO, Pattern
+```
+
+---
+
+### CPY027 — locale.resetlocale() removed in Python 3.13
+
+**Severity:** Error | **Affects:** CPython ≥ 3.13
+
+```python
+# Good
+locale.setlocale(locale.LC_ALL, '')
+```
+
+---
+
+### CPY028 — lib2to3 removed in Python 3.13
+
+**Severity:** Error | **Affects:** CPython ≥ 3.13
+
+```python
+# Good
+pip install libcst
+```
+
+---
+
+### CPY029 — locals() semantics changed in Python 3.13
+
+**Severity:** Warning | **Affects:** CPython ≥ 3.13
+
+PEP 667. Modifying `locals()` return value never affects local variables.
+
+---
+
+### CPY030 — sys.path no longer accepts bytes in Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≥ 3.11
+
+```python
+# Good
+sys.path.append('/some/path')
+```
+
+---
+
+### CPY031 — typing.assert_never requires Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.10 | PEP 673
+
+---
+
+### CPY032 — typing.reveal_type requires Python 3.11+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.10
+
+Was only a type-checker special form before 3.11.
+
+---
+
+### CPY033 — pathlib.Path.is_relative_to() requires Python 3.9+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.8
+
+```python
+# Good for 3.8
+try:
+    path.relative_to(base); return True
+except ValueError:
+    return False
+```
+
+---
+
+### CPY034 — int.bit_count() requires Python 3.10+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.9
+
+```python
+# Good for 3.9
+bin(n).count('1')
+```
+
+---
+
+### CPY035 — str.removeprefix/removesuffix requires Python 3.9+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.8 | PEP 616
+
+```python
+# Good for 3.8
+s[len(prefix):] if s.startswith(prefix) else s
+```
+
+---
+
+### CPY036 — datetime.utcnow() deprecated since Python 3.12
+
+**Severity:** Warning | **Affects:** CPython ≥ 3.12
+
+Returns a naive datetime with no timezone info.
+
+```python
+# Good
+datetime.datetime.now(datetime.timezone.utc)
+```
+
+---
+
+### CPY037 — datetime.utcfromtimestamp() deprecated since Python 3.12
+
+**Severity:** Warning | **Affects:** CPython ≥ 3.12
+
+```python
+# Good
+datetime.datetime.fromtimestamp(ts, datetime.timezone.utc)
+```
+
+---
+
+### CPY038 — asyncio.get_event_loop() raises RuntimeError in Python 3.12+
+
+**Severity:** Error | **Affects:** CPython ≥ 3.12
+
+No longer implicitly creates an event loop.
+
+```python
+# Good
+asyncio.run(main())
+```
+
+---
+
+### CPY039 — zoneinfo module requires Python 3.9+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.8 | PEP 615
+
+```python
+# Good for 3.8
+from backports.zoneinfo import ZoneInfo
+```
+
+---
+
+### CPY040 — graphlib module requires Python 3.9+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.8
+
+`graphlib.TopologicalSorter` added in Python 3.9.
+
+---
+
+### CPY041 — dict | merge operator requires Python 3.9+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.8 | PEP 584
+
+```python
+# Good for 3.8
+{**d1, **d2}
+```
+
+---
+
+### CPY042 — aiter() and anext() builtins require Python 3.10+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.9
+
+Raise `NameError` on 3.9 and below.
+
+---
+
+### CPY043 — math.lcm() requires Python 3.9+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.8
+
+```python
+# Good for 3.8
+def lcm(a, b): return abs(a*b) // math.gcd(a, b)
+```
+
+---
+
+### CPY044 — math.gcd() multi-arg form requires Python 3.9+
+
+**Severity:** Error | **Affects:** CPython ≤ 3.8
+
+Calling with 3+ args raises `TypeError` on 3.8.
+
+```python
+# Good for 3.8
+from functools import reduce
+reduce(math.gcd, [a, b, c])
+```
+
+---
+
+### CPY045 — NaN hash behaviour changed in Python 3.10
+
+**Severity:** Warning | **Affects:** CPython ≥ 3.10
+
+Before 3.10, `hash(float('nan'))` always returned 0. Now depends on object identity.
+
+---
+
+## PyPy rules — runtime differences
 
 ---
 
@@ -214,24 +488,13 @@ These rules detect code that behaves differently on PyPy vs CPython.
 
 **Severity:** Error | **Affects:** PyPy all versions
 
-CPython uses reference counting — `__del__` is called immediately when
-the last reference drops. PyPy uses a tracing GC — `__del__` may be
-called much later or never, silently leaking file handles, sockets,
-locks, and database connections.
+`__del__` may run much later or never on PyPy's tracing GC.
 
 ```python
-# Bad — leaks on PyPy
-class Conn:
-    def __del__(self):
-        self.socket.close()   # may never run on PyPy
-
-# Good — guaranteed on all runtimes
+# Good
 class Conn:
     def __enter__(self): return self
     def __exit__(self, *a): self.socket.close()
-
-with Conn() as c:
-    c.query()
 ```
 
 ---
@@ -240,11 +503,7 @@ with Conn() as c:
 
 **Severity:** Warning | **Affects:** PyPy all versions
 
-PyPy's ctypes implementation is incomplete. Pointer arithmetic, callbacks,
-and bit-field structures may silently produce wrong results or segfault
-on PyPy while working on CPython.
-
-**Suggestion:** Use `cffi` — fully supported on both CPython and PyPy.
+PyPy's ctypes is incomplete. Use `cffi` instead.
 
 ---
 
@@ -252,21 +511,7 @@ on PyPy while working on CPython.
 
 **Severity:** Error | **Affects:** PyPy all versions
 
-`sys.getrefcount()` relies on CPython's reference-counting GC. PyPy
-uses a tracing GC — `sys.getrefcount()` always returns a dummy constant
-(typically 0 or 65536). Any logic based on this value silently produces
-wrong results on PyPy.
-
-```python
-# Bad — always wrong on PyPy
-if sys.getrefcount(obj) == 1:
-    cleanup(obj)
-
-# Good
-import gc
-if len(gc.get_referrers(obj)) == 1:
-    cleanup(obj)
-```
+Always returns a dummy constant. Use `gc.get_referrers()` instead.
 
 ---
 
@@ -274,15 +519,8 @@ if len(gc.get_referrers(obj)) == 1:
 
 **Severity:** Warning | **Affects:** PyPy all versions
 
-On CPython, `weakref.proxy()` raises `ReferenceError` only when the
-proxied object is accessed after collection. On PyPy, `ReferenceError`
-may be raised at unpredictable points due to GC timing differences.
-
 ```python
-# Bad
-p = weakref.proxy(obj)
-
-# Good — explicit null check
+# Good
 ref = weakref.ref(obj)
 target = ref()
 if target is not None:
@@ -295,17 +533,8 @@ if target is not None:
 
 **Severity:** Warning | **Affects:** PyPy all versions
 
-On PyPy, file buffering behaviour differs from CPython due to GC timing.
-Data written to files may not be flushed to disk even after `close()`,
-silently losing writes.
-
 ```python
-# Bad — may lose data on PyPy
-f = open('out.txt', 'w')
-f.write(data)
-f.close()
-
-# Good — context manager guarantees flush + close
+# Good
 with open('out.txt', 'w') as f:
     f.write(data)
 ```
@@ -316,18 +545,10 @@ with open('out.txt', 'w') as f:
 
 **Severity:** Warning | **Affects:** PyPy all versions
 
-PyPy's JIT makes aggressive assumptions about built-in types. Patching
-them may silently produce wrong results or bypass JIT optimisations
-without raising any error.
-
 ```python
-# Bad
-list.custom = lambda self: None
-
-# Good — subclass instead
+# Good
 class MyList(list):
-    def custom(self):
-        pass
+    def custom(self): pass
 ```
 
 ---
@@ -336,24 +557,389 @@ class MyList(list):
 
 **Severity:** Warning | **Affects:** PyPy all versions
 
-On CPython, interned strings are guaranteed to share identity — `is`
-returns `True` for equal interned strings. On PyPy, the JIT may not
-preserve this identity guarantee.
+```python
+# Good
+assert a == b   # not: a is b
+```
+
+---
+
+### PPY008 — threading.local() cleanup timing differs on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+Thread-local data persists until GC runs — causes memory leaks with
+many short-lived threads.
+
+---
+
+### PPY009 — id() values not stable across GC cycles on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
 
 ```python
-# Bad — identity not guaranteed on PyPy
-a = sys.intern('hello')
-b = sys.intern('hello')
-assert a is b   # may fail on PyPy
-
-# Good — always use == for string equality
-assert a == b
+# Good
+x is y   # not: id(x) == id(y)
 ```
+
+---
+
+### PPY010 — gc.collect() behaviour differs on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+Cleanup is not guaranteed to be immediate. Use context managers instead.
+
+---
+
+### PPY011 — array.array('u') type code removed in Python 3.13
+
+**Severity:** Error | **Affects:** CPython ≥ 3.13
+
+```python
+# Good
+array.array('w', ...)
+```
+
+---
+
+### PPY012 — Overriding built-in methods behaves differently on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+CPython's C-level calls may bypass Python overrides. PyPy may go
+through them. Test explicitly on both runtimes.
+
+---
+
+### PPY013 — sys.getsizeof() raises TypeError on PyPy
+
+**Severity:** Error | **Affects:** PyPy all versions
+
+PyPy deliberately raises `TypeError`. Use vmprof for memory profiling.
+
+---
+
+### PPY014 — String concatenation in loops is O(n²) on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+```python
+# Good
+result = ''.join(items)
+```
+
+---
+
+### PPY015 — Generator cleanup timing differs on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+```python
+# Good
+gen.close()   # always close generators explicitly
+```
+
+---
+
+### PPY016 — Instance __dict__ ordering not guaranteed on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+PyPy uses hidden classes — instance `__dict__` order may not match CPython.
+
+---
+
+### PPY017 — Adding __del__ to existing class not called on PyPy
+
+**Severity:** Error | **Affects:** PyPy all versions
+
+`MyClass.__del__ = fn` after class definition will NOT be called on PyPy.
+
+---
+
+### PPY018 — sys.setrecursionlimit() behaviour differs on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+Sets stack space to `n * 768` bytes, not exact depth. Actual depth ≈ n/5.
+
+---
+
+### PPY019 — float('nan') identity differs between CPython and PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+On PyPy, `float('nan') is float('nan')` is `True`. On CPython it is `False`.
+Sets cannot contain multiple NaNs on PyPy.
+
+---
+
+### PPY020 — dict(**kwargs) requires string keys on PyPy and Python 3
+
+**Severity:** Error | **Affects:** PyPy all versions
+
+Non-string keys raise `TypeError`.
+
+---
+
+### PPY021 — Socket not closed promptly on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+```python
+# Good
+with socket.socket() as s:
+    ...
+```
+
+---
+
+### PPY022 — PYTHONHASHSEED=0 has no effect on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+PyPy always uses hash randomisation regardless of `PYTHONHASHSEED`.
+
+---
+
+### PPY023 — inspect.ismethod() returns different results on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+Built-in method wrappers return `True` on PyPy, `False` on CPython.
+
+---
+
+### PPY024 — timeit reports average not minimum on PyPy
+
+**Severity:** Info | **Affects:** PyPy all versions
+
+JIT warmup makes minimum misleading. PyPy reports average and std dev.
+
+---
+
+### PPY025 — Set iteration order differs between CPython and PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+CPython sets are unordered. PyPy sets are insertion-ordered.
+
+```python
+# Good
+sorted(my_set)   # deterministic on both runtimes
+```
+
+---
+
+### PPY026 — __builtins__ is always a module on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+```python
+# Good
+import builtins
+builtins.print = my_print
+```
+
+---
+
+### PPY027 — Deleting module/class attributes is slower on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+Set to `None` instead of deleting in hot paths.
+
+---
+
+### PPY028 — readline.parse_and_bind() silently ignored on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+PyPy's readline is not GNU readline. Keybinding calls are silently ignored.
+
+---
+
+### PPY029 — Assigning to __builtins__ has no effect on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+```python
+# Good
+import builtins
+builtins.print = my_print
+```
+
+---
+
+### PPY030 — sys.flags values may differ between CPython and PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+`sys.flags.hash_randomization` is always 1 on PyPy.
+
+---
+
+### PPY031 — Integer 'is' identity semantics differ on PyPy
+
+**Severity:** Info | **Affects:** PyPy all versions
+
+All integers unique by value on PyPy. `x + 1 is x + 1` is always `True`.
+
+```python
+# Good
+x == y   # not: x is y
+```
+
+---
+
+### PPY032 — Mutating dict keys raises RuntimeError on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+On CPython this silently corrupts the dict. On PyPy it raises `RuntimeError`.
+
+---
+
+### PPY033 — Exceptions in __del__ appear at unpredictable times on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+```python
+# Good
+def __del__(self):
+    try:
+        self.cleanup()
+    except Exception:
+        pass
+```
+
+---
+
+### PPY034 — hash() values may differ between CPython and PyPy
+
+**Severity:** Info | **Affects:** PyPy all versions
+
+Never store hash values persistently or compare across runtimes.
+
+---
+
+### PPY035 — C extension packages may not work correctly on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+`numpy`, `pandas`, `scipy`, `torch`, `psycopg2` and others may crash or
+produce wrong results. Check https://pypy.org/compat.html
+
+---
+
+### PPY036 — open() line buffering behaves differently on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+`buffering=1` hint may be ignored on PyPy.
+
+---
+
+### PPY037 — os.urandom() source may differ on PyPy
+
+**Severity:** Info | **Affects:** PyPy all versions
+
+```python
+# Good
+import secrets
+secrets.token_bytes(n)
+```
+
+---
+
+### PPY038 — decimal module uses different backend on PyPy
+
+**Severity:** Info | **Affects:** PyPy all versions
+
+CPython uses a C implementation. PyPy uses pure Python/RPython — slower
+with potential rounding differences in edge cases.
+
+---
+
+### PPY039 — os.fork() may not work correctly on all PyPy platforms
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+JIT state may not reset correctly in child process.
+
+```python
+# Good
+multiprocessing.set_start_method('spawn')
+```
+
+---
+
+### PPY040 — subprocess.PIPE buffering may cause deadlocks on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+```python
+# Good
+stdout, stderr = proc.communicate()
+```
+
+---
+
+### PPY041 — dict | operator requires PyPy 7.3.7+
+
+**Severity:** Info | **Affects:** PyPy < 7.3.7
+
+```python
+# Good for older PyPy
+{**d1, **d2}
+```
+
+---
+
+### PPY042 — print(flush=True) may not flush immediately on PyPy
+
+**Severity:** Info | **Affects:** PyPy all versions
+
+```python
+# Good
+sys.stdout.flush()
+```
+
+---
+
+### PPY043 — __slots__ memory savings differ on PyPy
+
+**Severity:** Info | **Affects:** PyPy all versions
+
+`__slots__` works correctly on PyPy but memory savings differ from CPython.
+Measure independently on each runtime.
+
+---
+
+### PPY044 — Exception variable cleanup timing differs on PyPy
+
+**Severity:** Info | **Affects:** PyPy all versions
+
+```python
+# Good — save before except block exits
+except Exception as e:
+    saved_exc = e
+```
+
+---
+
+### PPY045 — sys.settrace() disables JIT on PyPy
+
+**Severity:** Warning | **Affects:** PyPy all versions
+
+Disables PyPy's JIT entirely — 10-100x performance degradation.
+Use vmprof for profiling on PyPy.
 
 ---
 
 ## Adding your own rules
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for the complete guide on
-writing and submitting new rules. Rule IDs `CPY011+` and `PPY008+`
-are available for community contributions.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for the complete guide.
+
+Rule IDs `CPY046+` and `PPY046+` are open for community contributions.
