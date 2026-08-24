@@ -14,8 +14,14 @@ from pyrift.scanner import scan_file, scan, ScanResult
 from pyrift.rules.cpython.cpy001_dict_ordering    import DictOrderingRule
 from pyrift.rules.cpython.cpy002_exception_notes  import ExceptionNotesRule
 from pyrift.rules.cpython.cpy003_union_type_syntax import UnionTypeSyntaxRule
+from pyrift.rules.cpython.cpy004_tomllib          import TomllibRule
+from pyrift.rules.cpython.cpy005_match_case       import MatchCaseRule
+from pyrift.rules.cpython.cpy006_asyncio_timeout  import AsyncioTimeoutRule
+from pyrift.rules.cpython.cpy007_removed_modules  import RemovedModulesRule
 from pyrift.rules.pypy.ppy001_gc_finalizer        import GcFinalizerRule
 from pyrift.rules.pypy.ppy002_ctypes              import CtypesRule
+from pyrift.rules.pypy.ppy003_getrefcount         import GetRefcountRule
+from pyrift.rules.pypy.ppy004_weakref_proxy       import WeakrefProxyRule
 from pyrift.reporter import to_json, to_markdown, to_text
 
 
@@ -25,6 +31,8 @@ def parse(src: str) -> ast.AST:
 def run_rule(rule, src: str):
     return rule.check(parse(src), "<test>")
 
+
+# ── CPY001 ────────────────────────────────────────────────────────────────
 
 class TestCPY001:
     rule = DictOrderingRule()
@@ -48,6 +56,8 @@ class TestCPY001:
         if findings:
             assert findings[0].suggestion != ""
 
+
+# ── CPY002 ────────────────────────────────────────────────────────────────
 
 class TestCPY002:
     rule = ExceptionNotesRule()
@@ -74,6 +84,8 @@ class TestCPY002:
         assert findings[0].docs_url != ""
 
 
+# ── CPY003 ────────────────────────────────────────────────────────────────
+
 class TestCPY003:
     rule = UnionTypeSyntaxRule()
 
@@ -87,6 +99,107 @@ class TestCPY003:
         findings = run_rule(self.rule, "isinstance(x, (int, str))")
         assert len(findings) == 0
 
+
+# ── CPY004 ────────────────────────────────────────────────────────────────
+
+class TestCPY004:
+    rule = TomllibRule()
+
+    def test_detects_import_tomllib(self):
+        findings = run_rule(self.rule, "import tomllib")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY004"
+        assert findings[0].severity == Severity.ERROR
+
+    def test_detects_from_import(self):
+        findings = run_rule(self.rule, "from tomllib import loads")
+        assert len(findings) == 1
+
+    def test_clean_no_tomllib(self):
+        findings = run_rule(self.rule, "import json")
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_tomli(self):
+        findings = run_rule(self.rule, "import tomllib")
+        assert "tomli" in findings[0].suggestion.lower()
+
+
+# ── CPY005 ────────────────────────────────────────────────────────────────
+
+class TestCPY005:
+    rule = MatchCaseRule()
+
+    def test_detects_match_statement(self):
+        src = """
+match command:
+    case "quit":
+        quit()
+    case "go":
+        go()
+"""
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY005"
+        assert findings[0].severity == Severity.ERROR
+
+    def test_clean_if_else(self):
+        src = """
+if command == "quit":
+    quit()
+"""
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 0
+
+
+# ── CPY006 ────────────────────────────────────────────────────────────────
+
+class TestCPY006:
+    rule = AsyncioTimeoutRule()
+
+    def test_detects_asyncio_timeout(self):
+        findings = run_rule(self.rule, "async with asyncio.timeout(5): pass")
+        assert len(findings) >= 1
+        assert findings[0].rule_id == "CPY006"
+
+    def test_detects_taskgroup(self):
+        findings = run_rule(self.rule, "async with asyncio.TaskGroup() as tg: pass")
+        assert len(findings) >= 1
+
+    def test_clean_asyncio_sleep(self):
+        findings = run_rule(self.rule, "await asyncio.sleep(1)")
+        assert len(findings) == 0
+
+
+# ── CPY007 ────────────────────────────────────────────────────────────────
+
+class TestCPY007:
+    rule = RemovedModulesRule()
+
+    def test_detects_cgi(self):
+        findings = run_rule(self.rule, "import cgi")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY007"
+        assert findings[0].severity == Severity.ERROR
+
+    def test_detects_asynchat(self):
+        findings = run_rule(self.rule, "import asynchat")
+        assert len(findings) == 1
+
+    def test_detects_telnetlib(self):
+        findings = run_rule(self.rule, "from telnetlib import Telnet")
+        assert len(findings) == 1
+
+    def test_clean_standard_module(self):
+        findings = run_rule(self.rule, "import os")
+        assert len(findings) == 0
+
+    def test_multiple_removed_modules(self):
+        src = "import cgi\nimport aifc\nimport uu"
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 3
+
+
+# ── PPY001 ────────────────────────────────────────────────────────────────
 
 class TestPPY001:
     rule = GcFinalizerRule()
@@ -121,6 +234,8 @@ class TestPPY001:
         assert len(findings) == 0
 
 
+# ── PPY002 ────────────────────────────────────────────────────────────────
+
 class TestPPY002:
     rule = CtypesRule()
 
@@ -139,6 +254,50 @@ class TestPPY002:
         if findings:
             assert "cffi" in findings[0].suggestion.lower()
 
+
+# ── PPY003 ────────────────────────────────────────────────────────────────
+
+class TestPPY003:
+    rule = GetRefcountRule()
+
+    def test_detects_getrefcount(self):
+        findings = run_rule(self.rule, "import sys\nx = sys.getrefcount(obj)")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY003"
+        assert findings[0].severity == Severity.ERROR
+
+    def test_clean_sys_version(self):
+        findings = run_rule(self.rule, "import sys\nprint(sys.version)")
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_gc(self):
+        findings = run_rule(self.rule, "sys.getrefcount(x)")
+        assert "gc" in findings[0].suggestion.lower()
+
+
+# ── PPY004 ────────────────────────────────────────────────────────────────
+
+class TestPPY004:
+    rule = WeakrefProxyRule()
+
+    def test_detects_weakref_proxy(self):
+        src = "import weakref\np = weakref.proxy(obj)"
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY004"
+        assert findings[0].severity == Severity.WARNING
+
+    def test_clean_weakref_ref(self):
+        src = "import weakref\nr = weakref.ref(obj)"
+        findings = run_rule(self.rule, src)
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_ref(self):
+        findings = run_rule(self.rule, "weakref.proxy(obj)")
+        assert "ref()" in findings[0].suggestion
+
+
+# ── Scanner ───────────────────────────────────────────────────────────────
 
 class TestScanner:
     def test_scan_file_returns_findings(self, tmp_path):
@@ -177,6 +336,8 @@ class TestScanner:
         findings = scan_file(tmp_path / "broken.py")
         assert any(f.rule_id == "PARSE" for f in findings)
 
+
+# ── Reporter ──────────────────────────────────────────────────────────────
 
 class TestReporter:
     def _result(self, tmp_path):

@@ -13,18 +13,30 @@ from typing import Iterator
 from .finding import Finding
 from .base_rule import BaseRule
 
-from .rules.cpython.cpy001_dict_ordering    import DictOrderingRule
-from .rules.cpython.cpy002_exception_notes  import ExceptionNotesRule
+from .rules.cpython.cpy001_dict_ordering     import DictOrderingRule
+from .rules.cpython.cpy002_exception_notes   import ExceptionNotesRule
 from .rules.cpython.cpy003_union_type_syntax import UnionTypeSyntaxRule
-from .rules.pypy.ppy001_gc_finalizer        import GcFinalizerRule
-from .rules.pypy.ppy002_ctypes              import CtypesRule
+from .rules.cpython.cpy004_tomllib           import TomllibRule
+from .rules.cpython.cpy005_match_case        import MatchCaseRule
+from .rules.cpython.cpy006_asyncio_timeout   import AsyncioTimeoutRule
+from .rules.cpython.cpy007_removed_modules   import RemovedModulesRule
+from .rules.pypy.ppy001_gc_finalizer         import GcFinalizerRule
+from .rules.pypy.ppy002_ctypes               import CtypesRule
+from .rules.pypy.ppy003_getrefcount          import GetRefcountRule
+from .rules.pypy.ppy004_weakref_proxy        import WeakrefProxyRule
 
 ALL_RULES: list[BaseRule] = [
     DictOrderingRule(),
     ExceptionNotesRule(),
     UnionTypeSyntaxRule(),
+    TomllibRule(),
+    MatchCaseRule(),
+    AsyncioTimeoutRule(),
+    RemovedModulesRule(),
     GcFinalizerRule(),
     CtypesRule(),
+    GetRefcountRule(),
+    WeakrefProxyRule(),
 ]
 
 SKIP_DIRS = {
