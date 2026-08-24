@@ -6,6 +6,30 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.4.0] — 2026-08-24
+
+### Added
+- `CPY011` — `typing.Self` requires Python 3.11+ (PEP 673)
+- `CPY012` — `typing.LiteralString` requires Python 3.11+ (PEP 675)
+- `CPY013` — `typing.override` requires Python 3.12+ (PEP 698)
+- 9 new tests — now 79 tests total
+
+### Changed
+- Version bumped to 0.4.0
+- `scanner.py` updated — now 20 rules registered in `ALL_RULES`
+
+---
+
+## [0.3.1] — 2026-08-24
+
+### Fixed
+- `CPY001` false positive — dict view comparisons against `set` and
+  `frozenset` are now correctly skipped
+- Rule description updated to clarify the actual risk pattern
+- 3 new tests added covering the false positive cases — now 70 tests
+
+---
+
 ## [0.3.0] — 2026-08-24
 
 ### Added
