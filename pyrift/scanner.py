@@ -33,6 +33,46 @@ from .rules.pypy.ppy007_sys_intern           import SysInternRule
 from .rules.cpython.cpy011_typing_self    import TypingSelfRule
 from .rules.cpython.cpy012_literal_string import LiteralStringRule
 from .rules.cpython.cpy013_override       import OverrideRule
+from .rules.cpython.cpy014_type_alias      import TypeAliasRule
+from .rules.cpython.cpy015_never           import NeverRule
+from .rules.cpython.cpy016_typevartuple    import TypeVarTupleRule
+from .rules.cpython.cpy017_unpack          import UnpackRule
+from .rules.cpython.cpy018_required        import RequiredRule
+from .rules.pypy.ppy008_threading_local    import ThreadingLocalRule
+from .rules.pypy.ppy009_id_stability       import IdStabilityRule
+from .rules.pypy.ppy010_gc_collect         import GcCollectRule
+from .rules.pypy.ppy011_array              import ArrayTypeCodeRule
+from .rules.pypy.ppy012_subclassing_builtins import SubclassingBuiltinsRule
+from .rules.cpython.cpy019_distutils          import DistutilsRule
+from .rules.cpython.cpy020_datetime_utc       import DatetimeUTCRule
+from .rules.pypy.ppy013_getsizeof             import GetSizeofRule
+from .rules.pypy.ppy014_string_concat         import StringConcatLoopRule
+from .rules.pypy.ppy015_generator_gc          import GeneratorGCRule
+from .rules.pypy.ppy016_instance_dict_order   import InstanceDictOrderRule
+from .rules.pypy.ppy017_del_existing_class    import DelExistingClassRule
+from .rules.pypy.ppy018_recursion_limit       import RecursionLimitRule
+from .rules.pypy.ppy019_nan_identity          import NanIdentityRule
+from .rules.pypy.ppy020_kwargs_string_keys    import KwargsStringKeysRule
+from .rules.cpython.cpy021_asyncio_coroutine    import AsyncioIsCoroutineRule
+from .rules.cpython.cpy022_bool_inversion       import BoolInversionRule
+from .rules.cpython.cpy023_multiprocessing_fork import MultiprocessingForkRule
+from .rules.cpython.cpy024_typeguard            import TypeGuardRule
+from .rules.cpython.cpy025_paramspec            import ParamSpecRule
+from .rules.pypy.ppy021_socket_gc               import SocketGCRule
+from .rules.pypy.ppy022_hash_randomisation      import HashRandomisationRule
+from .rules.pypy.ppy023_inspect_ismethod        import InspectIsMethodRule
+from .rules.pypy.ppy024_timeit                  import TimeitRule
+from .rules.pypy.ppy025_set_ordering            import SetOrderingRule
+from .rules.cpython.cpy026_typing_io_re        import TypingIoReRule
+from .rules.cpython.cpy027_locale_resetlocale  import LocaleResetlocaleRule
+from .rules.cpython.cpy028_lib2to3             import Lib2to3Rule
+from .rules.cpython.cpy029_locals_behaviour    import LocalsBehaviourRule
+from .rules.cpython.cpy030_sys_path_bytes      import SysPathBytesRule
+from .rules.pypy.ppy026_builtins_module        import BuiltinsModuleRule
+from .rules.pypy.ppy027_module_attr_delete     import ModuleAttrDeleteRule
+from .rules.pypy.ppy028_readline_parse_bind    import ReadlineParseBindRule
+from .rules.pypy.ppy029_dict_kwargs_nonstring  import BuiltinsAssignRule
+from .rules.pypy.ppy030_sys_flags              import SysFlagsRule
 
 ALL_RULES: list[BaseRule] = [
     DictOrderingRule(),
@@ -55,6 +95,46 @@ ALL_RULES: list[BaseRule] = [
     TypingSelfRule(),
     LiteralStringRule(),
     OverrideRule(),
+    TypeAliasRule(),
+    NeverRule(),
+    TypeVarTupleRule(),
+    UnpackRule(),
+    RequiredRule(),
+    ThreadingLocalRule(),
+    IdStabilityRule(),
+    GcCollectRule(),
+    ArrayTypeCodeRule(),
+    SubclassingBuiltinsRule(),
+    DistutilsRule(),
+    DatetimeUTCRule(),
+    GetSizeofRule(),
+    StringConcatLoopRule(),
+    GeneratorGCRule(),
+    InstanceDictOrderRule(),
+    DelExistingClassRule(),
+    RecursionLimitRule(),
+    NanIdentityRule(),
+    KwargsStringKeysRule(),
+    AsyncioIsCoroutineRule(),
+    BoolInversionRule(),
+    MultiprocessingForkRule(),
+    TypeGuardRule(),
+    ParamSpecRule(),
+    SocketGCRule(),
+    HashRandomisationRule(),
+    InspectIsMethodRule(),
+    TimeitRule(),
+    SetOrderingRule(),
+    TypingIoReRule(),
+    LocaleResetlocaleRule(),
+    Lib2to3Rule(),
+    LocalsBehaviourRule(),
+    SysPathBytesRule(),
+    BuiltinsModuleRule(),
+    ModuleAttrDeleteRule(),
+    ReadlineParseBindRule(),
+    BuiltinsAssignRule(),
+    SysFlagsRule(),
 ]
 
 SKIP_DIRS = {
