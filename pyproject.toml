@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyrift"
-version = "0.3.0"
+version = "0.3.1"
 description = "Detect silent Python behaviour differences across CPython versions and CPython vs PyPy"
 readme = "README.md"
 license = { text = "MIT" }
