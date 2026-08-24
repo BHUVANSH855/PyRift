@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyrift"
+version = "0.1.0"
+description = "Detect silent Python behaviour differences across CPython versions and CPython vs PyPy"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Bhuvansh Kataria", email = "your@email.com" }]
+requires-python = ">=3.10"
+keywords = [
+  "cpython", "pypy", "compatibility", "static-analysis",
+  "runtime", "behaviour", "semantic", "python-versions"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Testing",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov", "build", "twine"]
+
+[project.scripts]
+pyrift = "pyrift.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/BHUVANSH855/pyrift"
+Repository = "https://github.com/BHUVANSH855/pyrift"
+"Bug Tracker" = "https://github.com/BHUVANSH855/pyrift/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pyrift"]
