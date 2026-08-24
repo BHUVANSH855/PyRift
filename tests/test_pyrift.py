@@ -28,6 +28,9 @@ from pyrift.rules.pypy.ppy004_weakref_proxy       import WeakrefProxyRule
 from pyrift.rules.pypy.ppy005_io_buffering        import IoBufferingRule
 from pyrift.rules.pypy.ppy006_builtin_monkey_patch import BuiltinMonkeyPatchRule
 from pyrift.rules.pypy.ppy007_sys_intern          import SysInternRule
+from pyrift.rules.cpython.cpy011_typing_self    import TypingSelfRule
+from pyrift.rules.cpython.cpy012_literal_string import LiteralStringRule
+from pyrift.rules.cpython.cpy013_override       import OverrideRule
 from pyrift.reporter import to_json, to_markdown, to_text
 
 
@@ -562,3 +565,63 @@ class TestReporter:
         (tmp_path / "c.py").write_text("x = 1\n")
         result = scan(tmp_path)
         assert "No issues" in to_text(result)
+
+
+# ── CPY011 ────────────────────────────────────────────────────────────────
+
+class TestCPY011:
+    rule = TypingSelfRule()
+
+    def test_detects_self_import(self):
+        findings = run_rule(self.rule, "from typing import Self")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY011"
+        assert findings[0].severity == Severity.ERROR
+
+    def test_clean_other_typing_import(self):
+        findings = run_rule(self.rule, "from typing import Optional")
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_typing_extensions(self):
+        findings = run_rule(self.rule, "from typing import Self")
+        assert "typing_extensions" in findings[0].suggestion.lower()
+
+
+# ── CPY012 ────────────────────────────────────────────────────────────────
+
+class TestCPY012:
+    rule = LiteralStringRule()
+
+    def test_detects_literal_string_import(self):
+        findings = run_rule(self.rule, "from typing import LiteralString")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY012"
+        assert findings[0].severity == Severity.ERROR
+
+    def test_clean_other_typing_import(self):
+        findings = run_rule(self.rule, "from typing import Literal")
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_typing_extensions(self):
+        findings = run_rule(self.rule, "from typing import LiteralString")
+        assert "typing_extensions" in findings[0].suggestion.lower()
+
+
+# ── CPY013 ────────────────────────────────────────────────────────────────
+
+class TestCPY013:
+    rule = OverrideRule()
+
+    def test_detects_override_import(self):
+        findings = run_rule(self.rule, "from typing import override")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY013"
+        assert findings[0].severity == Severity.ERROR
+
+    def test_clean_other_typing_import(self):
+        findings = run_rule(self.rule, "from typing import final")
+        assert len(findings) == 0
+
+    def test_suggestion_mentions_typing_extensions(self):
+        findings = run_rule(self.rule, "from typing import override")
+        assert "typing_extensions" in findings[0].suggestion.lower()

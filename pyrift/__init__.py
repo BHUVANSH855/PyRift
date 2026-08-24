@@ -20,7 +20,7 @@ from .scanner  import scan, scan_file, ScanResult, ALL_RULES
 from .finding  import Finding, Severity, Runtime
 from .reporter import to_json, to_markdown, to_text
 
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 __author__  = "Bhuvansh Kataria"
 __license__ = "MIT"
 

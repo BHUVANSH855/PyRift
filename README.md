@@ -157,7 +157,7 @@ Use `--exit-zero` to report without failing.
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/BHUVANSH855/pyrift
-    rev: v0.3.1
+    rev: v0.4.0
     hooks:
       - id: pyrift
 ```
@@ -182,9 +182,8 @@ pyrift does not replace any of these tools. It catches what they all miss.
 
 Planned for upcoming versions — contributions welcome:
 
-- `CPY011` — `typing.Self` requires Python 3.11+
-- `CPY012` — `typing.LiteralString` requires Python 3.11+
-- `CPY013` — `@override` decorator requires Python 3.12+
+- `CPY014` — `typing.TypeAlias` requires Python 3.10+
+- `CPY015` — `typing.Never` requires Python 3.11+
 - `PPY008` — `array.array` behaviour differences on PyPy
 - `PPY009` — `decimal` module precision differences on PyPy
 - Pre-commit hook native support
@@ -207,9 +206,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## Project status
 
-- **Version:** 0.3.1
-- **Rules:** 17 (10 CPython + 7 PyPy)
-- **Tests:** 70 passing
+- **Version:** 0.4.0
+- **Rules:** 20 (13 CPython + 7 PyPy)
+- **Tests:** 79 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 

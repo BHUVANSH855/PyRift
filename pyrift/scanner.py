@@ -30,6 +30,9 @@ from .rules.pypy.ppy004_weakref_proxy        import WeakrefProxyRule
 from .rules.pypy.ppy005_io_buffering         import IoBufferingRule
 from .rules.pypy.ppy006_builtin_monkey_patch import BuiltinMonkeyPatchRule
 from .rules.pypy.ppy007_sys_intern           import SysInternRule
+from .rules.cpython.cpy011_typing_self    import TypingSelfRule
+from .rules.cpython.cpy012_literal_string import LiteralStringRule
+from .rules.cpython.cpy013_override       import OverrideRule
 
 ALL_RULES: list[BaseRule] = [
     DictOrderingRule(),
@@ -49,6 +52,9 @@ ALL_RULES: list[BaseRule] = [
     IoBufferingRule(),
     BuiltinMonkeyPatchRule(),
     SysInternRule(),
+    TypingSelfRule(),
+    LiteralStringRule(),
+    OverrideRule(),
 ]
 
 SKIP_DIRS = {
