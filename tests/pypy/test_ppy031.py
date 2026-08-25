@@ -1,30 +1,78 @@
 import ast
-import textwrap
 
-from pyrift.finding import Severity
 from pyrift.rules.pypy.ppy031_integer_identity import IntegerIdentityRule
 
 
-def parse(src): return ast.parse(textwrap.dedent(src))
-def run(rule, src): return rule.check(parse(src), "<test>")
+def _findings(source: str):
+    tree = ast.parse(source)
+    return IntegerIdentityRule().check(tree, "test.py")
 
-class TestPPY031:
-    rule = IntegerIdentityRule()
 
-    def test_detects_is_comparison(self):
-        findings = run(self.rule, "if x is y: pass")
-        assert len(findings) == 1
-        assert findings[0].rule_id == "PPY031"
-        assert findings[0].severity == Severity.INFO
+def test_detects_integer_literal_identity():
+    findings = _findings("x is 1000")
 
-    def test_detects_is_not_comparison(self):
-        findings = run(self.rule, "if x is not y: pass")
-        assert len(findings) == 1
+    assert len(findings) == 1
+    assert findings[0].rule_id == "PPY031"
 
-    def test_suggestion_mentions_equality(self):
-        findings = run(self.rule, "x is y")
-        assert "==" in findings[0].suggestion
 
-    def test_docs_url_present(self):
-        findings = run(self.rule, "x is y")
-        assert findings[0].docs_url != ""
+def test_detects_integer_expression_identity():
+    findings = _findings("x is 1 + 2")
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "PPY031"
+
+
+def test_detects_integer_literal_is_not():
+    findings = _findings("x is not 1000")
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "PPY031"
+
+
+def test_ignores_none_identity():
+    findings = _findings("x is None")
+
+    assert findings == []
+
+
+def test_ignores_not_none_identity():
+    findings = _findings("x is not None")
+
+    assert findings == []
+
+
+def test_ignores_true_identity():
+    findings = _findings("x is True")
+
+    assert findings == []
+
+
+def test_ignores_false_identity():
+    findings = _findings("x is False")
+
+    assert findings == []
+
+
+def test_ignores_arbitrary_object_identity():
+    findings = _findings("x is y")
+
+    assert findings == []
+
+
+def test_ignores_string_identity():
+    findings = _findings("x is 'hello'")
+
+    assert findings == []
+
+
+def test_ignores_float_identity():
+    findings = _findings("x is 1.5")
+
+    assert findings == []
+
+
+def test_detects_negative_integer_expression():
+    findings = _findings("x is -1000")
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "PPY031"

@@ -5,6 +5,7 @@ import json
 
 from pyrift.reporter import to_json, to_markdown, to_text
 from pyrift.scanner import ScanResult, scan, scan_file
+from pyrift.targets import PythonVersion, TargetConfig
 
 
 class TestScanner:
@@ -66,3 +67,85 @@ class TestReporter:
         (tmp_path / "c.py").write_text("x = 1\n")
         result = scan(tmp_path)
         assert "No issues" in to_text(result)
+
+
+class TestProjectTargeting:
+    def test_requires_python_suppresses_future_cpython_finding(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_text(
+            "[project]\n"
+            'requires-python = ">=3.10,<3.14"\n'
+        )
+        (tmp_path / "sample.py").write_text(
+            "import asyncio\n"
+            "asyncio.get_event_loop()\n"
+        )
+
+        result = scan(tmp_path)
+
+        assert not any(
+            finding.rule_id == "CPY038"
+            for finding in result.findings
+        )
+
+    def test_requires_python_keeps_affected_cpython_finding(
+        self,
+        tmp_path,
+    ):
+        (tmp_path / "pyproject.toml").write_text(
+            "[project]\n"
+            'requires-python = ">=3.10,<3.14"\n'
+        )
+        (tmp_path / "sample.py").write_text(
+            "import datetime\n"
+            "datetime.datetime.utcnow()\n"
+        )
+
+        result = scan(tmp_path)
+
+        assert any(
+            finding.rule_id == "CPY036"
+            for finding in result.findings
+        )
+
+    def test_no_project_config_keeps_all_findings(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_text(
+            "[project]\n"
+            'requires-python = ">=3.10,<3.14"\n'
+        )
+        (tmp_path / "sample.py").write_text(
+            "import asyncio\n"
+            "asyncio.get_event_loop()\n"
+        )
+
+        result = scan(
+            tmp_path,
+            use_project_config=False,
+        )
+
+        assert any(
+            finding.rule_id == "CPY038"
+            for finding in result.findings
+        )
+
+    def test_explicit_target_overrides_project_config(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_text(
+            "[project]\n"
+            'requires-python = ">=3.10,<3.14"\n'
+        )
+        (tmp_path / "sample.py").write_text(
+            "import asyncio\n"
+            "asyncio.get_event_loop()\n"
+        )
+
+        result = scan(
+            tmp_path,
+            target_config=TargetConfig(
+                minimum=PythonVersion.parse("3.14"),
+                maximum=PythonVersion.parse("3.14"),
+            ),
+        )
+
+        assert any(
+            finding.rule_id == "CPY038"
+            for finding in result.findings
+        )

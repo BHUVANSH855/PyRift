@@ -12,7 +12,8 @@ from collections.abc import Iterator
 from pathlib import Path
 
 from .base_rule import BaseRule
-from .finding import Finding
+from .finding import Finding, Runtime
+from .targets import TargetConfig, load_project_targets
 from .rules.cpython.cpy001_dict_ordering import DictOrderingRule
 from .rules.cpython.cpy002_exception_notes import ExceptionNotesRule
 from .rules.cpython.cpy003_union_type_syntax import UnionTypeSyntaxRule
@@ -277,24 +278,57 @@ def scan_file(filepath: str | Path,
     return findings
 
 
-def scan(path: str | Path,
-         rules: list[BaseRule] | None = None) -> ScanResult:
+def scan(
+    path: str | Path,
+    rules: list[BaseRule] | None = None,
+    target_config: TargetConfig | None = None,
+    use_project_config: bool = True,
+) -> ScanResult:
     """
     Scan a file or directory tree.
+
+    When ``use_project_config`` is True, pyrift reads
+    ``project.requires-python`` from ``pyproject.toml`` and removes
+    CPython findings that cannot affect the project's supported
+    Python versions.
+
+    An explicitly supplied ``target_config`` takes precedence over
+    project configuration.
 
     Usage::
 
         import pyrift
+
         result = pyrift.scan("./myproject")
-        for f in result.findings:
-            print(f)
+
+        for finding in result.findings:
+            print(finding)
     """
     path = Path(path)
+
+    if target_config is None and use_project_config:
+        target_config = load_project_targets(path)
+
     all_findings: list[Finding] = []
     files_scanned = 0
 
     for py_file in _python_files(path):
-        all_findings.extend(scan_file(py_file, rules))
+        findings = scan_file(py_file, rules)
+
+        if target_config is not None:
+            findings = [
+                finding
+                for finding in findings
+                if (
+                    finding.runtime not in (
+                        Runtime.CPYTHON,
+                        Runtime.BOTH,
+                    )
+                    or target_config.affects_cpython(finding)
+                )
+            ]
+
+        all_findings.extend(findings)
         files_scanned += 1
 
     return ScanResult(all_findings, files_scanned)
