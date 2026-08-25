@@ -160,7 +160,7 @@ Use `--exit-zero` to report without failing.
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/BHUVANSH855/pyrift
-    rev: v0.6.0
+    rev: v0.7.0
     hooks:
       - id: pyrift
 ```
