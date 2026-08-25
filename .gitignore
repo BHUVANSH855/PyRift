@@ -50,3 +50,6 @@ Thumbs.db
 # PyPI build artifacts
 *.whl
 *.tar.gz
+
+# Local uv environment/lockfile
+uv.lock
