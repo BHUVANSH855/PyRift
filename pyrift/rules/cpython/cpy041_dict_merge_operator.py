@@ -4,6 +4,12 @@ CPY041 — dict merge operator | requires Python 3.9+
 The | operator for dict merging and |= for dict update were
 added in Python 3.9 (PEP 584). Using them on 3.8 or below
 raises TypeError at runtime.
+
+Detection strategy:
+- Flag d1 | d2 only when at least one operand is a dict literal {}
+  (bare Name | Name is too broad — could be int, set, etc.)
+- Always flag d |= other (augmented assign on dicts is unambiguous
+  in practice since sets and ints rarely use |=)
 """
 from __future__ import annotations
 
@@ -11,6 +17,15 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+
+
+def _is_dict_literal(node: ast.AST) -> bool:
+    return isinstance(node, ast.Dict)
+
+
+def _looks_like_dict(node: ast.AST) -> bool:
+    """True only for clear dict signals — literals or subscripts of known names."""
+    return isinstance(node, ast.Dict)
 
 
 class DictMergeOperatorRule(BaseRule):
@@ -21,12 +36,12 @@ class DictMergeOperatorRule(BaseRule):
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
-            # Detect d1 | d2 where both sides look like dicts
+            # d1 | d2 — only flag when at least one side is a dict literal
+            # Name | Name is too ambiguous (could be sets, ints, flags, etc.)
             if isinstance(n, ast.BinOp) and isinstance(n.op, ast.BitOr):
-                # Check if either operand is a dict literal or Name
-                left_is_dict = isinstance(n.left, (ast.Dict, ast.Name))
-                right_is_dict = isinstance(n.right, (ast.Dict, ast.Name))
-                if left_is_dict and right_is_dict:
+                left_is_dict = _looks_like_dict(n.left)
+                right_is_dict = _looks_like_dict(n.right)
+                if left_is_dict or right_is_dict:
                     findings.append(Finding(
                         file=filename,
                         line=n.lineno,
@@ -49,31 +64,33 @@ class DictMergeOperatorRule(BaseRule):
                         ),
                         docs_url="https://peps.python.org/pep-0584/",
                     ))
-            # Detect d1 |= d2
+
+            # d |= other — augmented assign; flag all uses
             if (
                 isinstance(n, ast.AugAssign)
                 and isinstance(n.op, ast.BitOr)
                 and isinstance(n.target, ast.Name)
             ):
-                    findings.append(Finding(
-                        file=filename,
-                        line=n.lineno,
-                        col=n.col_offset,
-                        rule_id=self.rule_id,
-                        title=self.title,
-                        description=(
-                            "The |= operator for dict update was added in "
-                            "Python 3.9 (PEP 584). Using it on Python 3.8 "
-                            "or below raises TypeError at runtime."
-                        ),
-                        severity=Severity.ERROR,
-                        runtime=Runtime.CPYTHON,
-                        affected_from="3.0",
-                        affected_until="3.8",
-                        suggestion=(
-                            "For Python 3.8 compatibility use: "
-                            "d1.update(d2) instead of d1 |= d2."
-                        ),
-                        docs_url="https://peps.python.org/pep-0584/",
-                    ))
+                findings.append(Finding(
+                    file=filename,
+                    line=n.lineno,
+                    col=n.col_offset,
+                    rule_id=self.rule_id,
+                    title=self.title,
+                    description=(
+                        "The |= operator for dict update was added in "
+                        "Python 3.9 (PEP 584). Using it on Python 3.8 "
+                        "or below raises TypeError at runtime."
+                    ),
+                    severity=Severity.ERROR,
+                    runtime=Runtime.CPYTHON,
+                    affected_from="3.0",
+                    affected_until="3.8",
+                    suggestion=(
+                        "For Python 3.8 compatibility use: "
+                        "d1.update(d2) instead of d1 |= d2."
+                    ),
+                    docs_url="https://peps.python.org/pep-0584/",
+                ))
+
         return findings
