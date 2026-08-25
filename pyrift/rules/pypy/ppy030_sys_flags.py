@@ -13,10 +13,10 @@ import ast
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 
+# hash_randomization is explicitly confirmed in PyPy docs:
+# "-R is ignored in PyPy. Both CPython >= 3.4 and PyPy3 implement SipHash"
 PYPY_DIFFERENT_FLAGS = {
     "hash_randomization",
-    "ignore_environment",
-    "isolated",
 }
 
 
@@ -44,12 +44,13 @@ class SysFlagsRule(BaseRule):
                 rule_id=self.rule_id,
                 title=self.title,
                 description=(
-                    f"sys.flags.{n.attr} is accessed here. This flag "
-                    "may have different values or semantics on PyPy "
-                    "compared to CPython. In particular, "
-                    "hash_randomization is always 1 on PyPy regardless "
-                    "of PYTHONHASHSEED, and other flags may reflect "
-                    "PyPy-specific startup behaviour."
+                    f"sys.flags.{n.attr} is accessed here. "
+                    "On PyPy, hash_randomization is always 1 regardless "
+                    "of PYTHONHASHSEED — PyPy always uses the randomized "
+                    "SipHash algorithm and ignores the -R flag entirely. "
+                    "Code checking sys.flags.hash_randomization == 0 "
+                    "to detect deterministic hash mode will always "
+                    "be False on PyPy, breaking any conditional logic."
                 ),
                 severity=Severity.WARNING,
                 runtime=Runtime.PYPY,

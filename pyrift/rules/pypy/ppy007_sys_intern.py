@@ -40,12 +40,13 @@ class SysInternRule(BaseRule):
                     description=(
                         "sys.intern() is used here. On CPython, interned "
                         "strings are guaranteed to share identity — "
-                        "'a' is 'b' returns True for equal interned strings. "
-                        "On PyPy, the JIT may or may not preserve this "
-                        "identity guarantee, making 'is' comparisons on "
-                        "interned strings unreliable across runtimes."
+                        "equal interned strings return True for 'is'. "
+                        "On PyPy, sys.intern() exists but the JIT may not "
+                        "preserve strict identity guarantees in all cases. "
+                        "This difference is observed in practice but is not "
+                        "formally documented in PyPy's differences page."
                     ),
-                    severity=Severity.WARNING,
+                    severity=Severity.INFO,
                     runtime=Runtime.PYPY,
                     suggestion=(
                         "Use == for string equality instead of 'is'. "

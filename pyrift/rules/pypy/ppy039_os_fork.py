@@ -37,12 +37,13 @@ class OsForkRule(BaseRule):
                     rule_id=self.rule_id,
                     title=self.title,
                     description=(
-                        "os.fork() is called here. On PyPy, forking a "
-                        "process with active JIT-compiled code can cause "
-                        "issues — the JIT state may not be properly reset "
-                        "in the child process, leading to silent crashes "
-                        "or incorrect behaviour. PyPy also does not support "
-                        "os.fork() on all platforms it runs on."
+                        "os.fork() is called here. "
+                        "On PyPy, forking a process with active "
+                        "JIT-compiled code can cause issues — the JIT state "
+                        "may not be properly reset in the child process. "
+                        "This is an observed compatibility concern; use "
+                        "multiprocessing with the spawn start method as a "
+                        "safer cross-platform alternative."
                     ),
                     severity=Severity.WARNING,
                     runtime=Runtime.PYPY,

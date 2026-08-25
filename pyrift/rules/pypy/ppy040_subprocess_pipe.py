@@ -47,11 +47,11 @@ class SubprocessPipeRule(BaseRule):
                             title=self.title,
                             description=(
                                 f"Popen is called with {kw.arg}=PIPE. "
-                                "On PyPy, GC timing differences can cause "
-                                "subprocess pipe communication to deadlock "
-                                "or lose data silently — especially when "
-                                "both stdin and stdout use PIPE and the "
-                                "buffers fill up before communicate() is called."
+                                "Always use communicate() to read from "
+                                "subprocess pipes — this avoids potential "
+                                "deadlocks when the pipe buffer fills up, "
+                                "regardless of runtime. On PyPy, GC timing "
+                                "differences make this especially important."
                             ),
                             severity=Severity.WARNING,
                             runtime=Runtime.PYPY,

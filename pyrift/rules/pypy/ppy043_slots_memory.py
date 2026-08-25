@@ -38,12 +38,12 @@ class SlotsMemorypyRule(BaseRule):
                                 title=self.title,
                                 description=(
                                     f"Class '{n.name}' defines __slots__. "
-                                    "On CPython, __slots__ prevents __dict__ "
-                                    "creation and gives predictable memory savings. "
-                                    "On PyPy, object layout uses hidden classes — "
-                                    "__slots__ works correctly but memory savings "
-                                    "differ from CPython. Do not rely on specific "
-                                    "memory numbers from CPython when running on PyPy."
+                                    "On PyPy, __slots__ works correctly for "
+                                    "attribute access, but the memory savings "
+                                    "differ from CPython because PyPy uses hidden "
+                                    "classes (maps) for object layout. Measure "
+                                    "memory independently on each runtime rather "
+                                    "than assuming CPython's numbers apply to PyPy."
                                 ),
                                 severity=Severity.INFO,
                                 runtime=Runtime.PYPY,

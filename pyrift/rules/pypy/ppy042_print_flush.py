@@ -40,12 +40,12 @@ class PrintFlushRule(BaseRule):
                             rule_id=self.rule_id,
                             title=self.title,
                             description=(
-                                "print(flush=True) is called. On CPython this "
-                                "immediately flushes the output buffer. On PyPy, "
-                                "buffering behaviour differs — the flush may be "
-                                "delayed when writing to pipes or redirected "
-                                "stdout, causing output to appear out of order "
-                                "or be lost if the process crashes."
+                                "print(flush=True) is called. "
+                                "For output that must appear immediately — "
+                                "especially to pipes or redirected stdout — "
+                                "follow with an explicit sys.stdout.flush() call. "
+                                "This is a best practice on all runtimes and "
+                                "avoids relying on buffering implementation details."
                             ),
                             severity=Severity.INFO,
                             runtime=Runtime.PYPY,

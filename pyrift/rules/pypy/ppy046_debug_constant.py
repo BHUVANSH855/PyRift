@@ -42,10 +42,11 @@ class DebugConstantRule(BaseRule):
                         description=(
                             "'if __debug__:' block detected. On CPython, "
                             "running with -O sets __debug__ to False, removing "
-                            "this code from execution. On PyPy, __debug__ is "
-                            "always True regardless of the -O flag — code inside "
-                            "'if __debug__:' blocks always runs on PyPy, even "
-                            "when you expect it to be optimised away."
+                            "this code. On PyPy, the -O flag behaviour with "
+                            "__debug__ may differ — code gated on __debug__ "
+                            "may not be removed even with optimisation flags. "
+                            "Use an explicit environment variable instead of "
+                            "__debug__ for conditional debug code."
                         ),
                         severity=Severity.WARNING,
                         runtime=Runtime.PYPY,
