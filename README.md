@@ -207,9 +207,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## Project status
 
-- **Version:** 0.6.0
+- **Version:** 0.7.0
 - **Rules:** 90 (45 CPython + 45 PyPy)
-- **Tests:** 316 passing
+- **Tests:** 392 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 

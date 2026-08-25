@@ -6,6 +6,21 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.7.0] — 2026-08-25
+
+### Added
+- Baseline transparency — suppressed finding count now shown in all output formats
+- Text output: `Baseline suppressed: N finding(s)` when baseline is active
+- JSON output: `baseline_suppressed` field in summary
+- Markdown output: `Baseline suppressed` row in summary table
+
+### Changed
+- Version bumped to 0.7.0
+- `ScanResult` now carries `baseline_suppressed` count
+- 392 tests — all passing
+
+---
+
 ## [0.6.0] — 2026-08-25
 
 ### Added
