@@ -207,9 +207,15 @@ SKIP_DIRS = {
 class ScanResult:
     """Holds all findings from a scan run."""
 
-    def __init__(self, findings: list[Finding], files_scanned: int):
-        self.findings      = findings
-        self.files_scanned = files_scanned
+    def __init__(
+        self,
+        findings: list[Finding],
+        files_scanned: int,
+        baseline_suppressed: int = 0,
+    ):
+        self.findings            = findings
+        self.files_scanned       = files_scanned
+        self.baseline_suppressed = baseline_suppressed
 
     @property
     def errors(self) -> list[Finding]:
@@ -227,11 +233,14 @@ class ScanResult:
         return max(0, 100 - deductions)
 
     def __repr__(self) -> str:
-        return (
+        base = (
             f"ScanResult(files={self.files_scanned}, "
             f"errors={len(self.errors)}, warnings={len(self.warnings)}, "
             f"score={self.score})"
         )
+        if self.baseline_suppressed:
+            base += f" [baseline suppressed: {self.baseline_suppressed}]"
+        return base
 
 
 def _python_files(path: Path) -> Iterator[Path]:

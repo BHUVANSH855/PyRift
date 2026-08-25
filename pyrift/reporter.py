@@ -14,11 +14,12 @@ from .scanner import ScanResult
 def to_json(result: ScanResult, indent: int = 2) -> str:
     data = {
         "summary": {
-            "files_scanned":  result.files_scanned,
-            "total_findings": len(result.findings),
-            "errors":         len(result.errors),
-            "warnings":       len(result.warnings),
-            "score":          result.score,
+            "files_scanned":        result.files_scanned,
+            "total_findings":       len(result.findings),
+            "errors":               len(result.errors),
+            "warnings":             len(result.warnings),
+            "baseline_suppressed":  result.baseline_suppressed,
+            "score":                result.score,
         },
         "findings": [f.to_dict() for f in result.findings],
     }
@@ -31,14 +32,21 @@ def to_markdown(result: ScanResult) -> str:
     lines.append("## Summary\n")
     lines.append("| | |")
     lines.append("|---|---|")
-    lines.append(f"| Files scanned | {result.files_scanned} |")
-    lines.append(f"| Errors        | {len(result.errors)} |")
-    lines.append(f"| Warnings      | {len(result.warnings)} |")
-    lines.append(f"| Health score  | {result.score} / 100 |")
+    lines.append(f"| Files scanned        | {result.files_scanned} |")
+    lines.append(f"| Errors               | {len(result.errors)} |")
+    lines.append(f"| Warnings             | {len(result.warnings)} |")
+    lines.append(f"| Baseline suppressed  | {result.baseline_suppressed} |")
+    lines.append(f"| Health score         | {result.score} / 100 |")
     lines.append("")
 
     if not result.findings:
-        lines.append("✅ **No behaviour differences detected.**\n")
+        msg = "✅ **No behaviour differences detected.**"
+        if result.baseline_suppressed:
+            msg += (
+                f"\n\n> ℹ️ Baseline suppressed "
+                f"{result.baseline_suppressed} known finding(s)."
+            )
+        lines.append(msg + "\n")
         return "\n".join(lines)
 
     for sev in (Severity.ERROR, Severity.WARNING, Severity.INFO):
@@ -69,9 +77,10 @@ def to_markdown(result: ScanResult) -> str:
 def to_text(result: ScanResult) -> str:
     lines: list[str] = []
     if not result.findings:
-        lines.append(
-            f"✅  No issues found — {result.files_scanned} file(s) scanned."
-        )
+        msg = f"✅  No issues found — {result.files_scanned} file(s) scanned."
+        if result.baseline_suppressed:
+            msg += f"\nBaseline suppressed: {result.baseline_suppressed} finding(s)"
+        lines.append(msg)
         return "\n".join(lines)
 
     for f in result.findings:
@@ -79,10 +88,13 @@ def to_text(result: ScanResult) -> str:
         if f.suggestion:
             lines.append(f"    → {f.suggestion}")
     lines.append("")
-    lines.append(
+    summary = (
         f"Scanned {result.files_scanned} file(s). "
         f"Found {len(result.errors)} error(s), "
         f"{len(result.warnings)} warning(s). "
         f"Score: {result.score}/100"
     )
+    if result.baseline_suppressed:
+        summary += f" (baseline suppressed: {result.baseline_suppressed})"
+    lines.append(summary)
     return "\n".join(lines)

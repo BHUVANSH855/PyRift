@@ -296,16 +296,16 @@ def main(argv: list[str] | None = None) -> None:
                     )
                     sys.exit(2)
 
-                new_findings, _baseline_findings = (
+                new_findings, baseline_findings = (
                     filter_baseline_findings(
                         result.findings,
                         baseline,
                     )
                 )
-
                 result = ScanResult(
                     new_findings,
                     result.files_scanned,
+                    baseline_suppressed=len(baseline_findings),
                 )
 
         output = _format_result(
