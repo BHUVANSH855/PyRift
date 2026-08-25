@@ -160,7 +160,7 @@ Use `--exit-zero` to report without failing.
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/BHUVANSH855/pyrift
-    rev: v0.5.0
+    rev: v0.6.0
     hooks:
       - id: pyrift
 ```
@@ -207,7 +207,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## Project status
 
-- **Version:** 0.5.0
+- **Version:** 0.6.0
 - **Rules:** 90 (45 CPython + 45 PyPy)
 - **Tests:** 316 passing
 - **Dependencies:** zero

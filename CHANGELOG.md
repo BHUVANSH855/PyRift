@@ -6,7 +6,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [0.5.0] — 2026-08-25
+## [0.6.0] — 2026-08-25
 
 ### Added — CPython rules
 - `CPY019` — `distutils` removed in Python 3.12+
@@ -78,7 +78,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - `PPY045` — `sys.settrace()` disables JIT on PyPy
 
 ### Changed
-- Version bumped to 0.5.0
+- Version bumped to 0.6.0
 - Test suite restructured — one file per rule in `tests/cpython/` and `tests/pypy/`
 - 316 tests total
 - `scanner.py` updated — now 90 rules in `ALL_RULES`

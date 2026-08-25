@@ -21,7 +21,7 @@ from .reporter import to_json, to_markdown, to_text
 from .scanner import ALL_RULES, ScanResult, scan, scan_file
 from .targets import PythonVersion, TargetConfig
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 __author__  = "Bhuvansh Kataria"
 __license__ = "MIT"
 
