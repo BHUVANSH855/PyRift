@@ -20,6 +20,7 @@ def to_json(result: ScanResult, indent: int = 2) -> str:
             "warnings":             len(result.warnings),
             "baseline_suppressed":  result.baseline_suppressed,
             "score":                result.score,
+            "rule_errors":          len(result.rule_errors),
         },
         "findings": [f.to_dict() for f in result.findings],
     }
@@ -37,16 +38,23 @@ def to_markdown(result: ScanResult) -> str:
     lines.append(f"| Warnings             | {len(result.warnings)} |")
     lines.append(f"| Baseline suppressed  | {result.baseline_suppressed} |")
     lines.append(f"| Health score         | {result.score} / 100 |")
+    lines.append(f"| Rule execution errors| {len(result.rule_errors)} |")
     lines.append("")
 
     if not result.findings:
-        msg = "✅ **No behaviour differences detected.**"
-        if result.baseline_suppressed:
-            msg += (
-                f"\n\n> ℹ️ Baseline suppressed "
-                f"{result.baseline_suppressed} known finding(s)."
+        if result.rule_errors:
+            lines.append(
+                "⚠️ **No behaviour findings were produced, but rule execution "
+                f"failed {len(result.rule_errors)} time(s).**\n"
             )
-        lines.append(msg + "\n")
+        else:
+            msg = "✅ **No behaviour differences detected.**"
+            if result.baseline_suppressed:
+                msg += (
+                    f"\n\n> ℹ️ Baseline suppressed "
+                    f"{result.baseline_suppressed} known finding(s)."
+                )
+            lines.append(msg + "\n")
         return "\n".join(lines)
 
     for sev in (Severity.ERROR, Severity.WARNING, Severity.INFO):
@@ -77,10 +85,16 @@ def to_markdown(result: ScanResult) -> str:
 def to_text(result: ScanResult) -> str:
     lines: list[str] = []
     if not result.findings:
-        msg = f"✅  No issues found — {result.files_scanned} file(s) scanned."
-        if result.baseline_suppressed:
-            msg += f"\nBaseline suppressed: {result.baseline_suppressed} finding(s)"
-        lines.append(msg)
+        if result.rule_errors:
+            lines.append(
+                f"⚠️  No findings produced — {result.files_scanned} file(s) scanned, "
+                f"but {len(result.rule_errors)} rule execution error(s) occurred."
+            )
+        else:
+            msg = f"✅  No issues found — {result.files_scanned} file(s) scanned."
+            if result.baseline_suppressed:
+                msg += f"\nBaseline suppressed: {result.baseline_suppressed} finding(s)"
+            lines.append(msg)
         return "\n".join(lines)
 
     for f in result.findings:
@@ -94,6 +108,8 @@ def to_text(result: ScanResult) -> str:
         f"{len(result.warnings)} warning(s). "
         f"Score: {result.score}/100"
     )
+    if result.rule_errors:
+        summary += f"; {len(result.rule_errors)} rule execution error(s)"
     if result.baseline_suppressed:
         summary += f" (baseline suppressed: {result.baseline_suppressed})"
     lines.append(summary)

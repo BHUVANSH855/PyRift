@@ -240,17 +240,19 @@ SKIP_DIRS = {
 
 
 class ScanResult:
-    """Holds all findings from a scan run."""
+    """Holds all findings and analyzer failures from a scan run."""
 
     def __init__(
         self,
         findings: list[Finding],
         files_scanned: int,
         baseline_suppressed: int = 0,
+        rule_errors: list[str] | None = None,
     ):
-        self.findings            = findings
-        self.files_scanned       = files_scanned
+        self.findings = findings
+        self.files_scanned = files_scanned
         self.baseline_suppressed = baseline_suppressed
+        self.rule_errors = rule_errors or []
 
     @property
     def errors(self) -> list[Finding]:
@@ -271,7 +273,7 @@ class ScanResult:
         base = (
             f"ScanResult(files={self.files_scanned}, "
             f"errors={len(self.errors)}, warnings={len(self.warnings)}, "
-            f"score={self.score})"
+            f"rule_errors={len(self.rule_errors)}, score={self.score})"
         )
         if self.baseline_suppressed:
             base += f" [baseline suppressed: {self.baseline_suppressed}]"
@@ -290,16 +292,19 @@ def _python_files(path: Path) -> Iterator[Path]:
                 yield Path(root) / f
 
 
-def scan_file(filepath: str | Path,
-              rules: list[BaseRule] | None = None) -> list[Finding]:
-    """Scan a single file. Returns list of Findings."""
+def _scan_file_detailed(
+    filepath: str | Path,
+    rules: list[BaseRule] | None = None,
+) -> tuple[list[Finding], list[str]]:
+    """Scan a single file and return findings plus rule execution failures."""
     filepath = Path(filepath)
     rules = rules or ALL_RULES
     findings: list[Finding] = []
+    rule_errors: list[str] = []
 
     try:
         source = filepath.read_text(encoding="utf-8", errors="replace")
-        tree   = ast.parse(source, filename=str(filepath))
+        tree = ast.parse(source, filename=str(filepath))
     except SyntaxError as exc:
         from .finding import Runtime, Severity
         findings.append(Finding(
@@ -311,19 +316,31 @@ def scan_file(filepath: str | Path,
             severity=Severity.ERROR,
             runtime=Runtime.BOTH,
         ))
-        return findings
+        return findings, rule_errors
 
     for rule in rules:
         try:
             findings.extend(rule.check(tree, str(filepath)))
-        except Exception as exc:  # noqa: BLE001
-            logger.debug(
-                "Rule %s failed for %s: %s",
-                rule.rule_id,
-                filepath,
-                exc,
-            )
+        except Exception as exc:
+            message = f"{filepath}: {rule.rule_id}: {type(exc).__name__}: {exc}"
+            rule_errors.append(message)
+            logger.exception("Rule %s failed for %s", rule.rule_id, filepath)
 
+    return findings, rule_errors
+
+
+def scan_file(
+    filepath: str | Path,
+    rules: list[BaseRule] | None = None,
+) -> list[Finding]:
+    """Scan a single file. Returns list of Findings.
+
+    Rule execution failures are intentionally not returned as compatibility
+    findings. The directory-level :func:`scan` API exposes them through
+    ``ScanResult.rule_errors`` so callers can distinguish analyzer failures
+    from source-code findings.
+    """
+    findings, _ = _scan_file_detailed(filepath, rules)
     return findings
 
 
@@ -359,10 +376,12 @@ def scan(
         target_config = load_project_targets(path)
 
     all_findings: list[Finding] = []
+    rule_errors: list[str] = []
     files_scanned = 0
 
     for py_file in _python_files(path):
-        findings = scan_file(py_file, rules)
+        findings, file_rule_errors = _scan_file_detailed(py_file, rules)
+        rule_errors.extend(file_rule_errors)
 
         if target_config is not None:
             findings = [
@@ -380,4 +399,4 @@ def scan(
         all_findings.extend(findings)
         files_scanned += 1
 
-    return ScanResult(all_findings, files_scanned)
+    return ScanResult(all_findings, files_scanned, rule_errors=rule_errors)

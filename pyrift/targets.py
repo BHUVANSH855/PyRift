@@ -259,9 +259,15 @@ def load_project_targets(project_path: str | Path) -> TargetConfig | None:
     else:
         directory = path
 
-    pyproject = directory / "pyproject.toml"
-
-    if not pyproject.exists():
+    # Resolve the nearest project configuration by walking upward. This makes
+    # ``pyrift scan src/package`` behave the same as ``pyrift scan .`` when
+    # the project's pyproject.toml lives at the repository root.
+    directory = directory.resolve()
+    for candidate_directory in (directory, *directory.parents):
+        pyproject = candidate_directory / "pyproject.toml"
+        if pyproject.exists():
+            break
+    else:
         return None
 
     requires_python: str | None = None

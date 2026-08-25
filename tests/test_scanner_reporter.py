@@ -149,3 +149,17 @@ class TestProjectTargeting:
             finding.rule_id == "CPY038"
             for finding in result.findings
         )
+
+def test_scan_reports_rule_execution_errors(tmp_path):
+    class BrokenRule:
+        rule_id = "TEST-BROKEN"
+
+        def check(self, node, filename):
+            raise RuntimeError("boom")
+
+    (tmp_path / "sample.py").write_text("x = 1\n")
+    result = scan(tmp_path, rules=[BrokenRule()])
+
+    assert len(result.rule_errors) == 1
+    assert "TEST-BROKEN" in result.rule_errors[0]
+    assert "RuntimeError" in result.rule_errors[0]

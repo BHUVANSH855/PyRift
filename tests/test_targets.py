@@ -146,3 +146,18 @@ def test_load_requires_python_without_tomllib(tmp_path, monkeypatch):
     assert config is not None
     assert config.minimum == PythonVersion(3, 10)
     assert config.maximum == PythonVersion(3, 13)
+
+
+def test_load_project_targets_walks_to_parent(tmp_path):
+    (tmp_path / "pyproject.toml").write_text(
+        "[project]\n"
+        'requires-python = ">=3.10,<3.14"\n'
+    )
+    nested = tmp_path / "src" / "package"
+    nested.mkdir(parents=True)
+
+    config = load_project_targets(nested)
+
+    assert config is not None
+    assert config.minimum == PythonVersion(3, 10)
+    assert config.maximum == PythonVersion(3, 13)

@@ -306,6 +306,7 @@ def main(argv: list[str] | None = None) -> None:
                     new_findings,
                     result.files_scanned,
                     baseline_suppressed=len(baseline_findings),
+                    rule_errors=result.rule_errors,
                 )
 
         output = _format_result(
@@ -321,7 +322,7 @@ def main(argv: list[str] | None = None) -> None:
         else:
             print(output)
 
-        if not args.exit_zero and result.errors:
+        if not args.exit_zero and (result.errors or result.rule_errors):
             sys.exit(1)
 
         sys.exit(0)
