@@ -7,6 +7,7 @@ Parses Python files into ASTs and runs all registered rules.
 from __future__ import annotations
 
 import ast
+import inspect
 import logging
 import os
 from collections.abc import Iterator
@@ -295,6 +296,7 @@ def _python_files(path: Path) -> Iterator[Path]:
 def _scan_file_detailed(
     filepath: str | Path,
     rules: list[BaseRule] | None = None,
+    target_config: TargetConfig | None = None,
 ) -> tuple[list[Finding], list[str]]:
     """Scan a single file and return findings plus rule execution failures."""
     filepath = Path(filepath)
@@ -307,24 +309,51 @@ def _scan_file_detailed(
         tree = ast.parse(source, filename=str(filepath))
     except SyntaxError as exc:
         from .finding import Runtime, Severity
-        findings.append(Finding(
-            file=str(filepath),
-            line=exc.lineno or 0,
-            rule_id="PARSE",
-            title="Syntax error — file could not be parsed",
-            description=str(exc),
-            severity=Severity.ERROR,
-            runtime=Runtime.BOTH,
-        ))
+
+        findings.append(
+            Finding(
+                file=str(filepath),
+                line=exc.lineno or 0,
+                rule_id="PARSE",
+                title="Syntax error — file could not be parsed",
+                description=str(exc),
+                severity=Severity.ERROR,
+                runtime=Runtime.BOTH,
+            )
+        )
         return findings, rule_errors
 
     for rule in rules:
         try:
-            findings.extend(rule.check(tree, str(filepath)))
+            check = rule.check
+            parameters = inspect.signature(check).parameters
+
+            if "target_config" in parameters:
+                findings.extend(
+                    check(
+                        tree,
+                        str(filepath),
+                        target_config,
+                    )
+                )
+            else:
+                findings.extend(
+                    check(
+                        tree,
+                        str(filepath),
+                    )
+                )
         except Exception as exc:
-            message = f"{filepath}: {rule.rule_id}: {type(exc).__name__}: {exc}"
+            message = (
+                f"{filepath}: {rule.rule_id}: "
+                f"{type(exc).__name__}: {exc}"
+            )
             rule_errors.append(message)
-            logger.exception("Rule %s failed for %s", rule.rule_id, filepath)
+            logger.exception(
+                "Rule %s failed for %s",
+                rule.rule_id,
+                filepath,
+            )
 
     return findings, rule_errors
 
@@ -380,7 +409,11 @@ def scan(
     files_scanned = 0
 
     for py_file in _python_files(path):
-        findings, file_rule_errors = _scan_file_detailed(py_file, rules)
+        findings, file_rule_errors = _scan_file_detailed(
+            py_file,
+            rules,
+            target_config,
+        )
         rule_errors.extend(file_rule_errors)
 
         if target_config is not None:

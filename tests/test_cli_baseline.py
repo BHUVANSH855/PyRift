@@ -333,3 +333,35 @@ class TestBaselineCLI:
             )
 
         assert exc.value.code == 2
+
+    def test_scan_passes_platform_to_scanner(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        write_python_file(project / "example.py")
+
+        captured = {}
+
+        def fake_scan(*args, **kwargs):
+            captured.update(kwargs)
+            return ScanResult([], 1)
+
+        monkeypatch.setattr("pyrift.cli.scan", fake_scan)
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--platform",
+                    "linux",
+                    "--no-baseline",
+                ]
+            )
+
+        assert exc.value.code == 0
+        assert captured["target_config"].platform == "linux"

@@ -63,13 +63,15 @@ class PythonVersion:
 @dataclass(frozen=True)
 class TargetConfig:
     """
-    Python versions supported by the project.
+    Python versions and platform supported by the project.
 
-    ``None`` means the corresponding side of the range is unbounded.
+    ``None`` means the corresponding side of the version range is unbounded
+    or that no target platform was specified.
     """
 
     minimum: PythonVersion | None = None
     maximum: PythonVersion | None = None
+    platform: str | None = None
 
     def affects_cpython(self, finding: Finding) -> bool:
         """
@@ -84,6 +86,7 @@ class TargetConfig:
             if finding.affected_from
             else None
         )
+
         finding_max = (
             PythonVersion.parse(finding.affected_until)
             if finding.affected_until

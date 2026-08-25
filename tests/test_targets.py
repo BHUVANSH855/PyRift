@@ -161,3 +161,15 @@ def test_load_project_targets_walks_to_parent(tmp_path):
     assert config is not None
     assert config.minimum == PythonVersion(3, 10)
     assert config.maximum == PythonVersion(3, 13)
+
+
+def test_target_config_platform():
+    config = TargetConfig(platform="windows")
+
+    assert config.platform == "windows"
+
+
+def test_target_config_platform_defaults_to_none():
+    config = TargetConfig()
+
+    assert config.platform is None

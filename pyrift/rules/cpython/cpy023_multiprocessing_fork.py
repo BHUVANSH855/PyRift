@@ -1,31 +1,56 @@
 """
 CPY023 — multiprocessing fork start method changing in Python 3.14
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The default multiprocessing start method on Linux/BSD will change
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The default multiprocessing start method on POSIX platforms changes
 from 'fork' to a safer method in Python 3.14. Code relying on the
 default 'fork' behaviour may silently break.
 """
+
 from __future__ import annotations
 
 import ast
+from typing import TYPE_CHECKING
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 
+if TYPE_CHECKING:
+    from pyrift.targets import TargetConfig
+
 
 class MultiprocessingForkRule(BaseRule):
     rule_id = "CPY023"
-    title   = "multiprocessing default start method changing in Python 3.14"
+    title = "multiprocessing default start method changing in Python 3.14"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
+        if (
+            target_config is not None
+            and target_config.platform is not None
+            and target_config.platform.lower() in {
+                "windows",
+                "win32",
+            }
+        ):
+            return []
+
         findings: list[Finding] = []
+
         for n in ast.walk(node):
             if not isinstance(n, ast.Import):
                 continue
+
             for alias in n.names:
-                if alias.name == "multiprocessing":
-                    findings.append(Finding(
+                if alias.name != "multiprocessing":
+                    continue
+
+                findings.append(
+                    Finding(
                         file=filename,
                         line=n.lineno,
                         col=n.col_offset,
@@ -51,5 +76,7 @@ class MultiprocessingForkRule(BaseRule):
                             "https://docs.python.org/3/library/multiprocessing.html"
                             "#contexts-and-start-methods"
                         ),
-                    ))
+                    )
+                )
+
         return findings

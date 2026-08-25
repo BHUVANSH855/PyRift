@@ -91,6 +91,15 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     scan_cmd.add_argument(
+        "--platform",
+        choices=["windows", "linux", "macos", "posix"],
+        default=None,
+        help=(
+            "Target platform for compatibility analysis. "
+            "Use 'windows', 'linux', 'macos', or 'posix'."
+        ),
+    )
+    scan_cmd.add_argument(
         "--no-project-config",
         action="store_true",
         help=(
@@ -164,7 +173,11 @@ def _build_target_config(
     args: argparse.Namespace,
 ) -> TargetConfig | None:
     """Build and validate an optional Python target configuration."""
-    if args.python_min is None and args.python_max is None:
+    if (
+        args.python_min is None
+        and args.python_max is None
+        and getattr(args, "platform", None) is None
+    ):
         return None
 
     try:
@@ -179,6 +192,7 @@ def _build_target_config(
                 if args.python_max is not None
                 else None
             ),
+            platform=getattr(args, "platform", None),
         )
     except ValueError as exc:
         print(
