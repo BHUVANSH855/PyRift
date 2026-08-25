@@ -119,7 +119,6 @@ from .rules.pypy.ppy039_os_fork import OsForkRule
 from .rules.pypy.ppy040_subprocess_pipe import SubprocessPipeRule
 from .rules.pypy.ppy041_dict_merge_pypy import DictMergePypyRule
 from .rules.pypy.ppy042_print_flush import PrintFlushRule
-from .rules.pypy.ppy043_slots_memory import SlotsMemorypyRule
 from .rules.pypy.ppy044_exception_chaining import ExceptionChainingRule
 from .rules.pypy.ppy045_sys_settrace import SysSettraceRule
 from .rules.pypy.ppy046_debug_constant import DebugConstantRule
@@ -214,7 +213,6 @@ ALL_RULES: list[BaseRule] = [
     NanHashRule(),
     DictMergePypyRule(),
     PrintFlushRule(),
-    SlotsMemorypyRule(),
     ExceptionChainingRule(),
     SysSettraceRule(),
     OpenEncodingRule(),
