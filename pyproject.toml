@@ -45,3 +45,9 @@ Repository = "https://github.com/BHUVANSH855/pyrift"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pyrift"]
+
+[tool.ruff]
+exclude = ["compatibility-benchmark/"]
+
+[tool.ruff.lint]
+ignore = ["DTZ003", "BLE001", "B018"]

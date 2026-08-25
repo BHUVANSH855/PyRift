@@ -36,9 +36,8 @@ class HashMinusOneRule(BaseRule):
 
         for n in ast.walk(node):
             # Flag: h = hash(x) — storing hash result
-            if isinstance(n, ast.Assign):
-                if _is_hash_call(n.value):
-                    findings.append(self._make(filename, n.value))
+            if isinstance(n, ast.Assign) and _is_hash_call(n.value):
+                findings.append(self._make(filename, n.value))
 
             # Flag: if hash(x) == hash(y) — comparing hash values
             if isinstance(n, ast.Compare):
@@ -49,9 +48,8 @@ class HashMinusOneRule(BaseRule):
                         findings.append(self._make(filename, comp))
 
             # Flag: x == hash(y) in augmented assign
-            if isinstance(n, ast.AugAssign):
-                if _is_hash_call(n.value):
-                    findings.append(self._make(filename, n.value))
+            if isinstance(n, ast.AugAssign) and _is_hash_call(n.value):
+                findings.append(self._make(filename, n.value))
 
         return findings
 

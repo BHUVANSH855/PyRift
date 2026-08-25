@@ -38,9 +38,8 @@ class LocalsBehaviourRule(BaseRule):
 
         for n in ast.walk(node):
             # Flag: d = locals() — storing implies likely mutation
-            if isinstance(n, ast.Assign):
-                if _is_locals_call(n.value):
-                    findings.append(Finding(
+            if isinstance(n, ast.Assign) and _is_locals_call(n.value):
+                findings.append(Finding(
                         file=filename,
                         line=n.lineno,
                         col=n.col_offset,
