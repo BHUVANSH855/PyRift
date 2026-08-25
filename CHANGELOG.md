@@ -8,6 +8,31 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [0.6.0] — 2026-08-25
 
+### Added
+- `pyrift/targets.py` — target-aware Python version filtering
+- `pyrift/baseline.py` — baseline engine for suppressing known findings
+- `pyrift/fingerprint.py` — stable finding fingerprints for baseline matching
+- CLI flags: `--python-min`, `--python-max`, `--no-project-config`
+- `pyproject.toml` `requires-python` detection for automatic target config
+- 76 new tests covering targets, baseline, fingerprinting, CLI, and E2E
+
+### Fixed
+- `CPY022` — no longer evaluates `~bool` during analysis (was triggering its own deprecation warning)
+- `CPY038` — corrected version boundary
+- `PPY014` — reduced false positives (now requires static string evidence)
+- `PPY031` — hardened identity comparison detection
+- `PPY041` — expanded test coverage
+- `PPY044` — reduced noise (only reports when exception variable is used after handler)
+
+### Changed
+- Version bumped to 0.6.0
+- Scanner now filters findings based on project Python version targets
+- 392 tests total
+
+---
+
+## [0.5.0] — 2026-08-25
+
 ### Added — CPython rules
 - `CPY019` — `distutils` removed in Python 3.12+
 - `CPY020` — `datetime.UTC` requires Python 3.11+
