@@ -1,0 +1,19 @@
+﻿{
+  "datetime_utcnow": {
+    "result": "datetime",
+    "warnings": [
+      "DeprecationWarning"
+    ]
+  },
+  "locale_resetlocale": "AttributeError: module 'locale' has no attribute 'resetlocale'",
+  "locals_mutation": 0,
+  "multiprocessing_start_method": "spawn",
+  "pickle_default_protocol": 5,
+  "purepath_is_reserved": false,
+  "python": "3.14.7 (main, Aug  7 2026, 02:26:22) [MSC v.1944 64 bit (AMD64)]",
+  "version_info": [
+    3,
+    14,
+    7
+  ]
+}

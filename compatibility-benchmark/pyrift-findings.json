@@ -1,0 +1,97 @@
+{
+  "summary": {
+    "files_scanned": 1,
+    "total_findings": 6,
+    "errors": 1,
+    "warnings": 5,
+    "baseline_suppressed": 0,
+    "score": 75,
+    "rule_errors": 0
+  },
+  "findings": [
+    {
+      "file": "compatibility-benchmark\\cpython_cases.py",
+      "line": 3,
+      "col": 0,
+      "rule_id": "CPY023",
+      "title": "multiprocessing default start method changing in Python 3.14",
+      "description": "The default multiprocessing start method on Linux/BSD/POSIX is 'fork' in Python <= 3.13. In Python 3.14 it will change to a safer method. Code relying on fork semantics (shared memory, inherited file descriptors) may silently break.",
+      "severity": "warning",
+      "runtime": "cpython",
+      "affected_from": "3.14",
+      "affected_until": "",
+      "suggestion": "Explicitly set the start method: multiprocessing.set_start_method('fork') or use multiprocessing.get_context('fork') to make the behaviour explicit and version-safe.",
+      "docs_url": "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods"
+    },
+    {
+      "file": "compatibility-benchmark\\cpython_cases.py",
+      "line": 7,
+      "col": 0,
+      "rule_id": "CPY027",
+      "title": "locale.resetlocale() removed in Python 3.13",
+      "description": "locale.resetlocale() was deprecated in Python 3.11 and removed in Python 3.13. Calling it on Python 3.13+ raises AttributeError.",
+      "severity": "error",
+      "runtime": "cpython",
+      "affected_from": "3.13",
+      "affected_until": "",
+      "suggestion": "Replace with: locale.setlocale(locale.LC_ALL, '') which resets the locale to the system default and works on all Python 3 versions.",
+      "docs_url": "https://docs.python.org/3/whatsnew/3.13.html"
+    },
+    {
+      "file": "compatibility-benchmark\\cpython_cases.py",
+      "line": 20,
+      "col": 4,
+      "rule_id": "CPY029",
+      "title": "locals() semantics changed in Python 3.13 (PEP 667)",
+      "description": "locals() is called here. Before Python 3.13, modifying the dict returned by locals() had undefined behaviour \u2014 changes sometimes affected local variables. In Python 3.13 (PEP 667), locals() returns a snapshot and modifying it never affects actual local variables. Code relying on locals() mutation will silently break.",
+      "severity": "warning",
+      "runtime": "cpython",
+      "affected_from": "3.13",
+      "affected_until": "",
+      "suggestion": "Do not modify the dict returned by locals(). Use explicit variable assignment instead. If you need dynamic variable access, use a regular dict.",
+      "docs_url": "https://peps.python.org/pep-0667/"
+    },
+    {
+      "file": "compatibility-benchmark\\cpython_cases.py",
+      "line": 9,
+      "col": 0,
+      "rule_id": "CPY036",
+      "title": "datetime.utcnow() deprecated since Python 3.12",
+      "description": "datetime.datetime.utcnow() is deprecated since Python 3.12. It returns a naive datetime object with no timezone information, making it dangerously easy to confuse with local time. It will be removed in a future Python version.",
+      "severity": "warning",
+      "runtime": "cpython",
+      "affected_from": "3.12",
+      "affected_until": "",
+      "suggestion": "Use datetime.datetime.now(datetime.timezone.utc) which returns a timezone-aware UTC datetime. Or with Python 3.11+: datetime.datetime.now(datetime.UTC)",
+      "docs_url": "https://docs.python.org/3/library/datetime.html#datetime.datetime.utcnow"
+    },
+    {
+      "file": "compatibility-benchmark\\cpython_cases.py",
+      "line": 12,
+      "col": 0,
+      "rule_id": "CPY050",
+      "title": "PurePath.is_reserved() deprecated in 3.13, removed in 3.15",
+      "description": "pathlib.PurePath.is_reserved() was deprecated in Python 3.13 and will be removed in Python 3.15. On non-Windows platforms it always returned False. On Windows, use os.path.isreserved() instead.",
+      "severity": "warning",
+      "runtime": "cpython",
+      "affected_from": "3.13",
+      "affected_until": "",
+      "suggestion": "Replace with: import os; os.path.isreserved(path) for Windows reserved path detection. This works on Python 3.13+ on all platforms.",
+      "docs_url": "https://docs.python.org/3/library/pathlib.html"
+    },
+    {
+      "file": "compatibility-benchmark\\cpython_cases.py",
+      "line": 23,
+      "col": 0,
+      "rule_id": "CPY051",
+      "title": "Unsynchronized module-level mutable state may be unsafe in free-threaded Python",
+      "description": "Module-level mutable variable '_CACHE' is mutated in this module. In a CPython free-threaded build, code that relies on the GIL to coordinate compound or unsynchronized access to shared state can behave differently.",
+      "severity": "warning",
+      "runtime": "cpython",
+      "affected_from": "3.13",
+      "affected_until": "",
+      "suggestion": "If this state is shared across threads, protect compound mutations and read-modify-write sequences with a lock, or use an appropriate thread-safe abstraction. Individual built-in list/dict/set operations should not be treated as a blanket guarantee of thread safety.",
+      "docs_url": "https://docs.python.org/3/howto/free-threading-python.html"
+    }
+  ]
+}

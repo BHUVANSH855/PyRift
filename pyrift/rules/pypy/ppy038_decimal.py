@@ -1,10 +1,12 @@
 """
 PPY038 — Decimal module uses different backend on PyPy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-On CPython, the decimal module uses a fast C implementation
-(_decimal). On PyPy, decimal is implemented in pure Python
-(or RPython), which means performance differs significantly
-and some edge cases in rounding and context handling may
+On CPython, the decimal module uses a fast C implementation.
+On PyPy, it uses a pure Python/RPython implementation — slower
+with potential rounding differences in edge cases.
+
+Only flag when Decimal is used with non-default precision or
+rounding context, where backend differences are most likely to
 produce different results.
 """
 from __future__ import annotations
@@ -14,6 +16,11 @@ import ast
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 
+_CONTEXT_ATTRS = {
+    "prec", "rounding", "Emin", "Emax", "capitals",
+    "clamp", "traps", "flags",
+}
+
 
 class DecimalBackendRule(BaseRule):
     rule_id = "PPY038"
@@ -22,40 +29,39 @@ class DecimalBackendRule(BaseRule):
 
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
+
         for n in ast.walk(node):
-            mod = None
-            if isinstance(n, ast.Import):
-                for alias in n.names:
-                    if alias.name == "decimal":
-                        mod = alias.name
-                        line, col = n.lineno, n.col_offset
-            elif isinstance(n, ast.ImportFrom) and n.module == "decimal":
-                mod = n.module
-                line, col = n.lineno, n.col_offset
-            if mod:
-                findings.append(Finding(
-                    file=filename,
-                    line=line,
-                    col=col,
-                    rule_id=self.rule_id,
-                    title=self.title,
-                    description=(
-                        "The decimal module is imported. On CPython, decimal "
-                        "uses a fast C implementation. On PyPy, it uses a "
-                        "pure Python/RPython implementation which is slower "
-                        "and may have subtle differences in rounding behaviour "
-                        "and context handling in edge cases."
-                    ),
-                    severity=Severity.INFO,
-                    runtime=Runtime.PYPY,
-                    suggestion=(
-                        "Test decimal-heavy code on PyPy explicitly. "
-                        "For high-precision financial calculations, verify "
-                        "rounding behaviour matches expectations on both "
-                        "CPython and PyPy with your specific data."
-                    ),
-                    docs_url=(
-                        "https://doc.pypy.org/en/latest/cpython_differences.html"
-                    ),
-                ))
+            # Flag: getcontext().prec = N or localcontext() usage
+            # These are the cases where backend precision differences matter
+            if isinstance(n, ast.Call):
+                func = n.func
+                if isinstance(func, ast.Attribute) and func.attr in (
+                    "getcontext", "localcontext", "setcontext"
+                ):
+                    findings.append(Finding(
+                        file=filename,
+                        line=n.lineno,
+                        col=n.col_offset,
+                        rule_id=self.rule_id,
+                        title=self.title,
+                        description=(
+                            "decimal context is being configured. CPython uses "
+                            "a fast C implementation of decimal. PyPy uses a "
+                            "pure Python/RPython implementation — slower with "
+                            "potential rounding differences in edge cases when "
+                            "using non-default precision or rounding modes."
+                        ),
+                        severity=Severity.INFO,
+                        runtime=Runtime.PYPY,
+                        suggestion=(
+                            "Test decimal-heavy code with non-default precision "
+                            "on PyPy explicitly. Verify rounding behaviour "
+                            "matches expectations on both CPython and PyPy "
+                            "with your specific data."
+                        ),
+                        docs_url=(
+                            "https://doc.pypy.org/en/latest/cpython_differences.html"
+                        ),
+                    ))
+
         return findings

@@ -1,0 +1,747 @@
+﻿[
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\copy.py",
+        "line":  169,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\copyreg.py",
+        "line":  174,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\copyreg.py",
+        "line":  172,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\copyreg.py",
+        "line":  173,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\copyreg.py",
+        "line":  10,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\doctest.py",
+        "line":  151,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\filecmp.py",
+        "line":  20,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\ftplib.py",
+        "line":  43,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\gettext.py",
+        "line":  569,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\gettext.py",
+        "line":  526,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\imaplib.py",
+        "line":  57,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\imaplib.py",
+        "line":  34,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\inspect.py",
+        "line":  927,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\inspect.py",
+        "line":  926,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\linecache.py",
+        "line":  14,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\linecache.py",
+        "line":  13,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\locale.py",
+        "line":  22,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\locale.py",
+        "line":  716,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\modulefinder.py",
+        "line":  27,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\modulefinder.py",
+        "line":  33,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\os.py",
+        "line":  36,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\pickle.py",
+        "line":  37,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\pickletools.py",
+        "line":  2201,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\pickletools.py",
+        "line":  2247,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\pickletools.py",
+        "line":  2200,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\pickletools.py",
+        "line":  1155,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\platform.py",
+        "line":  1267,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\platform.py",
+        "line":  1083,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\poplib.py",
+        "line":  27,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\pyclbr.py",
+        "line":  50,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\shutil.py",
+        "line":  1148,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\shutil.py",
+        "line":  1357,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\shutil.py",
+        "line":  70,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\site.py",
+        "line":  57,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\smtplib.py",
+        "line":  55,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\socket.py",
+        "line":  69,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\socketserver.py",
+        "line":  131,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\statistics.py",
+        "line":  810,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\subprocess.py",
+        "line":  63,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\symtable.py",
+        "line":  381,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\this.py",
+        "line":  23,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\threading.py",
+        "line":  26,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\threading.py",
+        "line":  998,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\threading.py",
+        "line":  999,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\threading.py",
+        "line":  1668,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\token.py",
+        "line":  4,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\tokenize.py",
+        "line":  142,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\turtle.py",
+        "line":  146,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\typing.py",
+        "line":  394,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\typing.py",
+        "line":  393,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\webbrowser.py",
+        "line":  20,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\zipimport.py",
+        "line":  32,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\_compat_pickle.py",
+        "line":  8,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\_compat_pickle.py",
+        "line":  56,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\_pydatetime.py",
+        "line":  40,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\_pyio.py",
+        "line":  21,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\_py_warnings.py",
+        "line":  37,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\_strptime.py",
+        "line":  511,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\asyncio\\tasks.py",
+        "line":  1072,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\concurrent\\futures\\__init__.py",
+        "line":  23,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\ctypes\\__init__.py",
+        "line":  70,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\ctypes\\__init__.py",
+        "line":  330,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\dbm\\__init__.py",
+        "line":  43,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\email\\charset.py",
+        "line":  65,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\email\\charset.py",
+        "line":  36,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\email\\charset.py",
+        "line":  130,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\email\\mime\\audio.py",
+        "line":  48,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\email\\mime\\image.py",
+        "line":  46,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\encodings\\__init__.py",
+        "line":  36,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\html\\entities.py",
+        "line":  2503,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\html\\entities.py",
+        "line":  2507,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\http\\client.py",
+        "line":  84,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\idlelib\\debugger_r.py",
+        "line":  37,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\idlelib\\debugger_r.py",
+        "line":  36,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\idlelib\\debugger_r.py",
+        "line":  35,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\idlelib\\debugger_r.py",
+        "line":  38,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\idlelib\\mainmenu.py",
+        "line":  22,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\idlelib\\multicall.py",
+        "line":  313,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\idlelib\\multicall.py",
+        "line":  145,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\idlelib\\rpc.py",
+        "line":  123,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\idlelib\\idle_test\\test_config.py",
+        "line":  23,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\importlib\\_bootstrap.py",
+        "line":  134,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\importlib\\_bootstrap_external.py",
+        "line":  229,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\importlib\\__init__.py",
+        "line":  91,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\json\\encoder.py",
+        "line":  21,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\logging\\__init__.py",
+        "line":  884,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\logging\\__init__.py",
+        "line":  104,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\logging\\__init__.py",
+        "line":  112,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\multiprocessing\\connection.py",
+        "line":  51,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\multiprocessing\\managers.py",
+        "line":  11,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\multiprocessing\\process.py",
+        "line":  435,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\multiprocessing\\reduction.py",
+        "line":  21,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\multiprocessing\\resource_sharer.py",
+        "line":  21,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\multiprocessing\\resource_tracker.py",
+        "line":  40,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\multiprocessing\\sharedctypes.py",
+        "line":  178,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\multiprocessing\\spawn.py",
+        "line":  210,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\multiprocessing\\util.py",
+        "line":  274,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\profiling\\sampling\\opcode_utils.py",
+        "line":  22,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\re\\_constants.py",
+        "line":  216,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\re\\_constants.py",
+        "line":  227,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\re\\__init__.py",
+        "line":  326,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\re\\__init__.py",
+        "line":  327,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\sqlite3\\_completer.py",
+        "line":  11,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\sysconfig\\__init__.py",
+        "line":  28,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\picklecommon.py",
+        "line":  268,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\re_tests.py",
+        "line":  56,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\testcodec.py",
+        "line":  46,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_buffer.py",
+        "line":  65,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_buffer.py",
+        "line":  127,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_class.py",
+        "line":  66,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_class.py",
+        "line":  131,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_codecs.py",
+        "line":  3230,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_codecs.py",
+        "line":  2130,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_codecs.py",
+        "line":  3058,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_codecs.py",
+        "line":  3065,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_crossinterp.py",
+        "line":  177,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_heapq.py",
+        "line":  16,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_long.py",
+        "line":  21,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_profile.py",
+        "line":  177,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_runpy.py",
+        "line":  64,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_ssl.py",
+        "line":  72,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_unicode_file_functions.py",
+        "line":  12,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_xml_etree.py",
+        "line":  1976,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_xml_etree.py",
+        "line":  2063,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_xpickle.py",
+        "line":  27,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test__locale.py",
+        "line":  82,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test__locale.py",
+        "line":  98,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test__locale.py",
+        "line":  73,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\crashers\\mutation_inside_cyclegc.py",
+        "line":  22,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\libregrtest\\single.py",
+        "line":  148,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\support\\socket_helper.py",
+        "line":  290,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\support\\__init__.py",
+        "line":  1591,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_ctypes\\test_generated_structs.py",
+        "line":  58,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_ctypes\\test_repr.py",
+        "line":  7,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_ctypes\\test_unaligned_structures.py",
+        "line":  9,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_ctypes\\test_unaligned_structures.py",
+        "line":  8,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_importlib\\threaded_import_hangers.py",
+        "line":  15,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_profiling\\test_tracing_profiler.py",
+        "line":  240,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\test\\test_tomllib\\test_data.py",
+        "line":  16,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\tkinter\\filedialog.py",
+        "line":  33,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\turtledemo\\__main__.py",
+        "line":  109,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\unittest\\case.py",
+        "line":  130,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\unittest\\mock.py",
+        "line":  346,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\urllib\\request.py",
+        "line":  116,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\urllib\\request.py",
+        "line":  193,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\xml\\dom\\domreg.py",
+        "line":  19,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\xml\\etree\\ElementPath.py",
+        "line":  355,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\xml\\etree\\ElementTree.py",
+        "line":  1007,
+        "col":  0
+    },
+    {
+        "file":  "C:\\Users\\milan\\cpython\\Lib\\_pyrepl\\unix_eventqueue.py",
+        "line":  29,
+        "col":  0
+    }
+]

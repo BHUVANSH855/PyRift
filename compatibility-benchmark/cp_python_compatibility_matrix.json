@@ -1,0 +1,56 @@
+﻿[
+    {
+        "Python":  "3.10",
+        "LocaleResetlocale":  "Error: unsupported locale setting",
+        "UtcnowWarning":  "None",
+        "PurePathReserved":  false,
+        "PickleProtocol":  4,
+        "LocalsMutation":  0,
+        "Multiprocessing":  "spawn"
+    },
+    {
+        "Python":  "3.11",
+        "LocaleResetlocale":  "Error: unsupported locale setting",
+        "UtcnowWarning":  "None",
+        "PurePathReserved":  false,
+        "PickleProtocol":  4,
+        "LocalsMutation":  0,
+        "Multiprocessing":  "spawn"
+    },
+    {
+        "Python":  "3.12",
+        "LocaleResetlocale":  "Error: unsupported locale setting",
+        "UtcnowWarning":  "DeprecationWarning",
+        "PurePathReserved":  false,
+        "PickleProtocol":  4,
+        "LocalsMutation":  0,
+        "Multiprocessing":  "spawn"
+    },
+    {
+        "Python":  "3.13",
+        "LocaleResetlocale":  "AttributeError: module \u0027locale\u0027 has no attribute \u0027resetlocale\u0027",
+        "UtcnowWarning":  "DeprecationWarning",
+        "PurePathReserved":  false,
+        "PickleProtocol":  4,
+        "LocalsMutation":  0,
+        "Multiprocessing":  "spawn"
+    },
+    {
+        "Python":  "3.14",
+        "LocaleResetlocale":  "AttributeError: module \u0027locale\u0027 has no attribute \u0027resetlocale\u0027",
+        "UtcnowWarning":  "DeprecationWarning",
+        "PurePathReserved":  false,
+        "PickleProtocol":  5,
+        "LocalsMutation":  0,
+        "Multiprocessing":  "spawn"
+    },
+    {
+        "Python":  "3.15",
+        "LocaleResetlocale":  "AttributeError: module \u0027locale\u0027 has no attribute \u0027resetlocale\u0027",
+        "UtcnowWarning":  "DeprecationWarning",
+        "PurePathReserved":  "AttributeError: \u0027PureWindowsPath\u0027 object has no attribute \u0027is_reserved\u0027",
+        "PickleProtocol":  5,
+        "LocalsMutation":  0,
+        "Multiprocessing":  "spawn"
+    }
+]

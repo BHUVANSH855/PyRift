@@ -1,0 +1,19 @@
+﻿{
+  "datetime_utcnow": {
+    "result": "datetime",
+    "warnings": [
+      "DeprecationWarning"
+    ]
+  },
+  "locale_resetlocale": "AttributeError: module 'locale' has no attribute 'resetlocale'",
+  "locals_mutation": 0,
+  "multiprocessing_start_method": "spawn",
+  "pickle_default_protocol": 5,
+  "purepath_is_reserved": "AttributeError: 'PureWindowsPath' object has no attribute 'is_reserved'",
+  "python": "3.15.0rc1 (main, Aug  7 2026, 02:42:26) [MSC v.1951 64 bit (AMD64)]",
+  "version_info": [
+    3,
+    15,
+    0
+  ]
+}
