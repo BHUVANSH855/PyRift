@@ -26,10 +26,12 @@ class GetRefcountRule(BaseRule):
             if not isinstance(n, ast.Call):
                 continue
             func = n.func
-            if isinstance(func, ast.Attribute):
-                if (isinstance(func.value, ast.Name) and
-                        func.value.id == "sys" and
-                        func.attr == "getrefcount"):
+            if (
+                isinstance(func, ast.Attribute)
+                and isinstance(func.value, ast.Name)
+                and func.value.id == "sys"
+                and func.attr == "getrefcount"
+            ):
                     findings.append(Finding(
                         file=filename,
                         line=n.lineno,

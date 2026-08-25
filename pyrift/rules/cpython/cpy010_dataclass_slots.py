@@ -39,8 +39,7 @@ class DataclassSlotsRule(BaseRule):
                     continue
 
                 for kw in decorator.keywords:
-                    if kw.arg == "slots":
-                        if isinstance(kw.value, ast.Constant) and kw.value.value:
+                    if kw.arg == "slots" and isinstance(kw.value, ast.Constant) and kw.value.value:
                             findings.append(Finding(
                                 file=filename,
                                 line=decorator.lineno,

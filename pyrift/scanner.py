@@ -7,13 +7,15 @@ Parses Python files into ASTs and runs all registered rules.
 from __future__ import annotations
 
 import ast
+import logging
 import os
 from collections.abc import Iterator
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 from .base_rule import BaseRule
 from .finding import Finding, Runtime
-from .targets import TargetConfig, load_project_targets
 from .rules.cpython.cpy001_dict_ordering import DictOrderingRule
 from .rules.cpython.cpy002_exception_notes import ExceptionNotesRule
 from .rules.cpython.cpy003_union_type_syntax import UnionTypeSyntaxRule
@@ -59,6 +61,21 @@ from .rules.cpython.cpy042_aiter_anext import AiterAnextRule
 from .rules.cpython.cpy043_math_lcm import MathLcmRule
 from .rules.cpython.cpy044_math_gcd_multi import MathGcdMultiRule
 from .rules.cpython.cpy045_nan_hash import NanHashRule
+from .rules.cpython.cpy046_open_encoding import OpenEncodingRule
+from .rules.cpython.cpy047_bytesstring_removed import ByteStringRemovedRule
+from .rules.cpython.cpy048_concurrent_interpreters import ConcurrentInterpretersRule
+from .rules.cpython.cpy049_compression_zstd import CompressionZstdRule
+from .rules.cpython.cpy050_purepatth_is_reserved import PurePathIsReservedRule
+from .rules.cpython.cpy051_free_threaded_global_state import FreeThreadedGlobalStateRule
+from .rules.cpython.cpy052_free_threaded_threading_local import (
+    FreeThreadedThreadingLocalRule,
+)
+from .rules.cpython.cpy053_typing_get_overloads import TypingGetOverloadsRule
+from .rules.cpython.cpy054_int_trunc import IntTruncRule
+from .rules.cpython.cpy055_notimplemented_bool import NotImplementedBoolRule
+from .rules.cpython.cpy057_pickle_protocol import PickleProtocolRule
+from .rules.cpython.cpy062_template_string import TemplateStringRule
+from .rules.cpython.cpy063_annotationlib import AnnotationLibRule
 from .rules.pypy.ppy001_gc_finalizer import GcFinalizerRule
 from .rules.pypy.ppy002_ctypes import CtypesRule
 from .rules.pypy.ppy003_getrefcount import GetRefcountRule
@@ -104,6 +121,9 @@ from .rules.pypy.ppy042_print_flush import PrintFlushRule
 from .rules.pypy.ppy043_slots_memory import SlotsMemorypyRule
 from .rules.pypy.ppy044_exception_chaining import ExceptionChainingRule
 from .rules.pypy.ppy045_sys_settrace import SysSettraceRule
+from .rules.pypy.ppy046_debug_constant import DebugConstantRule
+from .rules.pypy.ppy047_ctypes_find_library import CtypesFindLibraryRule
+from .targets import TargetConfig, load_project_targets
 
 ALL_RULES: list[BaseRule] = [
     DictOrderingRule(),
@@ -196,6 +216,21 @@ ALL_RULES: list[BaseRule] = [
     SlotsMemorypyRule(),
     ExceptionChainingRule(),
     SysSettraceRule(),
+    OpenEncodingRule(),
+    ByteStringRemovedRule(),
+    ConcurrentInterpretersRule(),
+    CompressionZstdRule(),
+    PurePathIsReservedRule(),
+    FreeThreadedGlobalStateRule(),
+    FreeThreadedThreadingLocalRule(),
+    TypingGetOverloadsRule(),
+    DebugConstantRule(),
+    CtypesFindLibraryRule(),
+    IntTruncRule(),
+    NotImplementedBoolRule(),
+    PickleProtocolRule(),
+    TemplateStringRule(),
+    AnnotationLibRule(),
 ]
 
 SKIP_DIRS = {
@@ -281,8 +316,13 @@ def scan_file(filepath: str | Path,
     for rule in rules:
         try:
             findings.extend(rule.check(tree, str(filepath)))
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(
+                "Rule %s failed for %s: %s",
+                rule.rule_id,
+                filepath,
+                exc,
+            )
 
     return findings
 

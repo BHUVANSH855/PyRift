@@ -24,13 +24,14 @@ class HashRandomisationRule(BaseRule):
         findings: list[Finding] = []
         for n in ast.walk(node):
             # Detect os.environ['PYTHONHASHSEED'] or os.getenv('PYTHONHASHSEED')
-            if isinstance(n, ast.Subscript):
-                if isinstance(n.value, ast.Attribute):
-                    if n.value.attr == "environ":
-                        slice_node = n.slice
-                        if isinstance(slice_node, ast.Constant):
-                            if slice_node.value == "PYTHONHASHSEED":
-                                findings.append(self._make(filename, n))
+            if (
+                isinstance(n, ast.Subscript)
+                and isinstance(n.value, ast.Attribute)
+                and n.value.attr == "environ"
+            ):
+                slice_node = n.slice
+                if isinstance(slice_node, ast.Constant) and slice_node.value == "PYTHONHASHSEED":
+                    findings.append(self._make(filename, n))
             if isinstance(n, ast.Call):
                 func = n.func
                 if (isinstance(func, ast.Attribute) and

@@ -8,6 +8,7 @@ much later. Code relying on __del__ silently leaks on PyPy.
 from __future__ import annotations
 
 import ast
+from typing import ClassVar
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
@@ -18,9 +19,14 @@ class GcFinalizerRule(BaseRule):
     title   = "Relying on __del__ for resource cleanup breaks on PyPy"
     runtime = "pypy"
 
-    RESOURCE_PATTERNS = {
-        "close", "flush", "release", "disconnect",
-        "cleanup", "shutdown", "terminate",
+    RESOURCE_PATTERNS: ClassVar[set[str]] = {
+        "close",
+        "flush",
+        "release",
+        "disconnect",
+        "cleanup",
+        "shutdown",
+        "terminate",
     }
 
     def check(self, node: ast.AST, filename: str) -> list[Finding]:

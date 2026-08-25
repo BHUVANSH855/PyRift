@@ -23,10 +23,12 @@ class AsyncioTimeoutRule(BaseRule):
         findings: list[Finding] = []
 
         for n in ast.walk(node):
-            if isinstance(n, ast.Attribute):
-                if (isinstance(n.value, ast.Name) and
-                        n.value.id == "asyncio" and
-                        n.attr in ASYNCIO_311):
+            if (
+                isinstance(n, ast.Attribute)
+                and isinstance(n.value, ast.Name)
+                and n.value.id == "asyncio"
+                and n.attr in ASYNCIO_311
+            ):
                     findings.append(Finding(
                         file=filename,
                         line=n.lineno,

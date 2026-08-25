@@ -11,7 +11,6 @@ from pathlib import Path
 from .finding import Finding
 from .fingerprint import finding_fingerprint
 
-
 BASELINE_VERSION = 1
 DEFAULT_BASELINE_FILE = ".pyrift-baseline.json"
 

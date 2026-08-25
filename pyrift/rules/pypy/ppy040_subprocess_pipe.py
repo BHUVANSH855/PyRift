@@ -34,9 +34,11 @@ class SubprocessPipeRule(BaseRule):
                 continue
             # Check if stdout=PIPE or stdin=PIPE
             for kw in n.keywords:
-                if kw.arg in ("stdout", "stdin", "stderr"):
-                    if (isinstance(kw.value, ast.Attribute) and
-                            kw.value.attr == "PIPE"):
+                if (
+                    kw.arg in ("stdout", "stdin", "stderr")
+                    and isinstance(kw.value, ast.Attribute)
+                    and kw.value.attr == "PIPE"
+                ):
                         findings.append(Finding(
                             file=filename,
                             line=n.lineno,

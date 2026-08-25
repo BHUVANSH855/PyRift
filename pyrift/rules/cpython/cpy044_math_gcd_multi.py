@@ -24,12 +24,13 @@ class MathGcdMultiRule(BaseRule):
             if not isinstance(n, ast.Call):
                 continue
             func = n.func
-            if (isinstance(func, ast.Attribute) and
-                    func.attr == "gcd" and
-                    isinstance(func.value, ast.Name) and
-                    func.value.id == "math"):
-                # Only flag if called with more than 2 args
-                if len(n.args) > 2:
+            if (
+                isinstance(func, ast.Attribute)
+                and func.attr == "gcd"
+                and isinstance(func.value, ast.Name)
+                and func.value.id == "math"
+                and len(n.args) > 2
+            ):
                     findings.append(Finding(
                         file=filename,
                         line=n.lineno,

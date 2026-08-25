@@ -46,33 +46,33 @@ class IntegerIdentityRule(BaseRule):
                 and not isinstance(node.value, bool)
             )
 
-        if isinstance(node, ast.UnaryOp):
-            if isinstance(node.op, (ast.UAdd, ast.USub)):
+        if isinstance(node, ast.UnaryOp) and isinstance(
+            node.op, (ast.UAdd, ast.USub)
+        ):
                 return IntegerIdentityRule._looks_like_integer(
                     node.operand
                 )
 
-        if isinstance(node, ast.BinOp):
-            if isinstance(
-                node.op,
-                (
-                    ast.Add,
-                    ast.Sub,
-                    ast.Mult,
-                    ast.FloorDiv,
-                    ast.Mod,
-                    ast.Pow,
-                    ast.LShift,
-                    ast.RShift,
-                    ast.BitAnd,
-                    ast.BitOr,
-                    ast.BitXor,
-                ),
-            ):
-                return (
-                    IntegerIdentityRule._looks_like_integer(node.left)
-                    and IntegerIdentityRule._looks_like_integer(node.right)
-                )
+        if isinstance(node, ast.BinOp) and isinstance(
+            node.op,
+            (
+                ast.Add,
+                ast.Sub,
+                ast.Mult,
+                ast.FloorDiv,
+                ast.Mod,
+                ast.Pow,
+                ast.LShift,
+                ast.RShift,
+                ast.BitAnd,
+                ast.BitOr,
+                ast.BitXor,
+            ),
+        ):
+            return (
+                IntegerIdentityRule._looks_like_integer(node.left)
+                and IntegerIdentityRule._looks_like_integer(node.right)
+            )
 
         return False
 

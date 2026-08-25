@@ -46,13 +46,18 @@ class IoBufferingRule(BaseRule):
             # positional arg index 1 is mode
             if len(n.args) >= 2:
                 mode_arg = n.args[1]
-                if isinstance(mode_arg, ast.Constant):
-                    if any(m in str(mode_arg.value) for m in ("w", "a", "x")):
+                if (
+                    isinstance(mode_arg, ast.Constant)
+                    and any(m in str(mode_arg.value) for m in ("w", "a", "x"))
+                ):
                         mode_is_write = True
             # keyword arg
             for kw in n.keywords:
-                if kw.arg == "mode" and isinstance(kw.value, ast.Constant):
-                    if any(m in str(kw.value.value) for m in ("w", "a", "x")):
+                if (
+                    kw.arg == "mode"
+                    and isinstance(kw.value, ast.Constant)
+                    and any(m in str(kw.value.value) for m in ("w", "a", "x"))
+                ):
                         mode_is_write = True
 
             if not mode_is_write:

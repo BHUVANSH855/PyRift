@@ -137,7 +137,7 @@ def test_load_requires_python_without_tomllib(tmp_path, monkeypatch):
         'requires-python = ">=3.10,<3.14"\n'
     )
 
-    import pyrift.targets as targets
+    from pyrift import targets
 
     monkeypatch.setattr(targets, "tomllib", None)
 

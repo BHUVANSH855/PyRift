@@ -36,8 +36,7 @@ class ArrayTypeCodeRule(BaseRule):
                 continue
 
             # Check first argument is the 'u' type code
-            if n.args and isinstance(n.args[0], ast.Constant):
-                if n.args[0].value == "u":
+            if n.args and isinstance(n.args[0], ast.Constant) and n.args[0].value == "u":
                     findings.append(Finding(
                         file=filename,
                         line=n.lineno,

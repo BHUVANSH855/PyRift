@@ -1,7 +1,4 @@
 import json
-from pathlib import Path
-
-import pytest
 
 from pyrift.baseline import (
     DEFAULT_BASELINE_FILE,
@@ -9,7 +6,7 @@ from pyrift.baseline import (
     filter_baseline_findings,
     load_baseline,
 )
-from pyrift.scanner import ScanResult, scan
+from pyrift.scanner import scan
 
 
 def test_real_scan_baseline_workflow(tmp_path, monkeypatch):

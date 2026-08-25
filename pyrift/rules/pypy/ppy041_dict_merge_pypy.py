@@ -41,9 +41,8 @@ class DictMergePypyRule(BaseRule):
         if isinstance(node, ast.Name):
             return node.id == "dict"
 
-        if isinstance(node, ast.Subscript):
-            if isinstance(node.value, ast.Name):
-                return node.value.id == "dict"
+        if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name):
+            return node.value.id == "dict"
 
         if isinstance(node, ast.Attribute):
             return node.attr == "dict"

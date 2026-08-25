@@ -17,7 +17,6 @@ except ModuleNotFoundError:
 
 from .finding import Finding, Runtime
 
-
 _VERSION_RE = re.compile(r"^(\d+)(?:\.(\d+))?$")
 
 _REQUIRES_PYTHON_RE = re.compile(
@@ -33,7 +32,7 @@ class PythonVersion:
     minor: int
 
     @classmethod
-    def parse(cls, value: str) -> "PythonVersion":
+    def parse(cls, value: str) -> PythonVersion:
         value = value.strip()
 
         match = _VERSION_RE.fullmatch(value)
@@ -45,16 +44,16 @@ class PythonVersion:
             minor=int(match.group(2) or 0),
         )
 
-    def __lt__(self, other: "PythonVersion") -> bool:
+    def __lt__(self, other: PythonVersion) -> bool:
         return (self.major, self.minor) < (other.major, other.minor)
 
-    def __le__(self, other: "PythonVersion") -> bool:
+    def __le__(self, other: PythonVersion) -> bool:
         return (self.major, self.minor) <= (other.major, other.minor)
 
-    def __gt__(self, other: "PythonVersion") -> bool:
+    def __gt__(self, other: PythonVersion) -> bool:
         return (self.major, self.minor) > (other.major, other.minor)
 
-    def __ge__(self, other: "PythonVersion") -> bool:
+    def __ge__(self, other: PythonVersion) -> bool:
         return (self.major, self.minor) >= (other.major, other.minor)
 
     def __str__(self) -> str:
@@ -91,15 +90,18 @@ class TargetConfig:
             else None
         )
 
-        if self.maximum is not None and finding_min is not None:
-            if finding_min > self.maximum:
-                return False
+        if (
+            self.maximum is not None
+            and finding_min is not None
+            and finding_min > self.maximum
+        ):
+            return False
 
-        if self.minimum is not None and finding_max is not None:
-            if finding_max < self.minimum:
-                return False
-
-        return True
+        return not (
+            self.minimum is not None
+            and finding_max is not None
+            and finding_max < self.minimum
+        )
 
 
 def _parse_version_specifier(specifier: str) -> TargetConfig:

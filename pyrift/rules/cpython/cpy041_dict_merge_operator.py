@@ -50,8 +50,11 @@ class DictMergeOperatorRule(BaseRule):
                         docs_url="https://peps.python.org/pep-0584/",
                     ))
             # Detect d1 |= d2
-            if isinstance(n, ast.AugAssign) and isinstance(n.op, ast.BitOr):
-                if isinstance(n.target, ast.Name):
+            if (
+                isinstance(n, ast.AugAssign)
+                and isinstance(n.op, ast.BitOr)
+                and isinstance(n.target, ast.Name)
+            ):
                     findings.append(Finding(
                         file=filename,
                         line=n.lineno,

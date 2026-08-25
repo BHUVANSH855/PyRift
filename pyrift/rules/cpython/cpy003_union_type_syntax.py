@@ -55,7 +55,11 @@ class UnionTypeSyntaxRule(BaseRule):
         for n in ast.walk(tree):
             if isinstance(n, ast.Call):
                 func = n.func
-                if isinstance(func, ast.Name) and func.id in ("isinstance", "issubclass"):
-                    if len(n.args) >= 2 and n.args[1] is target:
-                        return True
+                if (
+                    isinstance(func, ast.Name)
+                    and func.id in ("isinstance", "issubclass")
+                    and len(n.args) >= 2
+                    and n.args[1] is target
+                ):
+                    return True
         return False

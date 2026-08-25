@@ -37,12 +37,11 @@ class CExtensionsRule(BaseRule):
                     if base in KNOWN_PROBLEMATIC:
                         mod = base
                         line, col = n.lineno, n.col_offset
-            elif isinstance(n, ast.ImportFrom):
-                if n.module:
-                    base = n.module.split(".")[0]
-                    if base in KNOWN_PROBLEMATIC:
-                        mod = base
-                        line, col = n.lineno, n.col_offset
+            elif isinstance(n, ast.ImportFrom) and n.module:
+                base = n.module.split(".")[0]
+                if base in KNOWN_PROBLEMATIC:
+                    mod = base
+                    line, col = n.lineno, n.col_offset
             if mod:
                 findings.append(Finding(
                     file=filename,

@@ -33,10 +33,14 @@ class NanHashRule(BaseRule):
             # Detect hash(float('nan'))
             if isinstance(arg, ast.Call):
                 inner = arg.func
-                if isinstance(inner, ast.Name) and inner.id == "float":
-                    if arg.args and isinstance(arg.args[0], ast.Constant):
-                        if str(arg.args[0].value).lower() in ("nan", "+nan", "-nan"):
-                            findings.append(Finding(
+                if (
+                    isinstance(inner, ast.Name)
+                    and inner.id == "float"
+                    and arg.args
+                    and isinstance(arg.args[0], ast.Constant)
+                    and str(arg.args[0].value).lower() in ("nan", "+nan", "-nan")
+                ):
+                    findings.append(Finding(
                                 file=filename,
                                 line=n.lineno,
                                 col=n.col_offset,

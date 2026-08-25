@@ -37,10 +37,9 @@ class RemovedModulesRule(BaseRule):
                     if alias.name in REMOVED_313:
                         mod = alias.name
                         line, col = n.lineno, n.col_offset
-            elif isinstance(n, ast.ImportFrom):
-                if n.module in REMOVED_313:
-                    mod = n.module
-                    line, col = n.lineno, n.col_offset
+            elif isinstance(n, ast.ImportFrom) and n.module in REMOVED_313:
+                mod = n.module
+                line, col = n.lineno, n.col_offset
 
             if mod:
                 findings.append(Finding(

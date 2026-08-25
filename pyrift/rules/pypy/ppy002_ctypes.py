@@ -35,8 +35,7 @@ class CtypesRule(BaseRule):
                 for alias in n.names:
                     if alias.name.startswith("ctypes"):
                         ctypes_imported = True
-            elif isinstance(n, ast.ImportFrom):
-                if n.module and n.module.startswith("ctypes"):
+            elif isinstance(n, ast.ImportFrom) and n.module and n.module.startswith("ctypes"):
                     ctypes_imported = True
 
         if not ctypes_imported:

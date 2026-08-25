@@ -29,8 +29,11 @@ class OpenFlushRule(BaseRule):
                 continue
             # Check for buffering=1 (line buffering) keyword
             for kw in n.keywords:
-                if kw.arg == "buffering":
-                    if isinstance(kw.value, ast.Constant) and kw.value.value == 1:
+                if (
+                    kw.arg == "buffering"
+                    and isinstance(kw.value, ast.Constant)
+                    and kw.value.value == 1
+                ):
                         findings.append(Finding(
                             file=filename,
                             line=n.lineno,

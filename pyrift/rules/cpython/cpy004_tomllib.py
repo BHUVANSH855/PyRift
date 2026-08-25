@@ -25,9 +25,8 @@ class TomllibRule(BaseRule):
                 for alias in n.names:
                     if alias.name == "tomllib":
                         findings.append(self._make(filename, n.lineno, n.col_offset))
-            elif isinstance(n, ast.ImportFrom):
-                if n.module == "tomllib":
-                    findings.append(self._make(filename, n.lineno, n.col_offset))
+            elif isinstance(n, ast.ImportFrom) and n.module == "tomllib":
+                findings.append(self._make(filename, n.lineno, n.col_offset))
 
         return findings
 

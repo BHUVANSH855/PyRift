@@ -27,9 +27,8 @@ class TimeitRule(BaseRule):
                 for alias in n.names:
                     if alias.name == "timeit":
                         findings.append(self._make(filename, n))
-            elif isinstance(n, ast.ImportFrom):
-                if n.module == "timeit":
-                    findings.append(self._make(filename, n))
+            elif isinstance(n, ast.ImportFrom) and n.module == "timeit":
+                findings.append(self._make(filename, n))
         return findings
 
     def _make(self, filename: str, n: ast.AST) -> Finding:

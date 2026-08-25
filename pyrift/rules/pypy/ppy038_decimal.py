@@ -29,10 +29,9 @@ class DecimalBackendRule(BaseRule):
                     if alias.name == "decimal":
                         mod = alias.name
                         line, col = n.lineno, n.col_offset
-            elif isinstance(n, ast.ImportFrom):
-                if n.module == "decimal":
-                    mod = n.module
-                    line, col = n.lineno, n.col_offset
+            elif isinstance(n, ast.ImportFrom) and n.module == "decimal":
+                mod = n.module
+                line, col = n.lineno, n.col_offset
             if mod:
                 findings.append(Finding(
                     file=filename,

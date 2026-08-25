@@ -7,6 +7,7 @@ typing.Required and typing.NotRequired were added in Python 3.11
 from __future__ import annotations
 
 import ast
+from typing import ClassVar
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
@@ -17,7 +18,7 @@ class RequiredRule(BaseRule):
     title   = "typing.Required / NotRequired requires Python 3.11+"
     runtime = "cpython"
 
-    TARGETS = {"Required", "NotRequired"}
+    TARGETS: ClassVar[set[str]] = {"Required", "NotRequired"}
 
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []

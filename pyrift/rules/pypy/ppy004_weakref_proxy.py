@@ -30,9 +30,8 @@ class WeakrefProxyRule(BaseRule):
             if isinstance(func, ast.Attribute):
                 if func.attr == "proxy":
                     is_proxy = True
-            elif isinstance(func, ast.Name):
-                if func.id == "proxy":
-                    is_proxy = True
+            elif isinstance(func, ast.Name) and func.id == "proxy":
+                is_proxy = True
 
             if is_proxy:
                 findings.append(Finding(

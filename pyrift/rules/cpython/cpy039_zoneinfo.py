@@ -26,10 +26,9 @@ class ZoneInfoRule(BaseRule):
                     if alias.name == "zoneinfo":
                         mod = alias.name
                         line, col = n.lineno, n.col_offset
-            elif isinstance(n, ast.ImportFrom):
-                if n.module == "zoneinfo":
-                    mod = n.module
-                    line, col = n.lineno, n.col_offset
+            elif isinstance(n, ast.ImportFrom) and n.module == "zoneinfo":
+                mod = n.module
+                line, col = n.lineno, n.col_offset
             if mod:
                 findings.append(Finding(
                     file=filename,

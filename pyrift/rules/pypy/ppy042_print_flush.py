@@ -28,8 +28,11 @@ class PrintFlushRule(BaseRule):
             if not (isinstance(func, ast.Name) and func.id == "print"):
                 continue
             for kw in n.keywords:
-                if kw.arg == "flush":
-                    if isinstance(kw.value, ast.Constant) and kw.value.value:
+                if (
+                    kw.arg == "flush"
+                    and isinstance(kw.value, ast.Constant)
+                    and kw.value.value
+                ):
                         findings.append(Finding(
                             file=filename,
                             line=n.lineno,

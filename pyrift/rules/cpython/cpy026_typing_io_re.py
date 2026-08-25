@@ -23,8 +23,7 @@ class TypingIoReRule(BaseRule):
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
-            if isinstance(n, ast.ImportFrom):
-                if n.module in REMOVED_NAMESPACES:
+            if isinstance(n, ast.ImportFrom) and n.module in REMOVED_NAMESPACES:
                     findings.append(Finding(
                         file=filename,
                         line=n.lineno,

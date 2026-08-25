@@ -28,9 +28,11 @@ class Lib2to3Rule(BaseRule):
                        alias.name.startswith("lib2to3."):
                         mod = alias.name
                         line, col = n.lineno, n.col_offset
-            elif isinstance(n, ast.ImportFrom):
-                if n.module and (n.module == "lib2to3" or
-                                 n.module.startswith("lib2to3.")):
+            elif (
+                isinstance(n, ast.ImportFrom)
+                and n.module
+                and (n.module == "lib2to3" or n.module.startswith("lib2to3."))
+            ):
                     mod = n.module
                     line, col = n.lineno, n.col_offset
             if mod:

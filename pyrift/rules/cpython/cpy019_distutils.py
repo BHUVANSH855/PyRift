@@ -41,9 +41,11 @@ class DistutilsRule(BaseRule):
                        alias.name.startswith("distutils."):
                         mod = alias.name
                         line, col = n.lineno, n.col_offset
-            elif isinstance(n, ast.ImportFrom):
-                if n.module and (n.module in DISTUTILS_MODULES or
-                                 n.module.startswith("distutils")):
+            elif (
+                isinstance(n, ast.ImportFrom)
+                and n.module
+                and (n.module in DISTUTILS_MODULES or n.module.startswith("distutils"))
+            ):
                     mod = n.module
                     line, col = n.lineno, n.col_offset
             if mod:
