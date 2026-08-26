@@ -25,6 +25,9 @@ CORPUS = {
     "flask":    {"max_findings": 60,  "max_errors": 10},
     "asyncio":  {"max_findings": 120, "max_errors": 20},
     "email":    {"max_findings": 60,  "max_errors": 10},
+    "httpx":    {"max_findings": 40,  "max_errors": 5},
+    "logging":  {"max_findings": 40,  "max_errors": 5},
+    "http":     {"max_findings": 30,  "max_errors": 10},
 }
 
 

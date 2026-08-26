@@ -172,3 +172,53 @@ def collect_imports(node: ast.AST) -> ImportMap:
                 ))
 
     return imp_map
+
+def collect_dynamic_imports(node: ast.AST) -> list[ImportInfo]:
+    """
+    Find dynamic imports via importlib.import_module() and __import__().
+
+    These are not caught by collect_imports() since they are not
+    ast.Import or ast.ImportFrom nodes.
+
+    Returns ImportInfo objects for each dynamic import where the
+    module name is a string literal (statically determinable).
+    """
+    results: list[ImportInfo] = []
+
+    for n in ast.walk(node):
+        if not isinstance(n, ast.Call):
+            continue
+
+        func = n.func
+        module_name: str | None = None
+
+        # Pattern: importlib.import_module('cgi')
+        if (
+            isinstance(func, ast.Attribute)
+            and func.attr == "import_module"
+            and isinstance(func.value, ast.Name)
+            and func.value.id == "importlib"
+            and n.args
+            and isinstance(n.args[0], ast.Constant)
+            and isinstance(n.args[0].value, str)
+        ) or (
+            isinstance(func, ast.Name)
+            and func.id == "__import__"
+            and n.args
+            and isinstance(n.args[0], ast.Constant)
+            and isinstance(n.args[0].value, str)
+        ):
+            module_name = n.args[0].value
+
+        if module_name:
+            results.append(ImportInfo(
+                module=module_name,
+                name=None,
+                alias=None,
+                line=n.lineno,
+                col=n.col_offset,
+                node=n,
+                version_guarded=None,
+            ))
+
+    return results

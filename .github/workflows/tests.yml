@@ -38,6 +38,10 @@ jobs:
       - name: Corpus benchmark
         run: python benchmark/corpus.py
 
+      - name: Runtime differential harness
+        run: python benchmark/runtime_harness.py
+        continue-on-error: true
+
       - name: Check diff whitespace
         run: git diff --check
 

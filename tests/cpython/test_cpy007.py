@@ -32,3 +32,20 @@ class TestCPY007:
     def test_multiple_removed_modules(self):
         findings = run(self.rule, "import cgi\nimport aifc\nimport uu")
         assert len(findings) == 3
+    def test_detects_importlib_dynamic(self):
+        findings = run(self.rule, "importlib.import_module('cgi')")
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY007"
+
+    def test_detects_dunder_import(self):
+        findings = run(self.rule, "__import__('telnetlib')")
+        assert len(findings) == 1
+
+    def test_clean_dynamic_import_non_literal(self):
+        # Can't detect dynamic imports with non-literal module names
+        findings = run(self.rule, "importlib.import_module(module_name)")
+        assert len(findings) == 0
+
+    def test_clean_dynamic_import_not_removed(self):
+        findings = run(self.rule, "importlib.import_module('json')")
+        assert len(findings) == 0
