@@ -280,9 +280,14 @@ GOLDEN = {
     ],
     "PPY016": [
         (
-            "x = obj.__dict__",
+            "keys = list(obj.__dict__)",
             True,
-            "external __dict__",
+            "external __dict__ order-sensitive iteration",
+        ),
+        (
+            "x = obj.__dict__",
+            False,
+            "plain external __dict__ access",
         ),
         (
             (
@@ -291,7 +296,16 @@ GOLDEN = {
                 "        return self.__dict__"
             ),
             False,
-            "self.__dict__ in method",
+            "self.__dict__ plain access",
+        ),
+        (
+            (
+                "class A:\n"
+                "    def f(self):\n"
+                "        return list(self.__dict__)"
+            ),
+            True,
+            "self.__dict__ order-sensitive iteration",
         ),
     ],
     "PPY031": [

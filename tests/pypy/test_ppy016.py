@@ -25,10 +25,26 @@ class TestPPY016:
 
         assert len(findings) == 0
 
+    def test_plain_subscript_access_is_not_order_sensitive(self):
+        findings = run(
+            self.rule,
+            'x = obj.__dict__["name"]',
+        )
+
+        assert len(findings) == 0
+
     def test_detects_dict_iteration(self):
         findings = run(
             self.rule,
             "for k in obj.__dict__: pass",
+        )
+
+        assert len(findings) == 1
+
+    def test_detects_comprehension_iteration(self):
+        findings = run(
+            self.rule,
+            "[key for key in obj.__dict__]",
         )
 
         assert len(findings) == 1
@@ -41,13 +57,114 @@ class TestPPY016:
 
         assert len(findings) == 1
 
-    def test_self_dict_inside_method_is_not_flagged(self):
+    def test_detects_tuple_conversion(self):
+        findings = run(
+            self.rule,
+            "keys = tuple(obj.__dict__)",
+        )
+
+        assert len(findings) == 1
+
+    def test_detects_iter_conversion(self):
+        findings = run(
+            self.rule,
+            "keys = iter(obj.__dict__)",
+        )
+
+        assert len(findings) == 1
+
+    def test_detects_sorted_conversion(self):
+        findings = run(
+            self.rule,
+            "keys = sorted(obj.__dict__)",
+        )
+
+        assert len(findings) == 1
+
+    def test_detects_reversed_conversion(self):
+        findings = run(
+            self.rule,
+            "keys = reversed(obj.__dict__)",
+        )
+
+        assert len(findings) == 1
+
+    def test_detects_dict_conversion(self):
+        findings = run(
+            self.rule,
+            "data = dict(obj.__dict__)",
+        )
+
+        assert len(findings) == 1
+
+    def test_detects_dict_keys(self):
+        findings = run(
+            self.rule,
+            "keys = obj.__dict__.keys()",
+        )
+
+        assert len(findings) == 1
+
+    def test_detects_dict_values(self):
+        findings = run(
+            self.rule,
+            "values = obj.__dict__.values()",
+        )
+
+        assert len(findings) == 1
+
+    def test_detects_dict_items(self):
+        findings = run(
+            self.rule,
+            "items = obj.__dict__.items()",
+        )
+
+        assert len(findings) == 1
+
+    def test_self_dict_order_sensitive_access_is_flagged(self):
         findings = run(
             self.rule,
             """
             class A:
                 def f(self):
                     return list(self.__dict__)
+            """,
+        )
+
+        assert len(findings) == 1
+
+    def test_self_dict_iteration_is_flagged(self):
+        findings = run(
+            self.rule,
+            """
+            class A:
+                def f(self):
+                    for key in self.__dict__:
+                        print(key)
+            """,
+        )
+
+        assert len(findings) == 1
+
+    def test_self_dict_plain_access_is_not_flagged(self):
+        findings = run(
+            self.rule,
+            """
+            class A:
+                def f(self):
+                    return self.__dict__
+            """,
+        )
+
+        assert len(findings) == 0
+
+    def test_self_dict_subscript_access_is_not_flagged(self):
+        findings = run(
+            self.rule,
+            """
+            class A:
+                def f(self):
+                    return self.__dict__["name"]
             """,
         )
 

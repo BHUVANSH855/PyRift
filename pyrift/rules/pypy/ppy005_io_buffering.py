@@ -17,6 +17,14 @@ class IoBufferingRule(BaseRule):
     runtime = "pypy"
 
     @staticmethod
+    def _is_write_mode(mode: str) -> bool:
+        """Return whether an open() mode can write to the file."""
+        return any(
+            flag in mode
+            for flag in ("w", "a", "x", "+")
+        )
+
+    @staticmethod
     def _is_write_open(node: ast.Call) -> bool:
         func = node.func
 
@@ -38,10 +46,7 @@ class IoBufferingRule(BaseRule):
             if (
                 isinstance(mode, ast.Constant)
                 and isinstance(mode.value, str)
-                and any(
-                    flag in mode.value
-                    for flag in ("w", "a", "x")
-                )
+                and IoBufferingRule._is_write_mode(mode.value)
             ):
                 return True
 
@@ -50,10 +55,7 @@ class IoBufferingRule(BaseRule):
                 keyword.arg == "mode"
                 and isinstance(keyword.value, ast.Constant)
                 and isinstance(keyword.value.value, str)
-                and any(
-                    flag in keyword.value.value
-                    for flag in ("w", "a", "x")
-                )
+                and IoBufferingRule._is_write_mode(keyword.value.value)
             ):
                 return True
 

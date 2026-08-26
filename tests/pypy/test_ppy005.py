@@ -32,10 +32,43 @@ class TestPPY005:
 
         assert len(findings) == 1
 
+    def test_detects_exclusive_mode(self):
+        findings = run(
+            self.rule,
+            "f = open('file.txt', 'x')",
+        )
+
+        assert len(findings) == 1
+
+    def test_detects_read_write_mode(self):
+        for mode in ("r+", "w+", "a+"):
+            findings = run(
+                self.rule,
+                f"f = open('file.txt', '{mode}')",
+            )
+
+            assert len(findings) == 1, mode
+
+    def test_detects_keyword_write_mode(self):
+        findings = run(
+            self.rule,
+            "f = open('file.txt', mode='w')",
+        )
+
+        assert len(findings) == 1
+
     def test_clean_read_mode(self):
         findings = run(
             self.rule,
             "f = open('file.txt', 'r')",
+        )
+
+        assert len(findings) == 0
+
+    def test_clean_binary_read_mode(self):
+        findings = run(
+            self.rule,
+            "f = open('file.txt', 'rb')",
         )
 
         assert len(findings) == 0
@@ -45,6 +78,17 @@ class TestPPY005:
             self.rule,
             """
             with open("file.txt", "w") as f:
+                f.write("hello")
+            """,
+        )
+
+        assert len(findings) == 0
+
+    def test_context_manager_with_keyword_mode_is_not_flagged(self):
+        findings = run(
+            self.rule,
+            """
+            with open("file.txt", mode="w") as f:
                 f.write("hello")
             """,
         )

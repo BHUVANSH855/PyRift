@@ -75,7 +75,8 @@ CORPUS = {
             "PPY027": 4,
             "PPY016": 2,
             "PPY012": 2,
-            "CPY035": 2,
+            # Current reviewed stdlib corpus produces three CPY035 findings.
+            "CPY035": 3,
         },
     },
     "httpx": {

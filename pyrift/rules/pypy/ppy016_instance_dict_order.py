@@ -12,35 +12,6 @@ from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 
 
-def _is_self_dict(node: ast.Attribute) -> bool:
-    return (
-        isinstance(node.value, ast.Name)
-        and node.value.id in {"self", "cls", "mcs"}
-    )
-
-
-def _inside_class_method(
-    node: ast.AST,
-    parent_map: dict[int, ast.AST],
-) -> bool:
-    current = parent_map.get(id(node))
-    in_func = False
-
-    while current is not None:
-        if isinstance(
-            current,
-            (ast.FunctionDef, ast.AsyncFunctionDef),
-        ):
-            in_func = True
-
-        if isinstance(current, ast.ClassDef) and in_func:
-            return True
-
-        current = parent_map.get(id(current))
-
-    return False
-
-
 def _is_order_sensitive(
     node: ast.Attribute,
     parent_map: dict[int, ast.AST],
@@ -64,11 +35,27 @@ def _is_order_sensitive(
                 "iter",
                 "sorted",
                 "reversed",
+                "dict",
             }
 
         return False
 
-    return isinstance(current, ast.Subscript)
+    # Handles:
+    #     obj.__dict__.keys()
+    #     obj.__dict__.values()
+    #     obj.__dict__.items()
+    if isinstance(current, ast.Attribute):
+        if current.attr not in {"keys", "values", "items"}:
+            return False
+
+        call = parent_map.get(id(current))
+
+        return (
+            isinstance(call, ast.Call)
+            and call.func is current
+        )
+
+    return False
 
 
 class InstanceDictOrderRule(BaseRule):
@@ -94,15 +81,6 @@ class InstanceDictOrderRule(BaseRule):
                 continue
 
             if current.attr != "__dict__":
-                continue
-
-            if (
-                _is_self_dict(current)
-                and _inside_class_method(
-                    current,
-                    parent_map,
-                )
-            ):
                 continue
 
             if not _is_order_sensitive(
