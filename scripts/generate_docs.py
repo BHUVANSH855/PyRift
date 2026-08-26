@@ -68,7 +68,7 @@ def main() -> None:
     )
 
     README.write_text(content, encoding="utf-8")
-    print(f"README.md updated.")
+    print("README.md updated.")
 
 
 if __name__ == "__main__":
