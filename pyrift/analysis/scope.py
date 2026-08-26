@@ -20,15 +20,15 @@ def is_module_level(node: ast.AST,
     return isinstance(parent, ast.Module)
 
 
-def is_inside_class(node: ast.AST,
-                    parent_map: dict[int, ast.AST]) -> bool:
+def is_inside_class(
+    node: ast.AST,
+    parent_map: dict[int, ast.AST],
+) -> bool:
     """True if node is inside a ClassDef."""
     current = parent_map.get(id(node))
     while current is not None:
         if isinstance(current, ast.ClassDef):
             return True
-        if isinstance(current, ast.FunctionDef):
-            break
         current = parent_map.get(id(current))
     return False
 

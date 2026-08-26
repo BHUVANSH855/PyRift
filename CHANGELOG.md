@@ -29,9 +29,9 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - Dynamic import detection — `importlib.import_module()` and `__import__()`
 - Golden benchmark suite — 81/81 cases, CI precision gate
 - Self-scan quality gate — 120 files, 0 findings
-- Corpus benchmark — 7 real packages validated
+- Corpus benchmark — reviewed corpus gate covering third-party and standard-library packages
 - Runtime differential harness — 5 rules verified across 6 Python versions
-- Release gate — all checks must pass before PyPI publish
+- Release gate — lint, tests, benchmarks, self-scan, corpus, documentation, and package checks must pass before PyPI publish
 - Confidence field — HIGH/MEDIUM/LOW independent of severity
 - `by_statement()` dedup — multi-name from imports produce one finding
 - BOM-safe scanning — utf-8-sig encoding, 0 parse errors on BOM files

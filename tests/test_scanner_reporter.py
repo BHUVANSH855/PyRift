@@ -163,3 +163,48 @@ def test_scan_reports_rule_execution_errors(tmp_path):
     assert len(result.rule_errors) == 1
     assert "TEST-BROKEN" in result.rule_errors[0]
     assert "RuntimeError" in result.rule_errors[0]
+
+def test_json_includes_evidence_metadata():
+    from pyrift.finding import Finding, Runtime
+    from pyrift.reporter import to_json
+    from pyrift.scanner import ScanResult
+
+    finding = Finding(
+        file="example.py",
+        line=10,
+        rule_id="CPY051",
+        runtime=Runtime.CPYTHON,
+    )
+
+    result = ScanResult(
+        [finding],
+        files_scanned=1,
+    )
+
+    output = to_json(result)
+
+    assert '"evidence_type": "pep"' in output
+    assert '"evidence_source": "pep:703"' in output
+
+
+def test_markdown_includes_confidence_and_evidence():
+    from pyrift.finding import Finding, Runtime
+    from pyrift.reporter import to_markdown
+    from pyrift.scanner import ScanResult
+
+    finding = Finding(
+        file="example.py",
+        line=10,
+        rule_id="CPY051",
+        runtime=Runtime.CPYTHON,
+    )
+
+    result = ScanResult(
+        [finding],
+        files_scanned=1,
+    )
+
+    output = to_markdown(result)
+
+    assert "**Confidence:** `medium`" in output
+    assert "**Evidence:** `pep` (`pep:703`)" in output

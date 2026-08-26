@@ -1,10 +1,7 @@
 """
 PPY005 — File buffering behaviour differs on PyPy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-On CPython, writing to an unbuffered or line-buffered file flushes
-data to disk predictably. On PyPy, due to the GC and internal
-buffering differences, data written to files may not be flushed
-even when the file appears to be closed — silently losing data.
+Warn about writable files where lifecycle management is not explicit.
 """
 from __future__ import annotations
 
@@ -13,83 +10,125 @@ import ast
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 
-# open() modes that involve writing
-WRITE_MODES = {"w", "wb", "a", "ab", "w+", "wb+", "a+", "ab+", "x", "xb"}
-
 
 class IoBufferingRule(BaseRule):
     rule_id = "PPY005"
-    title   = "File write without explicit flush may lose data on PyPy"
+    title = "File write without explicit lifecycle management on PyPy"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    @staticmethod
+    def _is_write_open(node: ast.Call) -> bool:
+        func = node.func
+
+        is_open = (
+            isinstance(func, ast.Name)
+            and func.id == "open"
+        ) or (
+            isinstance(func, ast.Attribute)
+            and func.attr == "open"
+            and isinstance(func.value, ast.Name)
+            and func.value.id in {"io", "builtins"}
+        )
+
+        if not is_open:
+            return False
+
+        if len(node.args) >= 2:
+            mode = node.args[1]
+            if (
+                isinstance(mode, ast.Constant)
+                and isinstance(mode.value, str)
+                and any(
+                    flag in mode.value
+                    for flag in ("w", "a", "x")
+                )
+            ):
+                return True
+
+        for keyword in node.keywords:
+            if (
+                keyword.arg == "mode"
+                and isinstance(keyword.value, ast.Constant)
+                and isinstance(keyword.value.value, str)
+                and any(
+                    flag in keyword.value.value
+                    for flag in ("w", "a", "x")
+                )
+            ):
+                return True
+
+        return False
+
+    @staticmethod
+    def _is_context_manager_call(
+        node: ast.Call,
+        parent_map: dict[int, ast.AST],
+    ) -> bool:
+        current = parent_map.get(id(node))
+
+        while current is not None:
+            if isinstance(current, ast.withitem):
+                return current.context_expr is node
+
+            if isinstance(current, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                break
+
+            current = parent_map.get(id(current))
+
+        return False
+
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+    ) -> list[Finding]:
+        parent_map: dict[int, ast.AST] = {}
+
+        for parent in ast.walk(node):
+            for child in ast.iter_child_nodes(parent):
+                parent_map[id(child)] = parent
+
         findings: list[Finding] = []
 
-        for n in ast.walk(node):
-            # Detect: open(...) calls not used as context manager
-            if not isinstance(n, ast.Call):
+        for call in ast.walk(node):
+            if not isinstance(call, ast.Call):
                 continue
 
-            func = n.func
-            is_open = False
-            if isinstance(func, ast.Name) and func.id == "open" or (isinstance(func, ast.Attribute) and
-                  func.attr == "open" and
-                  isinstance(func.value, ast.Name) and
-                  func.value.id in ("io", "builtins")):
-                is_open = True
-
-            if not is_open:
+            if not self._is_write_open(call):
                 continue
 
-            # Check if mode argument suggests writing
-            mode_is_write = False
-            # positional arg index 1 is mode
-            if len(n.args) >= 2:
-                mode_arg = n.args[1]
-                if (
-                    isinstance(mode_arg, ast.Constant)
-                    and any(m in str(mode_arg.value) for m in ("w", "a", "x"))
-                ):
-                        mode_is_write = True
-            # keyword arg
-            for kw in n.keywords:
-                if (
-                    kw.arg == "mode"
-                    and isinstance(kw.value, ast.Constant)
-                    and any(m in str(kw.value.value) for m in ("w", "a", "x"))
-                ):
-                        mode_is_write = True
-
-            if not mode_is_write:
+            if self._is_context_manager_call(
+                call,
+                parent_map,
+            ):
                 continue
 
-            # Check if this open() call is NOT inside a 'with' statement
-            # We detect this by checking parent context — approximate:
-            # if the Call is directly assigned (not used as context manager)
-            findings.append(Finding(
-                file=filename,
-                line=n.lineno,
-                col=n.col_offset,
-                rule_id=self.rule_id,
-                title=self.title,
-                description=(
-                    "A file is opened for writing. On PyPy, file buffering "
-                    "behaviour differs from CPython — data may not be flushed "
-                    "to disk even after close() due to GC timing differences. "
-                    "Without explicit flush() or a context manager, writes can "
-                    "be silently lost on PyPy."
-                ),
-                severity=Severity.WARNING,
-                runtime=Runtime.PYPY,
-                suggestion=(
-                    "Always use 'with open(...) as f:' to guarantee flushing "
-                    "and closing. If not using a context manager, call "
-                    "f.flush() explicitly before f.close()."
-                ),
-                docs_url=(
-                    "https://doc.pypy.org/en/latest/cpython_differences.html"
-                    "#differences-related-to-garbage-collection-strategies"
-                ),
-            ))
+            findings.append(
+                Finding(
+                    file=filename,
+                    line=call.lineno,
+                    col=call.col_offset,
+                    rule_id=self.rule_id,
+                    title=self.title,
+                    description=(
+                        "A file is opened for writing without a "
+                        "context-manager lifecycle. PyPy's garbage "
+                        "collection and buffering behaviour can differ "
+                        "from CPython, so relying on implicit cleanup "
+                        "is less predictable."
+                    ),
+                    severity=Severity.WARNING,
+                    runtime=Runtime.PYPY,
+                    suggestion=(
+                        "Prefer 'with open(...) as f:' so that the "
+                        "file lifecycle is explicit and deterministic."
+                    ),
+                    docs_url=(
+                        "https://doc.pypy.org/en/latest/"
+                        "cpython_differences.html"
+                        "#differences-related-to-garbage-collection-strategies"
+                    ),
+                )
+            )
 
         return findings

@@ -1,11 +1,8 @@
 """
-PPY027 — Deleting module/class attributes is slower on PyPy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-On PyPy, module and class dictionaries are optimised under the
-assumption that deleting attributes is rare. Deleting attributes
-from modules or classes is significantly slower on PyPy than on
-CPython. Code that frequently deletes module-level attributes in
-hot paths will silently degrade performance on PyPy.
+PPY027 — Deleting module/class attributes may be slower on PyPy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This is a performance-oriented heuristic, so findings intentionally
+use conservative confidence/evidence metadata.
 """
 from __future__ import annotations
 
@@ -17,40 +14,50 @@ from pyrift.finding import Finding, Runtime, Severity
 
 class ModuleAttrDeleteRule(BaseRule):
     rule_id = "PPY027"
-    title   = "Deleting module/class attributes is significantly slower on PyPy"
+    title = "Deleting module/class attributes may be slower on PyPy"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+    ) -> list[Finding]:
         findings: list[Finding] = []
-        for n in ast.walk(node):
-            if not isinstance(n, ast.Delete):
+
+        for current in ast.walk(node):
+            if not isinstance(current, ast.Delete):
                 continue
-            for target in n.targets:
-                if isinstance(target, ast.Attribute):
-                    findings.append(Finding(
+
+            for target in current.targets:
+                if not isinstance(target, ast.Attribute):
+                    continue
+
+                findings.append(
+                    Finding(
                         file=filename,
-                        line=n.lineno,
-                        col=n.col_offset,
+                        line=current.lineno,
+                        col=current.col_offset,
                         rule_id=self.rule_id,
                         title=self.title,
                         description=(
                             f"Attribute '{target.attr}' is being deleted. "
-                            "On PyPy, module and class dictionaries are "
-                            "optimised under the assumption that deleting "
-                            "attributes is rare. Frequent attribute deletion "
-                            "is significantly slower on PyPy than on CPython "
-                            "and will silently degrade performance in hot paths."
+                            "PyPy may handle repeated module/class "
+                            "attribute deletion differently from CPython. "
+                            "This is a performance heuristic rather than "
+                            "proof of a hot-path regression."
                         ),
-                        severity=Severity.WARNING,
+                        severity=Severity.INFO,
                         runtime=Runtime.PYPY,
                         suggestion=(
-                            "Avoid frequent attribute deletion in hot code paths. "
-                            "Set attributes to None instead of deleting them, "
-                            "or restructure code to avoid deletion entirely."
+                            "If this deletion occurs in a hot path, benchmark the code "
+                            "on both CPython and PyPy before relying on equivalent "
+                            "performance. Otherwise, none is required."
                         ),
                         docs_url=(
-                            "https://doc.pypy.org/en/latest/cpython_differences.html"
-                            "#miscellaneous"
+                            "https://doc.pypy.org/en/latest/"
+                            "cpython_differences.html#miscellaneous"
                         ),
-                    ))
+                    )
+                )
+
         return findings

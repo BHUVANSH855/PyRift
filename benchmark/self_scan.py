@@ -2,79 +2,87 @@
 """
 Self-scan quality gate.
 
-Scans pyrift's own source and records expected finding counts.
-CI fails if findings exceed the reviewed threshold.
+Scans pyrift's own source using the production scanner.
 
-Run: python benchmark/self_scan.py
+The gate fails when:
+- source files cannot be parsed;
+- any rule crashes;
+- unexpected finding types appear;
+- unexpected finding counts appear.
+
+Run:
+    python benchmark/self_scan.py
 """
 from __future__ import annotations
 
-import ast
 import sys
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from pyrift import ALL_RULES
 
-# Reviewed thresholds -- update when findings are intentionally added
-# pyrift scans itself and should have minimal findings
-EXPECTED = {
-    "max_total": 15,       # reviewed threshold -- see known_findings below
-    "max_errors": 0,       # zero errors in our own code
-    "known_findings": [
-        # PPY009 -- id() in AST parent-map building -- pyrift/analysis/scope.py uses id() as AST node
-        # identity keys in parent_map dict. This is intentional -- we use
-        # id() to build a child->parent lookup, not for PyPy stability.
-        # These are false positives in pyrift's own infrastructure code.
-        "PPY009",
-    ],
-}
+from pyrift.scanner import scan
+
+# Exact reviewed findings expected from pyrift's own source.
+#
+# An empty mapping intentionally means that any new self-finding must
+# be reviewed before CI is allowed to pass.
+EXPECTED_RULE_COUNTS: dict[str, int] = {}
 
 
 def main() -> int:
     src_dir = Path(__file__).parent.parent / "pyrift"
-    findings = []
-    files = 0
-    parse_errors = 0
 
-    for path in src_dir.rglob("*.py"):
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-            for rule in ALL_RULES:
-                try:
-                    findings.extend(rule.check(tree, str(path)))
-                except Exception:  # noqa: S110
-                    pass
-            files += 1
-        except SyntaxError:
-            parse_errors += 1
+    result = scan(
+        src_dir,
+        use_project_config=False,
+    )
 
-    errors = [f for f in findings if f.severity.value == "error"]
-    warnings = [f for f in findings if f.severity.value == "warning"]
-
-    print(f"Self-scan: {files} files scanned, {parse_errors} skipped (parse errors), "
-          f"{len(findings)} findings ({len(errors)} ERR, {len(warnings)} WARN)")
-    if parse_errors > 0:
-        print(f"  [WARN] {parse_errors} file(s) could not be parsed")
-
-    if findings:
-        from collections import Counter
-        counts = Counter(f.rule_id for f in findings)
-        for rid, n in counts.most_common():
-            f = next(x for x in findings if x.rule_id == rid)
-            print(f"  {rid} ({n}x): {f.title}")
+    print(
+        f"Self-scan: {result.files_scanned} files scanned, "
+        f"{len(result.findings)} findings, "
+        f"{len(result.rule_errors)} rule execution errors"
+    )
 
     failed = False
-    if len(errors) > EXPECTED["max_errors"]:
-        print(f"[FAIL] Too many errors: {len(errors)} > {EXPECTED['max_errors']}")
-        failed = True
-    if len(findings) > EXPECTED["max_total"]:
-        print(f"[FAIL] Too many findings: {len(findings)} > {EXPECTED['max_total']}")
+
+    if result.rule_errors:
+        print(
+            f"[FAIL] {len(result.rule_errors)} rule execution "
+            "error(s) detected."
+        )
+        for error in result.rule_errors:
+            print(f"  {error}")
         failed = True
 
-    if not failed:
-        print("[OK] Self-scan passed.")
-    return 1 if failed else 0
+    actual = Counter(
+        finding.rule_id
+        for finding in result.findings
+    )
+
+    expected = Counter(EXPECTED_RULE_COUNTS)
+
+    for rule_id in sorted(set(actual) | set(expected)):
+        actual_count = actual.get(rule_id, 0)
+        expected_count = expected.get(rule_id, 0)
+
+        if actual_count != expected_count:
+            print(
+                f"[FAIL] {rule_id}: "
+                f"expected {expected_count}, "
+                f"found {actual_count}"
+            )
+            failed = True
+
+    if not result.findings:
+        print("[OK] No self-findings detected.")
+
+    if failed:
+        print("[FAIL] Self-scan quality gate failed.")
+        return 1
+
+    print("[OK] Self-scan passed.")
+    return 0
 
 
 if __name__ == "__main__":

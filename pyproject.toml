@@ -50,4 +50,4 @@ packages = ["pyrift"]
 exclude = ["compatibility-benchmark/"]
 
 [tool.ruff.lint]
-ignore = ["DTZ003", "BLE001", "B018", "EXE001", "PLW1510"]
+ignore = ["DTZ003", "B018", "EXE001", "PLW1510"]

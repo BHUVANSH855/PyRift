@@ -208,7 +208,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 ## Project status
 
 - **Version:** 0.8.0
-- **Rules:** 104 (58 CPython + 46 PyPy)
+- **Rules:** 104 total (58 CPython + 44 PyPy + 2 cross-runtime)
 - **Tests:** 519 passing
 - **Dependencies:** zero
 - **Python:** 3.10+

@@ -5,64 +5,140 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   gate:
     name: Release gate
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            benchmark/requirements.txt
 
-      - name: Install dependencies
-        run: pip install -e ".[dev]"
+      - name: Install package and development dependencies
+        run: python -m pip install -e ".[dev]"
 
-      - name: Ruff
-        run: ruff check .
+      - name: Install pinned corpus dependencies
+        run: python -m pip install -r benchmark/requirements.txt
 
-      - name: Tests
-        run: pytest tests/ -q
+      - name: Check Ruff
+        run: python -m ruff check .
 
-      - name: Benchmark
+      - name: Compile project
+        run: python -m compileall -q pyrift tests benchmark scripts
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Run golden benchmark
         run: python benchmark/run_benchmark.py
+
+      - name: Run self-scan
+        run: python benchmark/self_scan.py
+
+      - name: Run strict corpus benchmark
+        env:
+          PYRIFT_CORPUS_STRICT: "1"
+        run: python benchmark/corpus.py
+
+      - name: Run runtime differential harness
+        run: python benchmark/runtime_harness.py
 
       - name: Validate rule inventory
         run: |
           python -c "
           import pyrift
           from pathlib import Path
+
           rules = pyrift.ALL_RULES
-          readme = Path('README.md').read_text()
-          count = len(rules)
+          readme = Path('README.md').read_text(encoding='utf-8')
+          changelog = Path('CHANGELOG.md').read_text(encoding='utf-8')
+
           version = pyrift.__version__
-          assert str(count) in readme, f'README missing rule count {count}'
-          assert version in readme, f'README missing version {version}'
-          changelog = Path('CHANGELOG.md').read_text()
-          assert version in changelog, f'CHANGELOG missing entry for v{version}'
-          print(f'Gate passed: {count} rules, v{version}')
+          total = len(rules)
+          cpython = sum(r.runtime == 'cpython' for r in rules)
+          pypy = sum(r.runtime == 'pypy' for r in rules)
+          both = sum(r.runtime == 'both' for r in rules)
+
+          expected = (
+              f'**Rules:** {total} total '
+              f'({cpython} CPython + '
+              f'{pypy} PyPy + '
+              f'{both} cross-runtime)'
+          )
+
+          assert expected in readme, (
+              f'README rule inventory mismatch: {expected}'
+          )
+
+          assert f'## [{version}]' in changelog, (
+              f'CHANGELOG missing entry for {version}'
+          )
+
+          print(
+              f'Rule inventory valid: '
+              f'{total} total, '
+              f'{cpython} CPython, '
+              f'{pypy} PyPy, '
+              f'{both} cross-runtime, '
+              f'v{version}'
+          )
           "
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Check distributions
+        run: python -m twine check dist/*
+
+      - name: Upload validated distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyrift-distributions
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
 
   publish:
     name: Publish to PyPI
     needs: gate
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - name: Download validated distributions
+        uses: actions/download-artifact@v4
         with:
-          python-version: "3.11"
+          name: pyrift-distributions
+          path: dist
 
-      - name: Install build tool
-        run: pip install build twine
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - name: Build distributions
-        run: python -m build
+      - name: Install publishing tools
+        run: python -m pip install twine
+
+      - name: Check distributions
+        run: python -m twine check dist/*
 
       - name: Publish to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload dist/*
+        run: python -m twine upload dist/*

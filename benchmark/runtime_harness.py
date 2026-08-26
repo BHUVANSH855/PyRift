@@ -69,7 +69,7 @@ def load_probe(version: str) -> dict | None:
         return None
     try:
         return json.loads(path.read_text(encoding="utf-8-sig"))
-    except Exception:
+    except (OSError, UnicodeError, json.JSONDecodeError):
         return None
 
 

@@ -14,13 +14,13 @@ from .scanner import ScanResult
 def to_json(result: ScanResult, indent: int = 2) -> str:
     data = {
         "summary": {
-            "files_scanned":        result.files_scanned,
-            "total_findings":       len(result.findings),
-            "errors":               len(result.errors),
-            "warnings":             len(result.warnings),
-            "baseline_suppressed":  result.baseline_suppressed,
-            "score":                result.score,
-            "rule_errors":          len(result.rule_errors),
+            "files_scanned": result.files_scanned,
+            "total_findings": len(result.findings),
+            "errors": len(result.errors),
+            "warnings": len(result.warnings),
+            "baseline_suppressed": result.baseline_suppressed,
+            "score": result.score,
+            "rule_errors": len(result.rule_errors),
         },
         "findings": [f.to_dict() for f in result.findings],
     }
@@ -29,23 +29,28 @@ def to_json(result: ScanResult, indent: int = 2) -> str:
 
 def to_markdown(result: ScanResult) -> str:
     lines: list[str] = []
+
     lines.append("# pyrift -- Scan Report\n")
     lines.append("## Summary\n")
     lines.append("| | |")
     lines.append("|---|---|")
-    lines.append(f"| Files scanned        | {result.files_scanned} |")
-    lines.append(f"| Errors               | {len(result.errors)} |")
-    lines.append(f"| Warnings             | {len(result.warnings)} |")
-    lines.append(f"| Baseline suppressed  | {result.baseline_suppressed} |")
-    lines.append(f"| Health score         | {result.score} / 100 |")
-    lines.append(f"| Rule execution errors| {len(result.rule_errors)} |")
+    lines.append(f"| Files scanned         | {result.files_scanned} |")
+    lines.append(f"| Errors                | {len(result.errors)} |")
+    lines.append(f"| Warnings              | {len(result.warnings)} |")
+    lines.append(
+        f"| Baseline suppressed   | {result.baseline_suppressed} |"
+    )
+    lines.append(f"| Health score          | {result.score} / 100 |")
+    lines.append(
+        f"| Rule execution errors | {len(result.rule_errors)} |"
+    )
     lines.append("")
 
     if not result.findings:
         if result.rule_errors:
             lines.append(
-                "[WARN] **No behaviour findings were produced, but rule execution "
-                f"failed {len(result.rule_errors)} time(s).**\n"
+                "[WARN] **No behaviour findings were produced, but rule "
+                f"execution failed {len(result.rule_errors)} time(s).**\n"
             )
         else:
             msg = "[OK] **No behaviour differences detected.**"
@@ -55,28 +60,74 @@ def to_markdown(result: ScanResult) -> str:
                     f"{result.baseline_suppressed} known finding(s)."
                 )
             lines.append(msg + "\n")
+
         return "\n".join(lines)
 
     for sev in (Severity.ERROR, Severity.WARNING, Severity.INFO):
-        group = [f for f in result.findings if f.severity == sev]
+        group = [
+            finding
+            for finding in result.findings
+            if finding.severity == sev
+        ]
+
         if not group:
             continue
-        emoji = {"error": "[ERROR]", "warning": "[WARN]", "info": "[INFO]"}[sev.value]
-        lines.append(f"## {emoji} {sev.value.capitalize()}s ({len(group)})\n")
-        for f in group:
-            lines.append(f"### `{f.rule_id}` -- {f.title}")
-            lines.append(f"**Location:** `{f.file}:{f.line}`  ")
-            lines.append(f"**Runtime:** `{f.runtime.value}`  ")
-            if f.affected_from:
-                lines.append(
-                    f"**Affects:** Python {f.affected_from}"
-                    + (f" – {f.affected_until}" if f.affected_until else "+")
+
+        marker = {
+            "error": "[ERROR]",
+            "warning": "[WARN]",
+            "info": "[INFO]",
+        }[sev.value]
+
+        lines.append(
+            f"## {marker} {sev.value.capitalize()}s ({len(group)})\n"
+        )
+
+        for finding in group:
+            lines.append(
+                f"### `{finding.rule_id}` -- {finding.title}"
+            )
+            lines.append(
+                f"**Location:** `{finding.file}:{finding.line}`  "
+            )
+            lines.append(
+                f"**Runtime:** `{finding.runtime.value}`  "
+            )
+            lines.append(
+                f"**Confidence:** `{finding.confidence.value}`  "
+            )
+            lines.append(
+                f"**Evidence:** `{finding.evidence_type.value}`"
+                + (
+                    f" (`{finding.evidence_source}`)"
+                    if finding.evidence_source
+                    else ""
                 )
-            lines.append(f"\n{f.description}\n")
-            if f.suggestion:
-                lines.append(f"💡 **Fix:** {f.suggestion}\n")
-            if f.docs_url:
-                lines.append(f"📖 [Docs]({f.docs_url})\n")
+                + "  "
+            )
+
+            if finding.affected_from:
+                lines.append(
+                    f"**Affects:** Python {finding.affected_from}"
+                    + (
+                        f" – {finding.affected_until}"
+                        if finding.affected_until
+                        else "+"
+                    )
+                )
+
+            lines.append(f"\n{finding.description}\n")
+
+            if finding.suggestion:
+                lines.append(
+                    f"💡 **Fix:** {finding.suggestion}\n"
+                )
+
+            if finding.docs_url:
+                lines.append(
+                    f"📖 [Docs]({finding.docs_url})\n"
+                )
+
             lines.append("---")
 
     return "\n".join(lines)
@@ -84,33 +135,66 @@ def to_markdown(result: ScanResult) -> str:
 
 def to_text(result: ScanResult) -> str:
     lines: list[str] = []
+
     if not result.findings:
         if result.rule_errors:
             lines.append(
-                f"[WARN]  No findings produced -- {result.files_scanned} file(s) scanned, "
-                f"but {len(result.rule_errors)} rule execution error(s) occurred."
+                f"[WARN]  No findings produced -- "
+                f"{result.files_scanned} file(s) scanned, but "
+                f"{len(result.rule_errors)} rule execution error(s) occurred."
             )
         else:
-            msg = f"[OK]  No issues found -- {result.files_scanned} file(s) scanned."
+            msg = (
+                f"[OK]  No issues found -- "
+                f"{result.files_scanned} file(s) scanned."
+            )
+
             if result.baseline_suppressed:
-                msg += f"\nBaseline suppressed: {result.baseline_suppressed} finding(s)"
+                msg += (
+                    f"\nBaseline suppressed: "
+                    f"{result.baseline_suppressed} finding(s)"
+                )
+
             lines.append(msg)
+
         return "\n".join(lines)
 
-    for f in result.findings:
-        lines.append(str(f))
-        if f.suggestion:
-            lines.append(f"    -> {f.suggestion}")
+    for finding in result.findings:
+        lines.append(str(finding))
+        lines.append(
+            f"    evidence: {finding.evidence_type.value}"
+            + (
+                f" ({finding.evidence_source})"
+                if finding.evidence_source
+                else ""
+            )
+        )
+
+        if finding.suggestion:
+            lines.append(
+                f"    -> {finding.suggestion}"
+            )
+
     lines.append("")
+
     summary = (
         f"Scanned {result.files_scanned} file(s). "
         f"Found {len(result.errors)} error(s), "
         f"{len(result.warnings)} warning(s). "
         f"Score: {result.score}/100"
     )
+
     if result.rule_errors:
-        summary += f"; {len(result.rule_errors)} rule execution error(s)"
+        summary += (
+            f"; {len(result.rule_errors)} "
+            f"rule execution error(s)"
+        )
+
     if result.baseline_suppressed:
-        summary += f" (baseline suppressed: {result.baseline_suppressed})"
+        summary += (
+            f" (baseline suppressed: "
+            f"{result.baseline_suppressed})"
+        )
+
     lines.append(summary)
     return "\n".join(lines)
