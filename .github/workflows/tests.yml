@@ -29,6 +29,9 @@ jobs:
       - name: Run tests
         run: pytest tests/ -q
 
+      - name: Run benchmark
+        run: python benchmark/run_benchmark.py
+
       - name: Check diff whitespace
         run: git diff --check
 
