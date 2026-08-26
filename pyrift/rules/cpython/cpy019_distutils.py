@@ -1,73 +1,47 @@
-"""
-CPY019 — distutils removed in Python 3.12
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The distutils package was removed from the standard library in
-Python 3.12 (PEP 632). Importing it raises ModuleNotFoundError.
-It was deprecated in Python 3.10.
-"""
+"""CPY019 -- distutils removed in Python 3.12+ (PEP 632)."""
 from __future__ import annotations
 
 import ast
 
+from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 
 DISTUTILS_MODULES = {
-    "distutils",
-    "distutils.core",
-    "distutils.cmd",
-    "distutils.command",
-    "distutils.util",
-    "distutils.version",
-    "distutils.errors",
-    "distutils.log",
-    "distutils.dist",
-    "distutils.extension",
+    "distutils", "distutils.core", "distutils.cmd",
+    "distutils.command", "distutils.dist", "distutils.extension",
+    "distutils.fancy_getopt", "distutils.file_util",
+    "distutils.log", "distutils.spawn", "distutils.sysconfig",
+    "distutils.text_file", "distutils.unixccompiler",
+    "distutils.util", "distutils.version",
 }
 
 
 class DistutilsRule(BaseRule):
     rule_id = "CPY019"
-    title   = "distutils removed in Python 3.12+"
+    title = "distutils removed in Python 3.12+"
     runtime = "cpython"
 
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
-        for n in ast.walk(node):
-            mod = None
-            if isinstance(n, ast.Import):
-                for alias in n.names:
-                    if alias.name in DISTUTILS_MODULES or \
-                       alias.name.startswith("distutils."):
-                        mod = alias.name
-                        line, col = n.lineno, n.col_offset
-            elif (
-                isinstance(n, ast.ImportFrom)
-                and n.module
-                and (n.module in DISTUTILS_MODULES or n.module.startswith("distutils"))
-            ):
-                    mod = n.module
-                    line, col = n.lineno, n.col_offset
-            if mod:
+        imp_map = collect_imports(node)
+        for info in imp_map.imports:
+            mod = info.module or ""
+            if mod in DISTUTILS_MODULES or mod.startswith("distutils."):
                 findings.append(Finding(
-                    file=filename,
-                    line=line,
-                    col=col,
-                    rule_id=self.rule_id,
-                    title=self.title,
+                    file=filename, line=info.line, col=info.col,
+                    rule_id=self.rule_id, title=self.title,
                     description=(
-                        f"'{mod}' is part of the distutils package which was "
-                        "removed from the Python standard library in Python 3.12 "
-                        "(PEP 632). Importing it on Python 3.12+ raises "
-                        "ModuleNotFoundError."
+                        f"distutils (imported as '{mod}') was deprecated in "
+                        "Python 3.10 and removed in Python 3.12 (PEP 632). "
+                        "Importing it on Python 3.12+ raises ModuleNotFoundError."
                     ),
-                    severity=Severity.ERROR,
-                    runtime=Runtime.CPYTHON,
+                    severity=Severity.ERROR, runtime=Runtime.CPYTHON,
                     affected_from="3.12",
                     suggestion=(
-                        "Replace distutils with setuptools: "
-                        "pip install setuptools. "
-                        "Most distutils APIs have direct equivalents in setuptools."
+                        "Replace with setuptools: pip install setuptools. "
+                        "Most distutils functionality is available in "
+                        "setuptools or the standard build tools."
                     ),
                     docs_url="https://peps.python.org/pep-0632/",
                 ))

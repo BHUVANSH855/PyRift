@@ -53,3 +53,8 @@ Thumbs.db
 
 # Local uv environment/lockfile
 uv.lock
+
+# Benchmark scan outputs — generated, not source
+*-scan.json
+benchmark-output/
+compatibility-benchmark/*.json

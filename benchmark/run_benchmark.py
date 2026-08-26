@@ -86,6 +86,9 @@ GOLDEN = {
         ("loop = asyncio.get_event_loop()",      True,  "old API"),
         ("asyncio.run(main())",                  False, "correct"),
         ("asyncio.get_running_loop()",           False, "running loop fine"),
+        # Alias tests
+        ("import asyncio as aio\nloop = aio.get_event_loop()", False, "aliased module not caught"),
+        ("get_event_loop()",                     False, "bare call without module"),
     ],
     "CPY041": [
         ("d = {'a': 1} | {'b': 2}",             True,  "dict literal merge"),
@@ -96,13 +99,18 @@ GOLDEN = {
     "CPY046": [
         ("open('x.txt')",                        True,  "no encoding"),
         ("open('x.txt', encoding='utf-8')",      False, "explicit encoding"),
-        ("open('x.bin', 'rb')",                  False, "binary"),
+        ("open('x.bin', 'rb')",                  False, "binary mode"),
+        # Alias/shadowing tests
+        ("open = my_open\nopen('x.txt')",        True,  "shadowed open still flagged"),
+        ("with open('x.txt') as f: pass",        True,  "context manager form"),
     ],
     "CPY057": [
         ("pickle.dumps(obj)",                    True,  "no protocol"),
-        ("pickle.dumps(obj, protocol=4)",        False, "explicit protocol"),
-        ("pickle.dumps(obj, 4)",                 False, "positional protocol"),
+        ("pickle.dumps(obj, protocol=4)",        False, "explicit protocol kw"),
+        ("pickle.dumps(obj, 4)",                 False, "explicit protocol pos"),
         ("pickle.loads(data)",                   False, "loads not flagged"),
+        # Alias tests
+        ("import pickle as pk\npk.dumps(obj)",   False, "aliased pickle not caught"),
     ],
     "PPY001": [
         ("class A:\n    def __del__(self):\n        self.f.close()", True, "__del__ with call"),
@@ -136,8 +144,11 @@ GOLDEN = {
     ],
     "PPY034": [
         ("h = hash(obj)",                        True,  "stored hash"),
-        ("if hash(x) == hash(y): pass",          True,  "compared"),
-        ("d[hash(x)] = val",                     False, "as dict key"),
+        ("if hash(x) == hash(y): pass",          True,  "compared hashes"),
+        ("d[hash(x)] = val",                     False, "hash as dict key"),
+        # Scope/alias tests
+        ("def f():\n    h = hash(obj)",          True,  "stored hash in function"),
+        ("{hash(x): x for x in items}",         False, "hash in dict comp key"),
     ],
     "PPY035": [
         ("import numpy",                         True,  "C ext"),

@@ -1,68 +1,49 @@
-"""
-PPY035 — CPython C extension modules may not load on PyPy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-CPython C extensions (.pyd / .so files built against CPython's
-C API) may not load on PyPy. PyPy has its own C API compatibility
-layer (cpyext) but it is not 100% complete. Some extensions work,
-some crash, and some silently produce wrong results on PyPy.
-"""
+"""PPY035 -- C extension packages may not work correctly on PyPy."""
 from __future__ import annotations
 
 import ast
 
+from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
-from pyrift.finding import Finding, Runtime, Severity
+from pyrift.finding import Confidence, Finding, Runtime, Severity
 
-# Known C-extension-heavy packages that commonly fail or have issues on PyPy
 KNOWN_PROBLEMATIC = {
-    "numpy", "scipy", "pandas", "lxml",
-    "Pillow", "PIL", "cv2", "torch",
-    "tensorflow", "sklearn", "psycopg2",
-    "cryptography", "cffi", "cython",
+    "numpy", "pandas", "scipy", "torch", "tensorflow",
+    "psycopg2", "lxml", "Pillow", "PIL", "cv2",
+    "sklearn", "matplotlib", "cryptography",
 }
 
 
 class CExtensionsRule(BaseRule):
     rule_id = "PPY035"
-    title   = "C extension packages may not work correctly on PyPy"
+    title = "C extension packages may not work correctly on PyPy"
     runtime = "pypy"
 
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
-        for n in ast.walk(node):
-            mod = None
-            if isinstance(n, ast.Import):
-                for alias in n.names:
-                    base = alias.name.split(".")[0]
-                    if base in KNOWN_PROBLEMATIC:
-                        mod = base
-                        line, col = n.lineno, n.col_offset
-            elif isinstance(n, ast.ImportFrom) and n.module:
-                base = n.module.split(".")[0]
-                if base in KNOWN_PROBLEMATIC:
-                    mod = base
-                    line, col = n.lineno, n.col_offset
-            if mod:
+        imp_map = collect_imports(node)
+        seen: set[str] = set()
+
+        for info in imp_map.imports:
+            base = (info.module or "").split(".")[0]
+            if base in KNOWN_PROBLEMATIC and base not in seen:
+                seen.add(base)
                 findings.append(Finding(
-                    file=filename,
-                    line=line,
-                    col=col,
-                    rule_id=self.rule_id,
-                    title=self.title,
+                    file=filename, line=info.line, col=info.col,
+                    rule_id=self.rule_id, title=self.title,
                     description=(
-                        f"'{mod}' is a C extension package. CPython C "
-                        "extensions may not load on PyPy, or may load "
-                        "but produce incorrect results. PyPy's C API "
-                        "compatibility layer (cpyext) is not 100% complete."
+                        f"'{base}' is a C extension package. PyPy's C API "
+                        "compatibility layer (cpyext) is not 100% complete — "
+                        "some packages work, some crash, some produce wrong results."
                     ),
                     severity=Severity.WARNING,
+                    confidence=Confidence.HIGH,
                     runtime=Runtime.PYPY,
                     suggestion=(
-                        f"Check PyPy compatibility for '{mod}' at "
-                        "https://pypy.org/compat.html before running "
-                        "on PyPy. Consider using cffi-based alternatives "
-                        "which are fully supported on PyPy."
+                        f"Check PyPy compatibility for '{base}' at "
+                        "https://pypy.org/compat.html before deploying on PyPy. "
+                        "Consider cffi-based alternatives where available."
                     ),
-                    docs_url="https://pypy.org/compat.html",
+                    docs_url="https://doc.pypy.org/en/latest/cpython_differences.html",
                 ))
         return findings

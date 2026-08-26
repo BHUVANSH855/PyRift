@@ -1,6 +1,6 @@
 """
-PPY002 — ctypes usage on PyPy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+PPY002 -- ctypes usage on PyPy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ctypes on PyPy is partially implemented. Pointer arithmetic,
 callbacks, and structures with bit fields may silently produce
 wrong results or crash on PyPy while working on CPython.
@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import ast
 
+from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 
@@ -29,14 +30,8 @@ class CtypesRule(BaseRule):
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
 
-        ctypes_imported = False
-        for n in ast.walk(node):
-            if isinstance(n, ast.Import):
-                for alias in n.names:
-                    if alias.name.startswith("ctypes"):
-                        ctypes_imported = True
-            elif isinstance(n, ast.ImportFrom) and n.module and n.module.startswith("ctypes"):
-                    ctypes_imported = True
+        imp_map = collect_imports(node)
+        ctypes_imported = imp_map.has_module("ctypes")
 
         if not ctypes_imported:
             return findings
@@ -51,7 +46,7 @@ class CtypesRule(BaseRule):
                     title=self.title,
                     description=(
                         f"ctypes.{n.attr} is used here. "
-                        "PyPy's ctypes implementation is incomplete — "
+                        "PyPy's ctypes implementation is incomplete -- "
                         "pointer arithmetic, callbacks, and bit-field structures "
                         "may silently produce wrong results or segfault on PyPy."
                     ),
@@ -59,7 +54,7 @@ class CtypesRule(BaseRule):
                     runtime=Runtime.PYPY,
                     suggestion=(
                         "Test explicitly on PyPy if ctypes is required. "
-                        "Consider cffi as a cross-runtime alternative — "
+                        "Consider cffi as a cross-runtime alternative -- "
                         "fully supported on both CPython and PyPy."
                     ),
                     docs_url="https://doc.pypy.org/en/latest/ctypes.html",

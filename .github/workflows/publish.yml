@@ -6,9 +6,48 @@ on:
       - "v*"
 
 jobs:
-  publish:
+  gate:
+    name: Release gate
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Tests
+        run: pytest tests/ -q
+
+      - name: Benchmark
+        run: python benchmark/run_benchmark.py
+
+      - name: Validate rule inventory
+        run: |
+          python -c "
+          import pyrift
+          from pathlib import Path
+          rules = pyrift.ALL_RULES
+          readme = Path('README.md').read_text()
+          count = len(rules)
+          version = pyrift.__version__
+          assert str(count) in readme, f'README missing rule count {count}'
+          assert version in readme, f'README missing version {version}'
+          changelog = Path('CHANGELOG.md').read_text()
+          assert version in changelog, f'CHANGELOG missing entry for v{version}'
+          print(f'Gate passed: {count} rules, v{version}')
+          "
+
+  publish:
+    name: Publish to PyPI
+    needs: gate
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 

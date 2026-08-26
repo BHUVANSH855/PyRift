@@ -32,6 +32,12 @@ jobs:
       - name: Run benchmark
         run: python benchmark/run_benchmark.py
 
+      - name: Self-scan quality gate
+        run: python benchmark/self_scan.py
+
+      - name: Corpus benchmark
+        run: python benchmark/corpus.py
+
       - name: Check diff whitespace
         run: git diff --check
 

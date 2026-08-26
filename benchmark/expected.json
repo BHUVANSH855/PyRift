@@ -35,6 +35,26 @@
     "PPY039": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"},
     "PPY040": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"},
     "PPY042": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"},
-    "PPY046": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"}
+    "PPY046": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"},
+    "CPY018": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "pep:655"},
+    "CPY026": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY028": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY047": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY048": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "pep:734"},
+    "CPY049": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY050": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "runtime_probe"},
+    "CPY051": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "medium", "evidence": "pep:703"},
+    "CPY054": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY055": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY062": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "pep:750"},
+    "CPY063": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "pep:749"},
+    "PPY004": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "PPY008": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "PPY019": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "PPY022": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "PPY030": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "PPY033": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "medium", "evidence": "inferred"},
+    "PPY044": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "medium", "evidence": "inferred"},
+    "PPY047": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"}
   }
 }
