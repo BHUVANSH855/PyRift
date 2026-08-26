@@ -214,30 +214,6 @@ GOLDEN = {
             "loads not flagged",
         ),
     ],
-    "CPY008": [
-        ("class Base: pass\nclass Child(Base):\n    __slots__ = ['x']", True, "slots with base"),
-        ("class A:\n    __slots__ = ['x']", False, "slots no base"),
-    ],
-    "CPY010": [
-        ("from dataclasses import dataclass\n@dataclass(slots=True)\nclass A: pass", True, "dataclass slots"),
-        ("@dataclass\nclass A: pass", False, "dataclass no slots"),
-    ],
-    "CPY030": [
-        ("import sys\nsys.path.append(b'/path')", True, "bytes on sys.path"),
-        ("sys.path.append('/path')", False, "str ok"),
-    ],
-    "CPY042": [
-        ("x = aiter(obj)", True, "aiter builtin"),
-        ("x = iter(obj)", False, "iter ok"),
-    ],
-    "CPY043": [
-        ("import math\nmath.lcm(3, 4)", True, "math.lcm"),
-        ("math.gcd(3, 4)", False, "gcd ok"),
-    ],
-    "CPY044": [
-        ("import math\nmath.gcd(3, 4, 5)", True, "gcd multi-arg"),
-        ("math.gcd(3, 4)", False, "gcd two-arg ok"),
-    ],
     "CPY009": [
         ("ExceptionGroup('test', [ValueError()])", True, "ExceptionGroup usage"),
         ("import os", False, "unrelated"),
@@ -320,6 +296,230 @@ GOLDEN = {
     "PPY030": [
         ("import sys\nif sys.flags.hash_randomization: pass", True, "flags check"),
         ("if sys.flags.debug: pass", False, "debug flag ok"),
+    ],
+    "CPY010": [
+        ("from dataclasses import dataclass\n@dataclass(slots=True)\nclass A: pass", True, "dataclass slots=True"),
+        ("from dataclasses import dataclass\n@dataclass\nclass A: pass", False, "no slots"),
+    ],
+    "CPY012": [
+        ("from typing import LiteralString", True, "LiteralString"),
+        ("from typing import Optional", False, "Optional ok"),
+    ],
+    "CPY013": [
+        ("from typing import override", True, "override"),
+        ("from typing import overload", False, "overload ok"),
+    ],
+    "CPY014": [
+        ("from typing import TypeAlias", True, "TypeAlias"),
+        ("from typing import TypeVar", False, "TypeVar ok"),
+    ],
+    "CPY015": [
+        ("from typing import Never", True, "Never"),
+        ("from typing import Any", False, "Any ok"),
+    ],
+    "CPY016": [
+        ("from typing import TypeVarTuple", True, "TypeVarTuple"),
+        ("from typing import TypeVar", False, "TypeVar ok"),
+    ],
+    "CPY017": [
+        ("from typing import Unpack", True, "Unpack"),
+        ("from typing import Optional", False, "Optional ok"),
+    ],
+    "CPY018": [
+        ("from typing import Required", True, "Required"),
+        ("from typing import Optional", False, "Optional ok"),
+    ],
+    "CPY021": [
+        ("asyncio.iscoroutinefunction(fn)", True, "deprecated iscoroutinefunction"),
+        ("inspect.iscoroutinefunction(fn)", False, "inspect form ok"),
+    ],
+    "CPY024": [
+        ("from typing import TypeGuard", True, "TypeGuard"),
+        ("from typing import Optional", False, "Optional ok"),
+    ],
+    "CPY025": [
+        ("from typing import ParamSpec", True, "ParamSpec"),
+        ("from typing import TypeVar", False, "TypeVar ok"),
+    ],
+    "CPY030": [
+        ("import sys\nsys.path.append(b'/path')", True, "bytes on sys.path"),
+        ("sys.path.append('/path')", False, "str ok"),
+    ],
+    "CPY031": [
+        ("from typing import assert_never", True, "assert_never"),
+        ("from typing import overload", False, "overload ok"),
+    ],
+    "CPY032": [
+        ("from typing import reveal_type", True, "reveal_type"),
+        ("from typing import cast", False, "cast ok"),
+    ],
+    "CPY035": [
+        ("s.removeprefix('x')", True, "removeprefix"),
+        ("s.replace('x', '')", False, "replace ok"),
+    ],
+    "CPY039": [
+        ("import zoneinfo", True, "zoneinfo"),
+        ("import datetime", False, "datetime ok"),
+    ],
+    "CPY040": [
+        ("import graphlib", True, "graphlib"),
+        ("import collections", False, "collections ok"),
+    ],
+    "CPY042": [
+        ("x = aiter(obj)", True, "aiter builtin"),
+        ("x = iter(obj)", False, "iter ok"),
+    ],
+    "CPY051": [
+        ("_cache = []\ndef f():\n    _cache.append(1)", True, "unsynced mutation"),
+        ("_cache = []\ndef f():\n    pass", False, "no mutation"),
+    ],
+    "CPY052": [
+        ("import threading\n_local = threading.local()", True, "threading.local"),
+        ("import threading\nt = threading.Thread()", False, "Thread ok"),
+    ],
+    "PPY006": [
+        ("list.custom = lambda: None", True, "monkey-patch builtin"),
+        ("MyList.custom = lambda: None", False, "custom class ok"),
+    ],
+    "PPY010": [
+        ("import gc\ngc.collect()", True, "gc.collect"),
+        ("import gc\ngc.get_count()", False, "get_count ok"),
+    ],
+    "PPY011": [
+        ("import array\narray.array('u', [])", True, "u typecode removed"),
+        ("import array\narray.array('b', [])", False, "b typecode ok"),
+    ],
+    "PPY015": [
+        ("def g():\n    try:\n        yield 1\n    finally: pass", True, "yield in try"),
+        ("def g():\n    yield 1", False, "simple generator ok"),
+    ],
+    "PPY017": [
+        ("class A: pass\nA.__del__ = fn", True, "add __del__ after class"),
+        ("class A:\n    def __del__(self): pass", False, "__del__ in class ok"),
+    ],
+    "PPY018": [
+        ("import sys\nsys.setrecursionlimit(1000)", True, "setrecursionlimit"),
+        ("sys.getrecursionlimit()", False, "get ok"),
+    ],
+    "PPY019": [
+        ("x = float('nan')", True, "nan identity"),
+        ("x = float('inf')", False, "inf ok"),
+    ],
+    "PPY020": [
+        ("d = dict(**{1: 'a'})", True, "non-string key in kwargs"),
+        ("d = dict(**{'a': 1})", False, "string key ok"),
+    ],
+    "PPY025": [
+        ("list({1, 2, 3})", True, "set to list conversion"),
+        ("list([1, 2, 3])", False, "list ok"),
+    ],
+    "PPY032": [
+        ("d = {{frozenset([1]): 'a'}}", False, "frozenset key ok"),
+        ("d = {frozenset([1]): 'a'}", False, "frozenset key ok"),
+    ],
+    "PPY041": [
+        ("a = {}\nb = {}\nc = a | b", True, "dict merge pipe"),
+        ("a = {}\nb = {}\na.update(b)", False, "update ok"),
+    ],
+    "PPY046": [
+        ("if __debug__:\n    check()", True, "__debug__ check"),
+        ("if True:\n    check()", False, "literal True ok"),
+    ],
+    "PPY047": [
+        ("from ctypes.util import find_library\nfind_library('ssl')", True, "find_library"),
+        ("from ctypes import CDLL", False, "CDLL ok"),
+    ],
+    "CPY008": [
+        ("class Base: pass\nclass Child(Base):\n    __slots__ = ['x']", True, "slots with non-slots base"),
+        ("class A:\n    __slots__ = ['x']", False, "slots no base ok"),
+    ],
+    "CPY043": [
+        ("import math\nmath.lcm(3, 4)", True, "math.lcm"),
+        ("import math\nmath.gcd(3, 4)", False, "gcd ok"),
+    ],
+    "CPY044": [
+        ("import math\nmath.gcd(3, 4, 5)", True, "gcd multi-arg"),
+        ("import math\nmath.gcd(3, 4)", False, "gcd two-arg ok"),
+    ],
+    "CPY045": [
+        ("h = hash(float('nan'))", True, "nan hash stored"),
+        ("h = hash(1.5)", False, "float hash ok"),
+    ],
+    "CPY049": [
+        ("import compression.zstd", True, "compression.zstd"),
+        ("import zlib", False, "zlib ok"),
+    ],
+    "CPY050": [
+        ("from pathlib import PurePath\np = PurePath('x')\np.is_reserved()", True, "is_reserved"),
+        ("p.is_absolute()", False, "other method ok"),
+    ],
+    "PPY005": [
+        ("f = open('x.txt', 'w')\nf.write(data)", True, "write without with"),
+        ("with open('x.txt', 'w') as f:\n    f.write(data)", False, "with ok"),
+    ],
+    "PPY007": [
+        ("import sys\nsys.intern('hello')", True, "intern"),
+        ("sys.version", False, "other sys ok"),
+    ],
+    "PPY012": [
+        ("class MyList(list):\n    def __getitem__(self, k): return k", True, "override builtin method"),
+        ("class MyList(list): pass", False, "no override ok"),
+    ],
+    "PPY022": [
+        ("import os\nos.environ['PYTHONHASHSEED'] = '0'", True, "hashseed env"),
+        ("os.environ['PATH'] = '/usr'", False, "other env ok"),
+    ],
+    "PPY023": [
+        ("import inspect\ninspect.ismethod(obj.method)", True, "ismethod"),
+        ("inspect.isfunction(fn)", False, "isfunction ok"),
+    ],
+    "PPY024": [
+        ("t = timer.timeit(1000)", True, "timeit result stored"),
+        ("import timeit", False, "import only ok"),
+    ],
+    "PPY026": [
+        ("isinstance(__builtins__, dict)", True, "builtins dict check"),
+        ("import builtins", False, "import builtins ok"),
+    ],
+    "PPY027": [
+        ("del os.path", True, "del module attr"),
+        ("del local_var", False, "local del ok"),
+    ],
+    "PPY028": [
+        ("import readline\nreadline.parse_and_bind('tab: complete')", True, "parse_and_bind"),
+        ("readline.get_history_length()", False, "get ok"),
+    ],
+    "PPY029": [
+        ("__builtins__ = {}", True, "assign to builtins"),
+        ("builtins_copy = {}", False, "local var ok"),
+    ],
+    "PPY033": [
+        ("class A:\n    def __del__(self):\n        raise ValueError('err')", True, "__del__ raises"),
+        ("class A:\n    def __del__(self):\n        pass", False, "pass ok"),
+    ],
+    "PPY036": [
+        ("open('f.txt', 'w', buffering=1)", True, "line buffering=1"),
+        ("open('f.txt', 'w')", False, "no buffering ok"),
+    ],
+    "PPY037": [
+        ("import os\nos.urandom(16)", True, "os.urandom"),
+        ("import secrets\nsecrets.token_bytes(16)", False, "secrets ok"),
+    ],
+    "PPY039": [
+        ("import os\nos.fork()", True, "os.fork"),
+        ("os.getpid()", False, "getpid ok"),
+    ],
+    "PPY040": [
+        ("subprocess.Popen(['cmd'], stdout=subprocess.PIPE)", True, "PIPE stdout"),
+        ("subprocess.run(['cmd'])", False, "run ok"),
+    ],
+    "PPY042": [
+        ("print('msg', flush=True)", True, "print flush"),
+        ("print('msg')", False, "print ok"),
+    ],
+    "PPY044": [
+        ("try:\n    x()\nexcept Exception as e:\n    pass\nprint(e)", True, "exception var used after handler"),
+        ("try:\n    x()\nexcept Exception as e:\n    raise RuntimeError() from e", False, "used inside handler ok"),
     ],
     "PPY001": [
         (

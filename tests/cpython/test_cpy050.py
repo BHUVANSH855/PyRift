@@ -27,14 +27,10 @@ p.is_reserved()
         assert findings[0].rule_id == "CPY050"
         assert findings[0].severity == Severity.WARNING
 
-    def test_detects_purepath_from_import(self):
-        src = """
-from pathlib import PurePosixPath
-p = PurePosixPath('/tmp/test')
-p.is_reserved()
-"""
-        run(self.rule, src)  # PurePosixPath not tracked — no finding expected
-        assert True  # rule works when pathlib alias is tracked
+    def test_no_finding_without_pathlib_import(self):
+        # Without pathlib import context rule correctly returns no findings
+        findings = run(self.rule, "p.is_reserved()")
+        assert len(findings) == 0
 
     def test_detects_via_assignment(self):
         src = """
