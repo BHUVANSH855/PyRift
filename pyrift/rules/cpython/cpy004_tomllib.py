@@ -22,7 +22,7 @@ class TomllibRule(BaseRule):
         imp_map = collect_imports(node)
         findings: list[Finding] = []
 
-        for info in imp_map.get("tomllib"):
+        for info in imp_map.get("tomllib", min_version=(3, 11)):
             findings.append(Finding(
                 file=filename,
                 line=info.line,

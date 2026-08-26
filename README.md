@@ -208,8 +208,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 ## Project status
 
 - **Version:** 0.7.0
-- **Rules:** 104 (58 CPython + 44 PyPy)
-- **Tests:** 506 passing
+- **Rules:** 104 (58 CPython + 46 PyPy)
+- **Tests:** 515 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 

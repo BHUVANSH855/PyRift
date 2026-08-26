@@ -24,6 +24,8 @@ class ImportInfo:
     line: int
     col: int
     node: ast.AST
+    version_guarded: tuple[int, ...] | None = None
+    # If not None, this import is inside: if sys.version_info >= version_guarded
 
 
 @dataclass
@@ -69,17 +71,30 @@ class ImportMap:
                 result.append(i)
         return result
 
-    def get(self, module: str) -> list[ImportInfo]:
+    def get(self, module: str,
+             min_version: tuple[int, ...] | None = None) -> list[ImportInfo]:
         """Return one ImportInfo per import STATEMENT matching module.
 
         Deduplicates by (node_id, module) so that:
             from tomllib import load, loads
         produces ONE entry, not two.
+
+        If min_version is given, skip imports that are version-guarded
+        at or above min_version (they are correctly guarded):
+            if sys.version_info >= (3, 11):
+                import tomllib  # guarded -- skip if min_version=(3,11)
         """
         seen: set[tuple[int, str]] = set()
         result: list[ImportInfo] = []
         for i in self.imports:
             if i.module != module:
+                continue
+            # Skip correctly version-guarded imports
+            if (
+                min_version is not None
+                and i.version_guarded is not None
+                and i.version_guarded >= min_version
+            ):
                 continue
             key = (id(i.node), i.module)
             if key not in seen:
@@ -88,17 +103,51 @@ class ImportMap:
         return result
 
 
+def _extract_version_guard(parent_map: dict[int, ast.AST],
+                           n: ast.AST) -> tuple[int, ...] | None:
+    """If n is inside an if sys.version_info >= (x,y): block, return (x,y)."""
+    current = parent_map.get(id(n))
+    while current is not None:
+        if isinstance(current, ast.If):
+            test = current.test
+            if (
+                isinstance(test, ast.Compare)
+                and len(test.ops) == 1
+                and isinstance(test.ops[0], (ast.GtE, ast.Gt))
+                and isinstance(test.left, ast.Attribute)
+                and test.left.attr == "version_info"
+                and isinstance(test.left.value, ast.Name)
+                and test.left.value.id == "sys"
+                and len(test.comparators) == 1
+                and isinstance(test.comparators[0], ast.Tuple)
+            ):
+                elts = test.comparators[0].elts
+                if all(isinstance(e, ast.Constant) for e in elts):
+                    return tuple(e.value for e in elts)
+        current = parent_map.get(id(current))
+    return None
+
+
 def collect_imports(node: ast.AST) -> ImportMap:
     """
     Walk an AST and collect all import statements.
 
     Returns an ImportMap with all imports found.
     Much faster than each rule re-walking for imports independently.
+    Import statements inside `if sys.version_info >= (x, y):` blocks
+    are marked with version_guarded=(x, y).
     """
+    # Build parent map for version guard detection
+    parent_map: dict[int, ast.AST] = {}
+    for parent in ast.walk(node):
+        for child in ast.iter_child_nodes(parent):
+            parent_map[id(child)] = parent
+
     imp_map = ImportMap()
 
     for n in ast.walk(node):
         if isinstance(n, ast.Import):
+            guard = _extract_version_guard(parent_map, n)
             for alias in n.names:
                 imp_map.imports.append(ImportInfo(
                     module=alias.name,
@@ -107,8 +156,10 @@ def collect_imports(node: ast.AST) -> ImportMap:
                     line=n.lineno,
                     col=n.col_offset,
                     node=n,
+                    version_guarded=guard,
                 ))
         elif isinstance(n, ast.ImportFrom) and n.module:
+            guard = _extract_version_guard(parent_map, n)
             for alias in n.names:
                 imp_map.imports.append(ImportInfo(
                     module=n.module,
@@ -117,6 +168,7 @@ def collect_imports(node: ast.AST) -> ImportMap:
                     line=n.lineno,
                     col=n.col_offset,
                     node=n,
+                    version_guarded=guard,
                 ))
 
     return imp_map

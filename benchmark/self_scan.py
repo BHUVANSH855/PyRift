@@ -22,7 +22,7 @@ EXPECTED = {
     "max_total": 15,       # reviewed threshold -- see known_findings below
     "max_errors": 0,       # zero errors in our own code
     "known_findings": [
-        # PPY009 (9x) -- pyrift/analysis/scope.py uses id() as AST node
+        # PPY009 -- id() in AST parent-map building -- pyrift/analysis/scope.py uses id() as AST node
         # identity keys in parent_map dict. This is intentional -- we use
         # id() to build a child->parent lookup, not for PyPy stability.
         # These are false positives in pyrift's own infrastructure code.

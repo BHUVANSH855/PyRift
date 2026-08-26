@@ -51,3 +51,37 @@ def build_parent_map(node: ast.AST) -> dict[int, ast.AST]:
         for child in ast.iter_child_nodes(parent):
             parent_map[id(child)] = parent
     return parent_map
+
+def is_version_guarded(node: ast.AST,
+                        parent_map: dict[int, ast.AST],
+                        min_version: tuple[int, ...]) -> bool:
+    """Return True if node is inside an `if sys.version_info >= (x, y)` block.
+
+    This suppresses false positives when code is properly guarded:
+        if sys.version_info >= (3, 11):
+            from typing import Self  # correctly guarded
+    """
+    current = parent_map.get(id(node))
+    while current is not None:
+        if isinstance(current, ast.If):
+            test = current.test
+            # Pattern: sys.version_info >= (x, y)
+            if (
+                isinstance(test, ast.Compare)
+                and len(test.ops) == 1
+                and isinstance(test.ops[0], (ast.GtE, ast.Gt))
+                and isinstance(test.left, ast.Attribute)
+                and test.left.attr == "version_info"
+                and isinstance(test.left.value, ast.Name)
+                and test.left.value.id == "sys"
+                and len(test.comparators) == 1
+                and isinstance(test.comparators[0], ast.Tuple)
+            ):
+                # Extract the version tuple
+                elts = test.comparators[0].elts
+                if all(isinstance(e, ast.Constant) for e in elts):
+                    guard_version = tuple(e.value for e in elts)
+                    if guard_version >= min_version:
+                        return True
+        current = parent_map.get(id(current))
+    return False

@@ -106,11 +106,13 @@ GOLDEN = {
     ],
     "CPY057": [
         ("pickle.dumps(obj)",                    True,  "no protocol"),
+        ("pickle.dumps(obj, None)",              True,  "protocol=None is default"),
+        ("pickle.dumps(obj, protocol=None)",     True,  "protocol=None keyword"),
+        ("pickle.dump(obj, f)",                  True,  "dump no protocol"),
+        ("pickle.Pickler(f)",                    True,  "Pickler no protocol"),
         ("pickle.dumps(obj, protocol=4)",        False, "explicit protocol kw"),
-        ("pickle.dumps(obj, 4)",                 False, "explicit protocol pos"),
+        ("pickle.dumps(obj, 4)",                 False, "positional protocol"),
         ("pickle.loads(data)",                   False, "loads not flagged"),
-        # Alias tests
-        ("import pickle as pk\npk.dumps(obj)",   False, "aliased pickle not caught"),
     ],
     "PPY001": [
         ("class A:\n    def __del__(self):\n        self.f.close()", True, "__del__ with call"),

@@ -13,8 +13,6 @@ import os
 from collections.abc import Iterator
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
-
 from .base_rule import BaseRule
 from .finding import Finding, Runtime
 from .rules.cpython.cpy001_dict_ordering import DictOrderingRule
@@ -124,6 +122,8 @@ from .rules.pypy.ppy045_sys_settrace import SysSettraceRule
 from .rules.pypy.ppy046_debug_constant import DebugConstantRule
 from .rules.pypy.ppy047_ctypes_find_library import CtypesFindLibraryRule
 from .targets import TargetConfig, load_project_targets
+
+logger = logging.getLogger(__name__)
 
 ALL_RULES: list[BaseRule] = [
     DictOrderingRule(),

@@ -16,7 +16,7 @@ class AssertNeverRule(BaseRule):
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
         for info in collect_imports(node).imports:
-            if info.module == "typing" and info.name == "assert_never":
+            if info.module == "typing" and info.name == "assert_never" and not (info.version_guarded and info.version_guarded >= (3, 11)):
                 findings.append(Finding(
                     file=filename, line=info.line, col=info.col,
                     rule_id=self.rule_id, title=self.title,
