@@ -214,6 +214,89 @@ GOLDEN = {
             "loads not flagged",
         ),
     ],
+    "CPY009": [
+        ("ExceptionGroup('test', [ValueError()])", True, "ExceptionGroup usage"),
+        ("import os", False, "unrelated"),
+    ],
+    "CPY011": [
+        ("from typing import Self", True, "Self requires 3.11+"),
+        ("from typing import Optional", False, "Optional ok"),
+    ],
+    "CPY020": [
+        ("import datetime\nx = datetime.UTC", True, "datetime.UTC"),
+        ("import datetime\nx = datetime.timezone.utc", False, "timezone.utc ok"),
+    ],
+    "CPY026": [
+        ("from typing.io import IO", True, "removed namespace"),
+        ("from typing import IO", False, "correct form"),
+    ],
+    "CPY027": [
+        ("import locale\nlocale.resetlocale()", True, "removed function"),
+        ("locale.setlocale(locale.LC_ALL, '')", False, "correct form"),
+    ],
+    "CPY028": [
+        ("import lib2to3", True, "removed module"),
+        ("import libcst", False, "replacement"),
+    ],
+    "CPY033": [
+        ("p.is_relative_to(base)", True, "is_relative_to"),
+        ("p.is_absolute()", False, "other method"),
+    ],
+    "CPY034": [
+        ("n.bit_count()", True, "bit_count"),
+        ("n.bit_length()", False, "bit_length ok"),
+    ],
+    "CPY047": [
+        ("from collections.abc import ByteString", True, "ByteString removed"),
+        ("from collections.abc import Sequence", False, "Sequence ok"),
+    ],
+    "CPY048": [
+        ("import concurrent.interpreters", True, "new module"),
+        ("import concurrent.futures", False, "futures ok"),
+    ],
+    "CPY053": [
+        ("from typing import get_overloads", True, "get_overloads import"),
+        ("from typing import get_type_hints", False, "get_type_hints ok"),
+    ],
+    "CPY054": [
+        ("class A:\n    def __trunc__(self): return 0", True, "__trunc__ defined"),
+        ("class A:\n    def __int__(self): return 0", False, "__int__ ok"),
+    ],
+    "CPY055": [
+        ("if NotImplemented: pass", True, "bool context"),
+        ("return NotImplemented", False, "return ok"),
+    ],
+    "CPY062": [
+        ("from string.templatelib import Template", True, "t-strings module"),
+        ("from string import Template", False, "string.Template ok"),
+    ],
+    "CPY063": [
+        ("import annotationlib", True, "annotationlib import"),
+        ("import typing", False, "typing ok"),
+    ],
+    "PPY004": [
+        ("import weakref\nref = weakref.proxy(obj)", True, "proxy usage"),
+        ("ref = weakref.ref(obj)", False, "ref ok"),
+    ],
+    "PPY008": [
+        ("import threading\n_local = threading.local()", True, "threading.local"),
+        ("import threading\nt = threading.Thread()", False, "Thread ok"),
+    ],
+    "PPY009": [
+        ("if id(x) == id(y): pass", True, "id comparison"),
+        ("parent_map[id(child)] = parent", False, "dict key ok"),
+    ],
+    "PPY013": [
+        ("size = sys.getsizeof(obj)", True, "getsizeof"),
+        ("size = len(obj)", False, "len ok"),
+    ],
+    "PPY021": [
+        ("import socket\ns = socket.socket()", True, "socket not closed"),
+    ],
+    "PPY030": [
+        ("import sys\nif sys.flags.hash_randomization: pass", True, "flags check"),
+        ("if sys.flags.debug: pass", False, "debug flag ok"),
+    ],
     "PPY001": [
         (
             (
@@ -258,10 +341,7 @@ GOLDEN = {
         ("sys.getrefcount(obj)", True, "getrefcount"),
         ("sys.version_info", False, "other sys"),
     ],
-    "PPY013": [
-        ("size = sys.getsizeof(obj)", True, "getsizeof"),
-        ("sys.version", False, "other sys"),
-    ],
+
     "PPY014": [
         (
             (

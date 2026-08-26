@@ -21,28 +21,15 @@ README = ROOT / "README.md"
 
 
 def get_test_count() -> int:
+    import re as _re
     result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pytest",
-            "tests/",
-            "--tb=no",
-            "-q",
-        ],
-        capture_output=True,
-        text=True,
-        cwd=ROOT,
-        check=False,
+        [sys.executable, "-m", "pytest", "tests/", "--tb=no", "-q"],
+        capture_output=True, text=True, cwd=ROOT, check=False,
     )
-
     for line in result.stdout.splitlines():
-        if "passed" in line:
-            numbers = re.findall(r"\d+", line)
-
-            if numbers:
-                return int(numbers[0])
-
+        m = _re.search(r"(\d+) passed", line)
+        if m:
+            return int(m.group(1))
     return 0
 
 

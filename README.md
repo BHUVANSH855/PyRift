@@ -1,4 +1,3 @@
-
 ---
 
 ## Quick start — Python API
@@ -185,8 +184,8 @@ pyrift does not replace any of these tools. It catches what they all miss.
 
 Planned for upcoming versions — contributions welcome:
 
-- `CPY046` — `typing.TypeIs` requires Python 3.13+
-- `CPY047` — `typing.ReadOnly` requires Python 3.13+
+- `CPY064+` — next CPython compatibility rules (open for contributions)
+- `PPY048+` — next PyPy runtime difference rules (open for contributions)
 - Pre-commit hook native support
 - VS Code extension
 - GitHub Action marketplace listing
@@ -209,7 +208,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 - **Version:** 0.8.0
 - **Rules:** 104 total (58 CPython + 44 PyPy + 2 cross-runtime)
-- **Tests:** 519 passing
+- **Tests:** 563 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
