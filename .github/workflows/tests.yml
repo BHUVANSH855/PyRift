@@ -59,3 +59,12 @@ jobs:
 
       - name: Run tests
         run: pytest tests/ -q
+
+      - name: Run benchmark on PyPy
+        run: python benchmark/run_benchmark.py
+
+      - name: Self-scan on PyPy
+        run: python benchmark/self_scan.py
+
+      - name: Corpus benchmark on PyPy
+        run: python benchmark/corpus.py
