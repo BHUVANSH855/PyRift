@@ -214,6 +214,30 @@ GOLDEN = {
             "loads not flagged",
         ),
     ],
+    "CPY008": [
+        ("class Base: pass\nclass Child(Base):\n    __slots__ = ['x']", True, "slots with base"),
+        ("class A:\n    __slots__ = ['x']", False, "slots no base"),
+    ],
+    "CPY010": [
+        ("from dataclasses import dataclass\n@dataclass(slots=True)\nclass A: pass", True, "dataclass slots"),
+        ("@dataclass\nclass A: pass", False, "dataclass no slots"),
+    ],
+    "CPY030": [
+        ("import sys\nsys.path.append(b'/path')", True, "bytes on sys.path"),
+        ("sys.path.append('/path')", False, "str ok"),
+    ],
+    "CPY042": [
+        ("x = aiter(obj)", True, "aiter builtin"),
+        ("x = iter(obj)", False, "iter ok"),
+    ],
+    "CPY043": [
+        ("import math\nmath.lcm(3, 4)", True, "math.lcm"),
+        ("math.gcd(3, 4)", False, "gcd ok"),
+    ],
+    "CPY044": [
+        ("import math\nmath.gcd(3, 4, 5)", True, "gcd multi-arg"),
+        ("math.gcd(3, 4)", False, "gcd two-arg ok"),
+    ],
     "CPY009": [
         ("ExceptionGroup('test', [ValueError()])", True, "ExceptionGroup usage"),
         ("import os", False, "unrelated"),
