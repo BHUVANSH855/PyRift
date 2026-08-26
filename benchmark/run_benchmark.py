@@ -3,7 +3,7 @@
 pyrift golden benchmark runner.
 
 Tests every rule against known positive and negative cases.
-Fails (exit 1) on any false positive — this is the CI precision gate.
+Fails (exit 1) on any false positive -- this is the CI precision gate.
 
 Usage:
     python benchmark/run_benchmark.py
@@ -117,7 +117,7 @@ GOLDEN = {
         ("class A:\n    def __del__(self):\n        pass", False, "pass only"),
     ],
     "PPY002": [
-        ("import ctypes\nctypes.CDLL('libssl.so')", True, "ctypes.CDLL — dangerous API"),
+        ("import ctypes\nctypes.CDLL('libssl.so')", True, "ctypes.CDLL -- dangerous API"),
         ("import ctypes", False, "import only - no use"),
         ("import cffi", False, "cffi is ok"),
     ],
@@ -189,7 +189,7 @@ def run() -> int:
             if did_flag == should_flag:
                 correct += 1
                 if verbose:
-                    print(f"  ✅ {rule_id} '{label}'")
+                    print(f"  [OK] {rule_id} '{label}'")
             else:
                 kind = "FALSE POSITIVE" if did_flag else "FALSE NEGATIVE"
                 failures.append(
@@ -201,12 +201,12 @@ def run() -> int:
           f"({100 * correct // total}%)")
 
     if failures:
-        print(f"\n❌ {len(failures)} failure(s):")
+        print(f"\n[FAIL] {len(failures)} failure(s):")
         for f in failures:
             print(f)
         return 1
 
-    print("✅ All benchmark cases passed.")
+    print("[OK] All benchmark cases passed.")
     return 0
 
 

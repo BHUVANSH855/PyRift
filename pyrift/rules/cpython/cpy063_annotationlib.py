@@ -1,4 +1,4 @@
-﻿"""CPY063 -- annotationlib requires Python 3.14+."""
+"""CPY063 -- annotationlib requires Python 3.14+."""
 from __future__ import annotations
 
 import ast
@@ -16,7 +16,7 @@ class AnnotationLibRule(BaseRule):
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
         imp_map = collect_imports(node)
-        for info in imp_map.imports:
+        for info in imp_map.by_statement():
             if info.module == "annotationlib" or (info.module and info.module.startswith("annotationlib")):
                 findings.append(Finding(
                     file=filename, line=info.line, col=info.col,

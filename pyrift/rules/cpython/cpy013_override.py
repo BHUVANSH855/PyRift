@@ -1,4 +1,4 @@
-﻿"""CPY013 -- typing.override requires Python 3.12+ (PEP 698)."""
+"""CPY013 -- typing.override requires Python 3.12+ (PEP 698)."""
 from __future__ import annotations
 
 import ast

@@ -1,4 +1,4 @@
-﻿"""CPY048 -- concurrent.interpreters requires Python 3.14+."""
+"""CPY048 -- concurrent.interpreters requires Python 3.14+."""
 from __future__ import annotations
 
 import ast
@@ -16,7 +16,7 @@ class ConcurrentInterpretersRule(BaseRule):
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
         imp_map = collect_imports(node)
-        for info in imp_map.imports:
+        for info in imp_map.by_statement():
             if info.module == "concurrent.interpreters" or (info.module and info.module.startswith("concurrent.interpreters")):
                 findings.append(Finding(
                     file=filename, line=info.line, col=info.col,

@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class ImportInfo:
-    """Information about a single import in a module."""
+    """Information about a single import statement."""
     module: str           # e.g. "datetime" or "collections.abc"
     name: str | None      # e.g. "datetime" (from import) or None (bare import)
     alias: str | None     # e.g. "dt" if imported as dt
@@ -52,9 +52,40 @@ class ImportMap:
                 return i.alias or module.split(".")[-1]
         return None
 
+    def by_statement(self, module: str | None = None) -> list[ImportInfo]:
+        """Return one ImportInfo per import STATEMENT.
+
+        For 'from tomllib import load, loads' this returns ONE entry,
+        not two. Use this when you want to report once per import statement.
+        """
+        seen: set[int] = set()
+        result: list[ImportInfo] = []
+        for i in self.imports:
+            if module is not None and i.module != module:
+                continue
+            node_id = id(i.node)
+            if node_id not in seen:
+                seen.add(node_id)
+                result.append(i)
+        return result
+
     def get(self, module: str) -> list[ImportInfo]:
-        """Return all imports of a module."""
-        return [i for i in self.imports if i.module == module]
+        """Return one ImportInfo per import STATEMENT matching module.
+
+        Deduplicates by (node_id, module) so that:
+            from tomllib import load, loads
+        produces ONE entry, not two.
+        """
+        seen: set[tuple[int, str]] = set()
+        result: list[ImportInfo] = []
+        for i in self.imports:
+            if i.module != module:
+                continue
+            key = (id(i.node), i.module)
+            if key not in seen:
+                seen.add(key)
+                result.append(i)
+        return result
 
 
 def collect_imports(node: ast.AST) -> ImportMap:
@@ -78,14 +109,14 @@ def collect_imports(node: ast.AST) -> ImportMap:
                     node=n,
                 ))
         elif isinstance(n, ast.ImportFrom) and n.module:
-                for alias in n.names:
-                    imp_map.imports.append(ImportInfo(
-                        module=n.module,
-                        name=alias.name,
-                        alias=alias.asname,
-                        line=n.lineno,
-                        col=n.col_offset,
-                        node=n,
-                    ))
+            for alias in n.names:
+                imp_map.imports.append(ImportInfo(
+                    module=n.module,
+                    name=alias.name,
+                    alias=alias.asname,
+                    line=n.lineno,
+                    col=n.col_offset,
+                    node=n,
+                ))
 
     return imp_map

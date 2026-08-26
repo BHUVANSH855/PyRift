@@ -32,8 +32,8 @@ def get_test_count() -> int:
 
 def main() -> None:
     rules = pyrift.ALL_RULES
-    cpy = [r for r in rules if r.runtime == "cpython"]
-    ppy = [r for r in rules if r.runtime == "pypy"]
+    cpy = [r for r in rules if r.rule_id.startswith("CPY")]
+    ppy = [r for r in rules if r.rule_id.startswith("PPY")]
     total = len(rules)
     test_count = get_test_count()
     version = pyrift.__version__

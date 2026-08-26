@@ -24,7 +24,7 @@ class CExtensionsRule(BaseRule):
         imp_map = collect_imports(node)
         seen: set[str] = set()
 
-        for info in imp_map.imports:
+        for info in imp_map.by_statement():
             base = (info.module or "").split(".")[0]
             if base in KNOWN_PROBLEMATIC and base not in seen:
                 seen.add(base)

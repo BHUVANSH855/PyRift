@@ -1,4 +1,4 @@
-﻿"""CPY017 -- typing.Unpack requires Python 3.11+ (PEP 646)."""
+"""CPY017 -- typing.Unpack requires Python 3.11+ (PEP 646)."""
 from __future__ import annotations
 
 import ast

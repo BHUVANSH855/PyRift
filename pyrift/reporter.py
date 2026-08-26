@@ -29,7 +29,7 @@ def to_json(result: ScanResult, indent: int = 2) -> str:
 
 def to_markdown(result: ScanResult) -> str:
     lines: list[str] = []
-    lines.append("# pyrift — Scan Report\n")
+    lines.append("# pyrift -- Scan Report\n")
     lines.append("## Summary\n")
     lines.append("| | |")
     lines.append("|---|---|")
@@ -44,14 +44,14 @@ def to_markdown(result: ScanResult) -> str:
     if not result.findings:
         if result.rule_errors:
             lines.append(
-                "⚠️ **No behaviour findings were produced, but rule execution "
+                "[WARN] **No behaviour findings were produced, but rule execution "
                 f"failed {len(result.rule_errors)} time(s).**\n"
             )
         else:
-            msg = "✅ **No behaviour differences detected.**"
+            msg = "[OK] **No behaviour differences detected.**"
             if result.baseline_suppressed:
                 msg += (
-                    f"\n\n> ℹ️ Baseline suppressed "
+                    f"\n\n> [INFO] Baseline suppressed "
                     f"{result.baseline_suppressed} known finding(s)."
                 )
             lines.append(msg + "\n")
@@ -61,10 +61,10 @@ def to_markdown(result: ScanResult) -> str:
         group = [f for f in result.findings if f.severity == sev]
         if not group:
             continue
-        emoji = {"error": "🔴", "warning": "🟡", "info": "🔵"}[sev.value]
+        emoji = {"error": "[ERROR]", "warning": "[WARN]", "info": "[INFO]"}[sev.value]
         lines.append(f"## {emoji} {sev.value.capitalize()}s ({len(group)})\n")
         for f in group:
-            lines.append(f"### `{f.rule_id}` — {f.title}")
+            lines.append(f"### `{f.rule_id}` -- {f.title}")
             lines.append(f"**Location:** `{f.file}:{f.line}`  ")
             lines.append(f"**Runtime:** `{f.runtime.value}`  ")
             if f.affected_from:
@@ -87,11 +87,11 @@ def to_text(result: ScanResult) -> str:
     if not result.findings:
         if result.rule_errors:
             lines.append(
-                f"⚠️  No findings produced — {result.files_scanned} file(s) scanned, "
+                f"[WARN]  No findings produced -- {result.files_scanned} file(s) scanned, "
                 f"but {len(result.rule_errors)} rule execution error(s) occurred."
             )
         else:
-            msg = f"✅  No issues found — {result.files_scanned} file(s) scanned."
+            msg = f"[OK]  No issues found -- {result.files_scanned} file(s) scanned."
             if result.baseline_suppressed:
                 msg += f"\nBaseline suppressed: {result.baseline_suppressed} finding(s)"
             lines.append(msg)
@@ -100,7 +100,7 @@ def to_text(result: ScanResult) -> str:
     for f in result.findings:
         lines.append(str(f))
         if f.suggestion:
-            lines.append(f"    → {f.suggestion}")
+            lines.append(f"    -> {f.suggestion}")
     lines.append("")
     summary = (
         f"Scanned {result.files_scanned} file(s). "

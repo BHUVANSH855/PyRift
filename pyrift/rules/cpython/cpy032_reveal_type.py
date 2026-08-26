@@ -1,4 +1,4 @@
-﻿"""CPY032 -- typing.reveal_type requires Python 3.11+ (PEP 544)."""
+"""CPY032 -- typing.reveal_type requires Python 3.11+ (PEP 544)."""
 from __future__ import annotations
 
 import ast

@@ -20,7 +20,7 @@ class TestCPY063:
     def test_detects_from_import(self):
         findings = run(self.rule,
             "from annotationlib import get_annotations, Format")
-        assert len(findings) >= 1
+        assert len(findings) == 1
 
     def test_clean_typing_import(self):
         findings = run(self.rule, "import typing")

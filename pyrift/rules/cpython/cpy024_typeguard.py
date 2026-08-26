@@ -1,4 +1,4 @@
-﻿"""CPY024 -- typing.TypeGuard requires Python 3.10+ (PEP 647)."""
+"""CPY024 -- typing.TypeGuard requires Python 3.10+ (PEP 647)."""
 from __future__ import annotations
 
 import ast

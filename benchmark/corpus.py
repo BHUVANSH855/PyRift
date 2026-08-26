@@ -64,13 +64,13 @@ def main() -> int:
     for pkg, limits in CORPUS.items():
         files, total, errors = scan_package(pkg)
         if files == 0:
-            print(f"  {pkg}: not installed — skipping")
+            print(f"  {pkg}: not installed -- skipping")
             continue
 
-        status = "✅" if (
+        status = "[OK]" if (
             total <= limits["max_findings"] and
             errors <= limits["max_errors"]
-        ) else "❌"
+        ) else "[FAIL]"
 
         print(f"  {status} {pkg}: {files} files, "
               f"{total} findings ({errors} ERR) "
@@ -85,9 +85,9 @@ def main() -> int:
 
     print()
     if failed:
-        print("❌ Corpus benchmark failed — rule precision regression detected.")
+        print("[FAIL] Corpus benchmark failed -- rule precision regression detected.")
         return 1
-    print("✅ Corpus benchmark passed.")
+    print("[OK] Corpus benchmark passed.")
     return 0
 
 

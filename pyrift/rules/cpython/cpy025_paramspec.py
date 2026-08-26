@@ -1,4 +1,4 @@
-﻿"""CPY025 -- typing.ParamSpec requires Python 3.10+ (PEP 612)."""
+"""CPY025 -- typing.ParamSpec requires Python 3.10+ (PEP 612)."""
 from __future__ import annotations
 
 import ast

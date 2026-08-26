@@ -1,4 +1,4 @@
-﻿"""CPY014 -- typing.TypeAlias requires Python 3.10+ (PEP 613)."""
+"""CPY014 -- typing.TypeAlias requires Python 3.10+ (PEP 613)."""
 from __future__ import annotations
 
 import ast

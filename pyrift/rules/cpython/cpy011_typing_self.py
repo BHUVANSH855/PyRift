@@ -1,4 +1,4 @@
-﻿"""CPY011 -- typing.Self requires Python 3.11+ (PEP 673)."""
+"""CPY011 -- typing.Self requires Python 3.11+ (PEP 673)."""
 from __future__ import annotations
 
 import ast

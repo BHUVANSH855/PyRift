@@ -22,13 +22,27 @@ class IdStabilityRule(BaseRule):
 
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
+        # Build parent map to detect id() used as dict key
+        parent_map: dict[int, ast.AST] = {}
+        for parent in ast.walk(node):
+            for child in ast.iter_child_nodes(parent):
+                parent_map[id(child)] = parent
+
         for n in ast.walk(node):
             if not isinstance(n, ast.Call):
                 continue
             func = n.func
-            if isinstance(func, ast.Name) and func.id == "id":
-                # Only flag if the id() result is stored or used in comparison
-                findings.append(Finding(
+            if not (isinstance(func, ast.Name) and func.id == "id"):
+                continue
+            # Skip: id() used as a dict key — legitimate AST node identity pattern
+            parent = parent_map.get(id(n))
+            if isinstance(parent, ast.Index):
+                continue
+            # Skip: id(x) directly as subscript index parent_map[id(x)]
+            grandparent = parent_map.get(id(parent)) if parent else None
+            if isinstance(parent, ast.Subscript) or isinstance(grandparent, ast.Subscript):
+                continue
+            findings.append(Finding(
                     file=filename,
                     line=n.lineno,
                     col=n.col_offset,

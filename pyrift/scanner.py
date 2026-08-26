@@ -66,7 +66,7 @@ from .rules.cpython.cpy046_open_encoding import OpenEncodingRule
 from .rules.cpython.cpy047_bytesstring_removed import ByteStringRemovedRule
 from .rules.cpython.cpy048_concurrent_interpreters import ConcurrentInterpretersRule
 from .rules.cpython.cpy049_compression_zstd import CompressionZstdRule
-from .rules.cpython.cpy050_purepatth_is_reserved import PurePathIsReservedRule
+from .rules.cpython.cpy050_purepath_is_reserved import PurePathIsReservedRule
 from .rules.cpython.cpy051_free_threaded_global_state import FreeThreadedGlobalStateRule
 from .rules.cpython.cpy052_free_threaded_threading_local import (
     FreeThreadedThreadingLocalRule,
@@ -303,7 +303,7 @@ def _scan_file_detailed(
     rule_errors: list[str] = []
 
     try:
-        source = filepath.read_text(encoding="utf-8", errors="replace")
+        source = filepath.read_text(encoding="utf-8-sig", errors="replace")
         tree = ast.parse(source, filename=str(filepath))
     except SyntaxError as exc:
         from .finding import Runtime, Severity

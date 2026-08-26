@@ -1,4 +1,4 @@
-﻿"""CPY016 -- typing.TypeVarTuple requires Python 3.11+ (PEP 646)."""
+"""CPY016 -- typing.TypeVarTuple requires Python 3.11+ (PEP 646)."""
 from __future__ import annotations
 
 import ast

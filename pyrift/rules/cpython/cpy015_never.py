@@ -1,4 +1,4 @@
-﻿"""CPY015 -- typing.Never requires Python 3.11+ (PEP 673)."""
+"""CPY015 -- typing.Never requires Python 3.11+ (PEP 673)."""
 from __future__ import annotations
 
 import ast

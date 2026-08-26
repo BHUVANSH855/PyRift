@@ -1,1 +1,1 @@
-﻿"""pyrift.analysis -- shared semantic AST utilities."""
+"""pyrift.analysis -- shared semantic AST utilities."""

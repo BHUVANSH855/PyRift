@@ -1,4 +1,4 @@
-﻿"""CPY031 -- typing.assert_never requires Python 3.11+ (PEP 673)."""
+"""CPY031 -- typing.assert_never requires Python 3.11+ (PEP 673)."""
 from __future__ import annotations
 
 import ast

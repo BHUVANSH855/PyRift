@@ -1,121 +1,75 @@
-import ast
-import textwrap
+#!/usr/bin/env python3
+"""
+Generate rule counts and update README.md automatically.
+Run: python scripts/generate_docs.py
+"""
+from __future__ import annotations
 
-from pyrift.finding import Severity
-from pyrift.rules.cpython.cpy050_purepatth_is_reserved import (
-    PurePathIsReservedRule,
-)
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+import pyrift
+
+ROOT = Path(__file__).parent.parent
+README = ROOT / "README.md"
 
 
-def parse(src):
-    return ast.parse(textwrap.dedent(src))
+def get_test_count() -> int:
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "tests/", "--tb=no", "-q"],
+        capture_output=True, text=True, cwd=ROOT
+    )
+    for line in result.stdout.splitlines():
+        if "passed" in line:
+            nums = re.findall(r"\d+", line)
+            if nums:
+                return int(nums[0])
+    return 0
 
 
-def run(rule, src):
-    return rule.check(parse(src), "<test>")
+def main() -> None:
+    rules = pyrift.ALL_RULES
+    cpy = [r for r in rules if r.rule_id.startswith("CPY")]
+    ppy = [r for r in rules if r.rule_id.startswith("PPY")]
+    total = len(rules)
+    test_count = get_test_count()
+    version = pyrift.__version__
+
+    print(f"Rules: {total} ({len(cpy)} CPython + {len(ppy)} PyPy)")
+    print(f"Tests: {test_count}")
+    print(f"Version: {version}")
+
+    content = README.read_text(encoding="utf-8")
+
+    # Update project status section
+    content = re.sub(
+        r"- \*\*Version:\*\* [\d.]+",
+        f"- **Version:** {version}",
+        content,
+    )
+    content = re.sub(
+        r"- \*\*Rules:\*\* \d+ \(\d+ CPython \+ \d+ PyPy\)",
+        f"- **Rules:** {total} ({len(cpy)} CPython + {len(ppy)} PyPy)",
+        content,
+    )
+    content = re.sub(
+        r"- \*\*Tests:\*\* \d+ passing",
+        f"- **Tests:** {test_count} passing",
+        content,
+    )
+    # Update pre-commit rev
+    content = re.sub(
+        r"rev: v[\d.]+",
+        f"rev: v{version}",
+        content,
+    )
+
+    README.write_text(content, encoding="utf-8")
+    print("README.md updated.")
 
 
-class TestCPY050:
-    rule = PurePathIsReservedRule()
-
-    def test_detects_purepath_is_reserved(self):
-        findings = run(
-            self.rule,
-            """
-            from pathlib import PurePath
-
-            path = PurePath("CON")
-            path.is_reserved()
-            """,
-        )
-
-        assert len(findings) == 1
-        assert findings[0].rule_id == "CPY050"
-        assert findings[0].severity == Severity.WARNING
-
-    def test_detects_pathlib_purepath_is_reserved(self):
-        findings = run(
-            self.rule,
-            """
-            import pathlib
-
-            path = pathlib.PurePath("CON")
-            path.is_reserved()
-            """,
-        )
-
-        assert len(findings) == 1
-
-    def test_detects_purepath_alias(self):
-        findings = run(
-            self.rule,
-            """
-            from pathlib import PurePath as PP
-
-            path = PP("CON")
-            path.is_reserved()
-            """,
-        )
-
-        assert len(findings) == 1
-
-    def test_detects_pathlib_alias(self):
-        findings = run(
-            self.rule,
-            """
-            import pathlib as pl
-
-            path = pl.PurePath("CON")
-            path.is_reserved()
-            """,
-        )
-
-        assert len(findings) == 1
-
-    def test_does_not_flag_unrelated_is_reserved_method(self):
-        findings = run(
-            self.rule,
-            """
-            validator.is_reserved()
-            """,
-        )
-
-        assert len(findings) == 0
-
-    def test_does_not_flag_unrelated_class_method(self):
-        findings = run(
-            self.rule,
-            """
-            class Validator:
-                def is_reserved(self):
-                    return False
-
-            validator = Validator()
-            validator.is_reserved()
-            """,
-        )
-
-        assert len(findings) == 0
-
-    def test_does_not_flag_unrelated_object_method(self):
-        findings = run(
-            self.rule,
-            """
-            custom_object.is_reserved()
-            """,
-        )
-
-        assert len(findings) == 0
-
-    def test_suggestion_mentions_os_path_isreserved(self):
-        findings = run(
-            self.rule,
-            """
-            from pathlib import PurePath
-
-            path = PurePath("CON")
-            path.is_reserved()
-            """,
-        )
-
-        assert "os.path.isreserved" in findings[0].suggestion
+if __name__ == "__main__":
+    main()

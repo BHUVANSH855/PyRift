@@ -1,4 +1,4 @@
-﻿"""CPY062 -- string.templatelib requires Python 3.14+."""
+"""CPY062 -- string.templatelib requires Python 3.14+."""
 from __future__ import annotations
 
 import ast
@@ -16,7 +16,7 @@ class TemplateStringRule(BaseRule):
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
         imp_map = collect_imports(node)
-        for info in imp_map.imports:
+        for info in imp_map.by_statement():
             if info.module == "string.templatelib" or (info.module and info.module.startswith("string.templatelib")):
                 findings.append(Finding(
                     file=filename, line=info.line, col=info.col,

@@ -25,7 +25,7 @@ class DistutilsRule(BaseRule):
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
         imp_map = collect_imports(node)
-        for info in imp_map.imports:
+        for info in imp_map.by_statement():
             mod = info.module or ""
             if mod in DISTUTILS_MODULES or mod.startswith("distutils."):
                 findings.append(Finding(

@@ -1,4 +1,4 @@
-﻿"""CPY012 -- typing.LiteralString requires Python 3.11+ (PEP 675)."""
+"""CPY012 -- typing.LiteralString requires Python 3.11+ (PEP 675)."""
 from __future__ import annotations
 
 import ast
