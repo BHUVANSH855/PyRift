@@ -414,7 +414,7 @@ GOLDEN = {
         ("list([1, 2, 3])", False, "list ok"),
     ],
     "PPY032": [
-        ("d = {{frozenset([1]): 'a'}}", False, "frozenset key ok"),
+        ("d = {{1, 2}: 'a'}", True, "set used as dict key"),
         ("d = {frozenset([1]): 'a'}", False, "frozenset key ok"),
     ],
     "PPY041": [
@@ -774,9 +774,9 @@ def run() -> int:
                 )
                 continue
 
-            if should_flag:
+            if should_flag and did_flag:
                 positive_cases += 1
-            elif did_flag:
+            elif not should_flag and did_flag:
                 false_positives += 1
 
             _validate_metadata(
