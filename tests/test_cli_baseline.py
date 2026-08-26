@@ -350,7 +350,10 @@ class TestBaselineCLI:
             captured.update(kwargs)
             return ScanResult([], 1)
 
-        monkeypatch.setattr("pyrift.cli.scan", fake_scan)
+        monkeypatch.setattr(
+            "pyrift.cli.scan",
+            fake_scan,
+        )
 
         with pytest.raises(SystemExit) as exc:
             main(
@@ -365,3 +368,293 @@ class TestBaselineCLI:
 
         assert exc.value.code == 0
         assert captured["target_config"].platform == "linux"
+
+    def test_changed_only_scans_only_git_changed_files(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        changed = project / "changed.py"
+
+        captured = []
+
+        def fake_changed_python_files(path, base):
+            assert Path(path) == project
+            assert base == "origin/main"
+            return [changed]
+
+        def fake_scan(path, **kwargs):
+            captured.append(Path(path))
+            return ScanResult([], 1)
+
+        monkeypatch.setattr(
+            "pyrift.cli.changed_python_files",
+            fake_changed_python_files,
+        )
+        monkeypatch.setattr(
+            "pyrift.cli.scan",
+            fake_scan,
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--changed-only",
+                    "--base",
+                    "origin/main",
+                    "--no-baseline",
+                ]
+            )
+
+        assert exc.value.code == 0
+        assert captured == [changed]
+
+    def test_changed_only_passes_base_revision(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        changed = project / "changed.py"
+        write_python_file(changed)
+
+        captured = {}
+
+        def fake_changed_python_files(path, base):
+            captured["path"] = Path(path)
+            captured["base"] = base
+            return [changed]
+
+        monkeypatch.setattr(
+            "pyrift.cli.changed_python_files",
+            fake_changed_python_files,
+        )
+        monkeypatch.setattr(
+            "pyrift.cli.scan",
+            lambda *args, **kwargs: ScanResult([], 1),
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--changed-only",
+                    "--base",
+                    "origin/main",
+                    "--no-baseline",
+                ]
+            )
+
+        assert exc.value.code == 0
+        assert captured["path"] == project
+        assert captured["base"] == "origin/main"
+
+    def test_changed_only_reports_git_error(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        def fail_changed_python_files(path, base):
+            from pyrift.git import GitError
+
+            raise GitError(
+                "unable to determine changed files"
+            )
+
+        monkeypatch.setattr(
+            "pyrift.cli.changed_python_files",
+            fail_changed_python_files,
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--changed-only",
+                ]
+            )
+
+        assert exc.value.code == 2
+
+        error = capsys.readouterr().err
+
+        assert "unable to determine changed files" in error
+
+    def test_changed_only_output_contains_scan_context(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        changed = project / "changed.py"
+        write_python_file(changed)
+
+        monkeypatch.setattr(
+            "pyrift.cli.changed_python_files",
+            lambda path, base: [changed],
+        )
+        monkeypatch.setattr(
+            "pyrift.cli.scan",
+            lambda *args, **kwargs: ScanResult([], 1),
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--changed-only",
+                    "--base",
+                    "origin/main",
+                    "--no-baseline",
+                ]
+            )
+
+        assert exc.value.code == 0
+
+        output = capsys.readouterr().out
+
+        assert "PyRift changed-only scan" in output
+        assert "Base: origin/main" in output
+        assert "Changed Python files: 1" in output
+        assert "Files scanned: 1" in output
+        assert "[OK]" in output
+
+    def test_changed_only_output_file_contains_summary(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        changed = project / "changed.py"
+        write_python_file(changed)
+
+        output_file = tmp_path / "report.txt"
+
+        monkeypatch.setattr(
+            "pyrift.cli.changed_python_files",
+            lambda path, base: [changed],
+        )
+        monkeypatch.setattr(
+            "pyrift.cli.scan",
+            lambda *args, **kwargs: ScanResult([], 1),
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--changed-only",
+                    "--base",
+                    "origin/main",
+                    "--no-baseline",
+                    "--output",
+                    str(output_file),
+                ]
+            )
+
+        assert exc.value.code == 0
+        assert capsys.readouterr().out == ""
+
+        output = output_file.read_text(
+            encoding="utf-8",
+        )
+
+        assert "PyRift changed-only scan" in output
+        assert "Base: origin/main" in output
+        assert "Changed Python files: 1" in output
+        assert "Files scanned: 1" in output
+
+    def test_changed_only_baseline_keeps_only_new_findings(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        changed = project / "changed.py"
+        write_python_file(changed)
+
+        baseline = tmp_path / DEFAULT_BASELINE_FILE
+
+        existing = make_finding(
+            file=str(changed),
+            line=10,
+            rule_id="PPY999",
+        )
+        new = make_finding(
+            file=str(changed),
+            line=20,
+            rule_id="PPY998",
+        )
+
+        from pyrift.fingerprint import finding_fingerprint
+
+        baseline.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "findings": [
+                        finding_fingerprint(existing),
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        monkeypatch.chdir(tmp_path)
+
+        monkeypatch.setattr(
+            "pyrift.cli.changed_python_files",
+            lambda path, base: [changed],
+        )
+
+        monkeypatch.setattr(
+            "pyrift.cli.scan",
+            lambda *args, **kwargs: ScanResult(
+                [existing, new],
+                1,
+            ),
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--changed-only",
+                    "--base",
+                    "origin/main",
+                ]
+            )
+
+        assert exc.value.code == 0
+
+        output = capsys.readouterr().out
+
+        assert "PyRift changed-only scan" in output
+        assert "PPY998" in output
+        assert "PPY999" not in output
+        assert "Baseline" in output or "baseline" in output

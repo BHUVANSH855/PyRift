@@ -24,6 +24,7 @@ from .baseline import (
     filter_baseline_findings,
     load_baseline,
 )
+from .git import GitError, changed_python_files
 from .reporter import to_json, to_markdown, to_text
 from .scanner import ScanResult, scan
 from .targets import PythonVersion, TargetConfig
@@ -111,6 +112,23 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Ignore .pyrift-baseline.json when scanning."
+        ),
+    )
+    scan_cmd.add_argument(
+        "--changed-only",
+        action="store_true",
+        help=(
+            "Scan only Python files changed relative to the Git base "
+            "revision."
+        ),
+    )
+
+    scan_cmd.add_argument(
+        "--base",
+        default="HEAD",
+        help=(
+            "Git revision used as the comparison base for "
+            "--changed-only (default: HEAD)."
         ),
     )
 
@@ -290,12 +308,42 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(2)
 
         target_config = _build_target_config(args)
+        changed_count: int | None = None
 
-        result = scan(
-            path,
-            target_config=target_config,
-            use_project_config=not args.no_project_config,
-        )
+        if args.changed_only:
+            try:
+                changed = changed_python_files(path, args.base)
+            except GitError as exc:
+                print(f"pyrift: {exc}", file=sys.stderr)
+                sys.exit(2)
+
+            changed_count = len(changed)
+
+            findings = []
+            rule_errors = []
+            files_scanned = 0
+
+            for changed_file in changed:
+                file_result = scan(
+                    changed_file,
+                    target_config=target_config,
+                    use_project_config=not args.no_project_config,
+                )
+                findings.extend(file_result.findings)
+                rule_errors.extend(file_result.rule_errors)
+                files_scanned += file_result.files_scanned
+
+            result = ScanResult(
+                findings,
+                files_scanned,
+                rule_errors=rule_errors,
+            )
+        else:
+            result = scan(
+                path,
+                target_config=target_config,
+                use_project_config=not args.no_project_config,
+            )
 
         if not args.no_baseline:
             baseline_path = Path(DEFAULT_BASELINE_FILE)
@@ -316,6 +364,7 @@ def main(argv: list[str] | None = None) -> None:
                         baseline,
                     )
                 )
+
                 result = ScanResult(
                     new_findings,
                     result.files_scanned,
@@ -327,6 +376,16 @@ def main(argv: list[str] | None = None) -> None:
             result,
             args.format,
         )
+
+        if args.changed_only and args.format == "text":
+            summary_lines = [
+                "PyRift changed-only scan",
+                f"Base: {args.base}",
+                f"Changed Python files: {changed_count}",
+                f"Files scanned: {result.files_scanned}",
+                "",
+            ]
+            output = "\n".join(summary_lines) + output
 
         if args.output:
             Path(args.output).write_text(
