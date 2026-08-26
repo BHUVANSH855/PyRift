@@ -118,3 +118,31 @@ class TestFindingFingerprint:
             character in "0123456789abcdef"
             for character in fingerprint
         )
+
+    def test_windows_absolute_path_normalized(self):
+        # C:\path\to\src\example.py and C:/path/to/src/example.py
+        # should have same fingerprint (backslash vs forward slash)
+        first = make_finding()
+        first.file = r"C:\path\to\src\example.py"
+
+        second = make_finding()
+        second.file = "path/to/src/example.py"
+
+        assert finding_fingerprint(first) == finding_fingerprint(second)
+
+    def test_absolute_posix_path_normalized(self):
+        # /home/user/project/src.py → src.py (leading slash stripped)
+        first = make_finding()
+        first.file = "/home/user/project/src/example.py"
+
+        second = make_finding()
+        second.file = "src/example.py"
+
+        # Different paths but normalized — different findings
+        assert finding_fingerprint(first) != finding_fingerprint(second)
+
+    def test_fingerprint_stable_across_calls(self):
+        finding = make_finding()
+        fp1 = finding_fingerprint(finding)
+        fp2 = finding_fingerprint(finding)
+        assert fp1 == fp2

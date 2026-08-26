@@ -33,13 +33,6 @@ def _normalize_path(path: str) -> str:
     p = p.lstrip("/")
     return p
 
-def _normalize_path(path: str) -> str:
-    """Normalize file path to be portable across OS and invocation styles."""
-    p = path.replace("\\", "/")
-    if len(p) >= 2 and p[1] == ":":
-        p = p[2:]
-    return p.lstrip("/")
-
 def finding_fingerprint(finding: Finding) -> str:
     """
     Return a stable fingerprint for a finding.
