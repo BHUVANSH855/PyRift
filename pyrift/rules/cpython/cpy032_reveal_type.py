@@ -1,54 +1,29 @@
-"""
-CPY032 — typing.reveal_type requires Python 3.11+
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-typing.reveal_type was added as a proper stdlib function in Python
-3.11. Before 3.11, reveal_type was only a special form recognised
-by type checkers — calling it at runtime raises NameError on 3.10-.
-"""
+﻿"""CPY032 -- typing.reveal_type requires Python 3.11+ (PEP 544)."""
 from __future__ import annotations
 
 import ast
 
+from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 
 
 class RevealTypeRule(BaseRule):
     rule_id = "CPY032"
-    title   = "typing.reveal_type requires Python 3.11+"
+    title = "typing.reveal_type requires Python 3.11+"
     runtime = "cpython"
 
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
-        for n in ast.walk(node):
-            if isinstance(n, ast.ImportFrom) and n.module == "typing":
-                for alias in n.names:
-                    if alias.name == "reveal_type":
-                        findings.append(Finding(
-                            file=filename,
-                            line=n.lineno,
-                            col=n.col_offset,
-                            rule_id=self.rule_id,
-                            title=self.title,
-                            description=(
-                                "typing.reveal_type was added to the stdlib "
-                                "in Python 3.11. Before 3.11, reveal_type was "
-                                "only recognised by type checkers as a special "
-                                "form — importing it from typing on 3.10 or "
-                                "below raises ImportError at runtime."
-                            ),
-                            severity=Severity.ERROR,
-                            runtime=Runtime.CPYTHON,
-                            affected_from="3.0",
-                            affected_until="3.10",
-                            suggestion=(
-                                "Guard with: if sys.version_info >= (3, 11): "
-                                "from typing import reveal_type "
-                                "else: from typing_extensions import reveal_type"
-                            ),
-                            docs_url=(
-                                "https://docs.python.org/3/library/typing.html"
-                                "#typing.reveal_type"
-                            ),
-                        ))
+        for info in collect_imports(node).imports:
+            if info.module == "typing" and info.name == "reveal_type":
+                findings.append(Finding(
+                    file=filename, line=info.line, col=info.col,
+                    rule_id=self.rule_id, title=self.title,
+                    description="typing.reveal_type requires Python 3.11+. Raises ImportError on Python 3.10 and below.",
+                    severity=Severity.ERROR, runtime=Runtime.CPYTHON,
+                    affected_from="3.0", affected_until="3.10",
+                    suggestion="Guard with: if sys.version_info >= (11,): from typing import reveal_type -- or use typing_extensions.",
+                    docs_url="https://peps.python.org/pep-544/",
+                ))
         return findings

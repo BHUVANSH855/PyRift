@@ -1,52 +1,29 @@
-"""
-CPY011 — typing.Self requires Python 3.11+
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-typing.Self was added in Python 3.11 (PEP 673).
-Using it on 3.10 or below raises ImportError at runtime.
-"""
+﻿"""CPY011 -- typing.Self requires Python 3.11+ (PEP 673)."""
 from __future__ import annotations
 
 import ast
 
+from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
-
-TYPING_311 = {"Self", "LiteralString", "Never", "TypeAlias", "Unpack"}
 
 
 class TypingSelfRule(BaseRule):
     rule_id = "CPY011"
-    title   = "typing.Self requires Python 3.11+"
+    title = "typing.Self requires Python 3.11+"
     runtime = "cpython"
 
     def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
-
-        for n in ast.walk(node):
-            if isinstance(n, ast.ImportFrom) and n.module == "typing":
-                for alias in n.names:
-                    if alias.name == "Self":
-                        findings.append(Finding(
-                            file=filename,
-                            line=n.lineno,
-                            col=n.col_offset,
-                            rule_id=self.rule_id,
-                            title=self.title,
-                            description=(
-                                "typing.Self was added in Python 3.11 "
-                                "(PEP 673). Importing it on Python 3.10 "
-                                "or below raises ImportError at runtime."
-                            ),
-                            severity=Severity.ERROR,
-                            runtime=Runtime.CPYTHON,
-                            affected_from="3.0",
-                            affected_until="3.10",
-                            suggestion=(
-                                "Guard with: if sys.version_info >= (3, 11): "
-                                "from typing import Self "
-                                "else: from typing_extensions import Self"
-                            ),
-                            docs_url="https://peps.python.org/pep-0673/",
-                        ))
-
+        for info in collect_imports(node).imports:
+            if info.module == "typing" and info.name == "Self":
+                findings.append(Finding(
+                    file=filename, line=info.line, col=info.col,
+                    rule_id=self.rule_id, title=self.title,
+                    description="typing.Self requires Python 3.11+. Raises ImportError on Python 3.10 and below.",
+                    severity=Severity.ERROR, runtime=Runtime.CPYTHON,
+                    affected_from="3.0", affected_until="3.10",
+                    suggestion="Guard with: if sys.version_info >= (11,): from typing import Self -- or use typing_extensions.",
+                    docs_url="https://peps.python.org/pep-673/",
+                ))
         return findings

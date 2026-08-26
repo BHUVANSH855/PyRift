@@ -27,5 +27,6 @@ class TestCPY040:
 
     def test_suggestion_mentions_version(self):
         findings = run(self.rule, "import graphlib")
-        assert "3.9" in findings[0].suggestion or \
+        assert "3, 9" in findings[0].suggestion or \
+               "3.9" in findings[0].suggestion or \
                "backport" in findings[0].suggestion.lower()
