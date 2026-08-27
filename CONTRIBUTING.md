@@ -22,10 +22,10 @@ This is the most common contribution. Here is the exact process.
 
 ### 1. Choose a rule ID
 
-- CPython version compatibility rules: `CPY008`, `CPY009`, ...
-- PyPy behaviour difference rules: `PPY005`, `PPY006`, ...
+- CPython version compatibility rules: `CPY064`, `CPY065`, ...
+- PyPy behaviour difference rules: `PPY048`, `PPY049`, ...
 
-Check existing rules to find the next available number.
+Check `pyrift/scanner.py` for the current highest rule ID.
 
 ### 2. Create the rule file
 
@@ -116,10 +116,33 @@ Title format: `feat: add CPYXXX — short description`
 ## Development setup
 
 ```bash
-git clone https://github.com/BHUVANSH855/pyrift.git
-cd pyrift
+git clone https://github.com/BHUVANSH855/PyRift.git
+cd PyRift
 pip install -e ".[dev]"
-pytest tests/ -v
+```
+
+## Validation commands
+
+Run all of these before submitting a PR:
+
+```bash
+# Lint
+ruff check .
+
+# Unit tests
+pytest tests/ -q
+
+# Golden benchmark — must be 100%
+python benchmark/run_benchmark.py
+
+# Self-scan — must produce 0 findings
+python benchmark/self_scan.py
+
+# Corpus benchmark
+python benchmark/corpus.py
+
+# Update README stats
+python scripts/generate_docs.py
 ```
 
 ---
@@ -128,11 +151,16 @@ pytest tests/ -v
 
 Before submitting, verify your rule:
 
-- Has zero false positives on the pyrift codebase itself (`pyrift scan pyrift/`)
+- Has zero false positives on the pyrift codebase itself
 - Has a concrete, actionable suggestion — not just "be careful"
 - Has a `docs_url` pointing to official Python or PyPy documentation
 - Is grounded in a real behaviour difference — not a style preference
-- Has at least one positive and one negative test
+- Has at least one positive and one negative test case
+- Has a golden benchmark entry in `benchmark/run_benchmark.py`
+- Has a contract in `benchmark/expected.json`
+- Is registered in `pyrift/scanner.py` (import + ALL_RULES entry)
+- Has metadata in `pyrift/rule_metadata.py`
+- Is documented in `docs/rules.md`
 
 ---
 

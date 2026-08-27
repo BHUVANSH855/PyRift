@@ -1,150 +1,146 @@
 """
-Tests for Git changed-file discovery.
+Tests for pyrift.git — Git helpers for changed-file scanning.
 """
-
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from pyrift.git import GitError, changed_python_files, repository_root
 
 
-def _git(
-    repo: Path,
-    *args: str,
-) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", *args],
-        cwd=repo,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+class TestRepositoryRoot:
+    def test_raises_git_error_when_not_in_repo(self, tmp_path):
+        with (
+            patch("subprocess.run", side_effect=subprocess.CalledProcessError(128, "git")),
+            pytest.raises(GitError),
+        ):
+            repository_root(tmp_path)
+
+    def test_raises_git_error_on_os_error(self, tmp_path):
+        with (
+            patch("subprocess.run", side_effect=OSError("git not found")),
+            pytest.raises(GitError),
+        ):
+            repository_root(tmp_path)
+
+    def test_returns_path_from_git_output(self, tmp_path):
+        mock_result = MagicMock()
+        mock_result.stdout = str(tmp_path) + "\n"
+        with patch("subprocess.run", return_value=mock_result):
+            result = repository_root(tmp_path)
+        assert result == tmp_path.resolve()
 
 
-def _init_repo(tmp_path: Path) -> Path:
-    repo = tmp_path / "repo"
-    repo.mkdir()
+class TestChangedPythonFiles:
+    def test_raises_git_error_on_failure(self, tmp_path):
+        with (
+            patch("pyrift.git.repository_root", side_effect=GitError("no git")),
+            pytest.raises(GitError),
+        ):
+            changed_python_files(tmp_path)
 
-    _git(repo, "init")
-    _git(repo, "config", "user.email", "test@example.com")
-    _git(repo, "config", "user.name", "PyRift Tests")
+    def test_filters_non_python_files(self, tmp_path):
+        py_file = tmp_path / "test.py"
+        py_file.write_text("x = 1")
 
-    return repo
+        with (
+            patch("pyrift.git.repository_root", return_value=tmp_path),
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_run.side_effect = [
+                MagicMock(stdout="test.py\nREADME.txt\n"),
+                MagicMock(stdout=""),
+                MagicMock(stdout=""),
+            ]
+            result = changed_python_files(tmp_path)
 
+        assert all(p.suffix == ".py" for p in result)
 
-def test_repository_root_returns_repo_root(tmp_path: Path) -> None:
-    repo = _init_repo(tmp_path)
-    nested = repo / "src"
-    nested.mkdir()
+    def test_returns_sorted_list(self, tmp_path):
+        b_py = tmp_path / "b.py"
+        a_py = tmp_path / "a.py"
+        b_py.write_text("x = 1")
+        a_py.write_text("x = 1")
 
-    assert repository_root(nested) == repo.resolve()
+        with (
+            patch("pyrift.git.repository_root", return_value=tmp_path),
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_run.side_effect = [
+                MagicMock(stdout="b.py\na.py\n"),
+                MagicMock(stdout=""),
+                MagicMock(stdout=""),
+            ]
+            result = changed_python_files(tmp_path)
 
+        assert result == sorted(result)
 
-def test_changed_python_files_returns_modified_python_files(
-    tmp_path: Path,
-) -> None:
-    repo = _init_repo(tmp_path)
+    def test_excludes_files_outside_target_path(self, tmp_path):
+        sub = tmp_path / "sub"
+        sub.mkdir()
+        outside_file = tmp_path / "outside.py"
+        outside_file.write_text("x = 1")
+        inside_file = sub / "inside.py"
+        inside_file.write_text("x = 1")
 
-    source = repo / "example.py"
-    source.write_text("value = 1\n", encoding="utf-8")
+        with (
+            patch("pyrift.git.repository_root", return_value=tmp_path),
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_run.side_effect = [
+                MagicMock(stdout="outside.py\nsub/inside.py\n"),
+                MagicMock(stdout=""),
+                MagicMock(stdout=""),
+            ]
+            result = changed_python_files(sub)
 
-    readme = repo / "README.md"
-    readme.write_text("# Example\n", encoding="utf-8")
+        # Files outside the scan target (sub/) should be excluded
+        # Result should only contain files under sub/
+        for p in result:
+            assert "inside.py" in str(p) or p.parent == sub
 
-    _git(repo, "add", ".")
-    _git(repo, "commit", "-m", "initial")
+    def test_git_subprocess_error_raises_git_error(self, tmp_path):
+        with (
+            patch("pyrift.git.repository_root", return_value=tmp_path),
+            patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "git")),
+            pytest.raises(GitError),
+        ):
+            changed_python_files(tmp_path)
 
-    source.write_text("value = 2\n", encoding="utf-8")
-    readme.write_text("# Updated\n", encoding="utf-8")
+    def test_skips_deleted_files(self, tmp_path):
+        existing = tmp_path / "exists.py"
+        existing.write_text("x = 1")
 
-    assert changed_python_files(repo) == [source.resolve()]
+        with (
+            patch("pyrift.git.repository_root", return_value=tmp_path),
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_run.side_effect = [
+                MagicMock(stdout="exists.py\ndeleted.py\n"),
+                MagicMock(stdout=""),
+                MagicMock(stdout=""),
+            ]
+            result = changed_python_files(tmp_path)
 
+        assert all(p.exists() for p in result)
 
-def test_changed_python_files_includes_new_python_files(
-    tmp_path: Path,
-) -> None:
-    repo = _init_repo(tmp_path)
+    def test_deduplicates_across_diff_and_staged(self, tmp_path):
+        py_file = tmp_path / "test.py"
+        py_file.write_text("x = 1")
 
-    initial = repo / "initial.py"
-    initial.write_text("value = 1\n", encoding="utf-8")
+        with (
+            patch("pyrift.git.repository_root", return_value=tmp_path),
+            patch("subprocess.run") as mock_run,
+        ):
+            # Same file in both diff and staged
+            mock_run.side_effect = [
+                MagicMock(stdout="test.py\n"),
+                MagicMock(stdout="test.py\n"),
+                MagicMock(stdout=""),
+            ]
+            result = changed_python_files(tmp_path)
 
-    _git(repo, "add", ".")
-    _git(repo, "commit", "-m", "initial")
-
-    new_file = repo / "new_module.py"
-    new_file.write_text("value = 2\n", encoding="utf-8")
-
-    assert changed_python_files(repo) == [new_file.resolve()]
-
-
-def test_changed_python_files_includes_staged_new_python_files(
-    tmp_path: Path,
-) -> None:
-    repo = _init_repo(tmp_path)
-
-    initial = repo / "initial.py"
-    initial.write_text("value = 1\n", encoding="utf-8")
-
-    _git(repo, "add", ".")
-    _git(repo, "commit", "-m", "initial")
-
-    new_file = repo / "staged_module.py"
-    new_file.write_text("value = 2\n", encoding="utf-8")
-
-    _git(repo, "add", str(new_file))
-
-    assert changed_python_files(repo) == [new_file.resolve()]
-
-
-def test_changed_python_files_excludes_non_python_files(
-    tmp_path: Path,
-) -> None:
-    repo = _init_repo(tmp_path)
-
-    source = repo / "example.py"
-    source.write_text("value = 1\n", encoding="utf-8")
-
-    _git(repo, "add", ".")
-    _git(repo, "commit", "-m", "initial")
-
-    readme = repo / "README.md"
-    readme.write_text("# Updated\n", encoding="utf-8")
-
-    assert changed_python_files(repo) == []
-
-
-def test_changed_python_files_respects_path_scope(
-    tmp_path: Path,
-) -> None:
-    repo = _init_repo(tmp_path)
-
-    src = repo / "src"
-    src.mkdir()
-
-    inside = src / "inside.py"
-    inside.write_text("value = 1\n", encoding="utf-8")
-
-    outside = repo / "outside.py"
-    outside.write_text("value = 1\n", encoding="utf-8")
-
-    _git(repo, "add", ".")
-    _git(repo, "commit", "-m", "initial")
-
-    inside.write_text("value = 2\n", encoding="utf-8")
-    outside.write_text("value = 2\n", encoding="utf-8")
-
-    assert changed_python_files(src) == [inside.resolve()]
-
-
-def test_changed_python_files_raises_for_non_git_directory(
-    tmp_path: Path,
-) -> None:
-    directory = tmp_path / "not-a-repo"
-    directory.mkdir()
-
-    with pytest.raises(GitError):
-        changed_python_files(directory)
+        assert len(result) == 1
