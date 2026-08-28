@@ -230,3 +230,14 @@ class TestFilterBaselineFindings:
 
         assert new_findings == []
         assert baseline_findings == findings
+
+class TestBaselineEdgeCases:
+    def test_malformed_baseline_not_dict(self, tmp_path):
+        """Baseline must be a JSON object, not an array."""
+        import json
+
+        from pyrift.baseline import BaselineError, load_baseline
+        baseline_file = tmp_path / ".pyrift-baseline.json"
+        baseline_file.write_text(json.dumps([1, 2, 3]))
+        with pytest.raises(BaselineError, match="JSON object"):
+            load_baseline(baseline_file)

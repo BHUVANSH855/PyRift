@@ -208,3 +208,59 @@ def test_markdown_includes_confidence_and_evidence():
 
     assert "**Confidence:** `medium`" in output
     assert "**Evidence:** `pep` (`pep:703`)" in output
+
+
+class TestScanResultRepr:
+    def test_repr_basic(self):
+        from pyrift.scanner import ScanResult
+        result = ScanResult(findings=[], files_scanned=5)
+        r = repr(result)
+        assert "ScanResult" in r
+        assert "5" in r
+
+    def test_repr_with_baseline_suppressed(self):
+        from pyrift.scanner import ScanResult
+        result = ScanResult(findings=[], files_scanned=3, baseline_suppressed=2)
+        r = repr(result)
+        assert "baseline suppressed" in r
+        assert "2" in r
+
+    def test_score_with_findings(self):
+        from pyrift.finding import Finding, Runtime, Severity
+        from pyrift.scanner import ScanResult
+        errors = [
+            Finding(file="f.py", line=1, col=0, rule_id="CPY001",
+                    title="t", description="d", severity=Severity.ERROR,
+                    runtime=Runtime.CPYTHON)
+            for _ in range(3)
+        ]
+        result = ScanResult(findings=errors, files_scanned=10)
+        assert result.score == max(0, 100 - 3 * 10 - 0 * 3)
+
+    def test_score_zero_floor(self):
+        from pyrift.finding import Finding, Runtime, Severity
+        from pyrift.scanner import ScanResult
+        errors = [
+            Finding(file="f.py", line=1, col=0, rule_id="CPY001",
+                    title="t", description="d", severity=Severity.ERROR,
+                    runtime=Runtime.CPYTHON)
+            for _ in range(20)
+        ]
+        result = ScanResult(findings=errors, files_scanned=10)
+        assert result.score == 0
+
+    def test_scan_single_py_file(self, tmp_path):
+        """Scanner accepts a single .py file, not just directories."""
+        from pyrift.scanner import scan
+        py_file = tmp_path / "example.py"
+        py_file.write_text("import cgi\n")
+        result = scan(py_file)
+        assert result.files_scanned == 1
+
+    def test_scan_single_non_py_file(self, tmp_path):
+        """Scanner skips non-.py files when given directly."""
+        from pyrift.scanner import scan
+        txt_file = tmp_path / "example.txt"
+        txt_file.write_text("import cgi\n")
+        result = scan(txt_file)
+        assert result.files_scanned == 0

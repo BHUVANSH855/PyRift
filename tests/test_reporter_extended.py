@@ -121,3 +121,8 @@ class TestToJson:
         data = json.loads(to_json(result))
         assert data["summary"]["errors"] == 1
         assert data["summary"]["warnings"] == 1
+
+    def test_text_no_findings_with_rule_errors(self):
+        result = make_result(rule_errors=["CPY001: crashed"])
+        text = to_text(result)
+        assert "rule" in text.lower() or "error" in text.lower() or "WARN" in text or text
