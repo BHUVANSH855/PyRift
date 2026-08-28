@@ -109,10 +109,10 @@ def _is_local_dedup_pattern(
     parent_map: dict[int, ast.AST],
 ) -> bool:
     """
-    Return whether id() is part of a local AST-analysis dedup key.
+    Return True for narrow local AST-analysis deduplication patterns.
 
-    This intentionally recognizes the narrow patterns used by PyRift's
-    own AST-analysis code rather than excluding every assignment.
+    Do not treat arbitrary assignments as safe. A normal assignment such
+    as ``cached_id = id(obj)`` must remain visible to PPY009.
     """
     parent = parent_map.get(id(node))
 
