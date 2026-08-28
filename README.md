@@ -178,6 +178,17 @@ pyrift does not replace any of these tools. It catches what they all miss.
 
 ---
 
+## Git-aware scanning
+
+For maintainer and CI workflows, PyRift can scan only Python files changed
+relative to a Git revision:
+
+```bash
+pyrift scan . --changed-only
+```
+
+---
+
 ## Roadmap
 
 Planned for upcoming versions - contributions welcome:
@@ -188,8 +199,7 @@ Planned for upcoming versions - contributions welcome:
 - VS Code extension
 - GitHub Action marketplace listing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) to add a rule yourself - rule IDs
-`CPY046+` and `PPY046+` are open for community contributions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) to add a rule yourself. New rule IDs are assigned after reviewing the existing rule inventory to avoid collisions and duplicate coverage.
 
 ---
 
@@ -206,7 +216,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 - **Version:** 0.8.0
 - **Rules:** 104 total (58 CPython + 44 PyPy + 2 cross-runtime)
-- **Tests:** 627 passing
+- **Tests:** 690 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 

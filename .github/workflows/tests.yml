@@ -51,6 +51,9 @@ jobs:
       - name: Run tests
         run: python -m pytest tests/ -q
 
+      - name: Check documentation statistics
+        run: python scripts/check_docs.py
+
       - name: Run golden benchmark
         run: python benchmark/run_benchmark.py
 
