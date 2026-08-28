@@ -1,6 +1,4 @@
----
-
-## Quick start — Python API
+﻿## Quick start - Python API
 
 ```python
 import pyrift
@@ -17,7 +15,7 @@ for finding in result.findings:
 
 # Filter by severity
 for error in result.errors:
-    print(f"{error.file}:{error.line} — {error.title}")
+    print(f"{error.file}:{error.line} - {error.title}")
 
 # Export formats
 json_output     = pyrift.to_json(result)
@@ -32,57 +30,57 @@ findings = pyrift.scan_file("./src/utils.py")
 
 ## Rules
 
-### CPython rules — version compatibility
+### CPython rules - version compatibility
 
 | ID | Title | Severity | Affects |
 |---|---|---|---|
 | CPY001 | Dict ordering assumption | Warning | CPython < 3.7 |
-| CPY002 | `Exception.add_note()` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY003 | `X \| Y` union type syntax requires Python 3.10+ | Error | CPython ≤ 3.9 |
-| CPY004 | `tomllib` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY005 | `match/case` requires Python 3.10+ | Error | CPython ≤ 3.9 |
-| CPY006 | `asyncio.timeout()` / `TaskGroup` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY007 | Module removed in Python 3.13 (21 modules) | Error | CPython ≥ 3.13 |
+| CPY002 | `Exception.add_note()` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY003 | `X \| Y` union type syntax requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
+| CPY004 | `tomllib` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY005 | `match/case` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
+| CPY006 | `asyncio.timeout()` / `TaskGroup` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY007 | Module removed in Python 3.13 (21 modules) | Error | CPython â‰¥ 3.13 |
 | CPY008 | `__slots__` may not prevent `__dict__` with base classes | Info | All versions |
-| CPY009 | `ExceptionGroup` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY010 | `@dataclass(slots=True)` requires Python 3.10+ | Error | CPython ≤ 3.9 |
-| CPY011 | `typing.Self` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY012 | `typing.LiteralString` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY013 | `typing.override` requires Python 3.12+ | Error | CPython ≤ 3.11 |
-| CPY014 | `typing.TypeAlias` requires Python 3.10+ | Error | CPython ≤ 3.9 |
-| CPY015 | `typing.Never` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY016 | `typing.TypeVarTuple` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY017 | `typing.Unpack` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY018 | `typing.Required` / `NotRequired` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY019 | `distutils` removed in Python 3.12+ | Error | CPython ≥ 3.12 |
-| CPY020 | `datetime.UTC` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY021 | `asyncio.iscoroutinefunction()` deprecated since 3.12 | Warning | CPython ≥ 3.12 |
-| CPY022 | Bitwise inversion on bool deprecated in 3.12 | Warning | CPython ≥ 3.12 |
-| CPY023 | `multiprocessing` default start method changing in 3.14 | Warning | CPython ≥ 3.14 |
-| CPY024 | `typing.TypeGuard` requires Python 3.10+ | Error | CPython ≤ 3.9 |
-| CPY025 | `typing.ParamSpec` requires Python 3.10+ | Error | CPython ≤ 3.9 |
-| CPY026 | `typing.io` and `typing.re` removed in Python 3.13 | Error | CPython ≥ 3.13 |
-| CPY027 | `locale.resetlocale()` removed in Python 3.13 | Error | CPython ≥ 3.13 |
-| CPY028 | `lib2to3` removed in Python 3.13 | Error | CPython ≥ 3.13 |
-| CPY029 | `locals()` semantics changed in Python 3.13 | Warning | CPython ≥ 3.13 |
-| CPY030 | `sys.path` no longer accepts bytes in Python 3.11+ | Error | CPython ≥ 3.11 |
-| CPY031 | `typing.assert_never` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY032 | `typing.reveal_type` requires Python 3.11+ | Error | CPython ≤ 3.10 |
-| CPY033 | `pathlib.Path.is_relative_to()` requires Python 3.9+ | Error | CPython ≤ 3.8 |
-| CPY034 | `int.bit_count()` requires Python 3.10+ | Error | CPython ≤ 3.9 |
-| CPY035 | `str.removeprefix/removesuffix` requires Python 3.9+ | Error | CPython ≤ 3.8 |
-| CPY036 | `datetime.utcnow()` deprecated since Python 3.12 | Warning | CPython ≥ 3.12 |
-| CPY037 | `datetime.utcfromtimestamp()` deprecated since Python 3.12 | Warning | CPython ≥ 3.12 |
-| CPY038 | `asyncio.get_event_loop()` raises RuntimeError in 3.12+ | Error | CPython ≥ 3.12 |
-| CPY039 | `zoneinfo` module requires Python 3.9+ | Error | CPython ≤ 3.8 |
-| CPY040 | `graphlib` module requires Python 3.9+ | Error | CPython ≤ 3.8 |
-| CPY041 | dict `\|` merge operator requires Python 3.9+ | Error | CPython ≤ 3.8 |
-| CPY042 | `aiter()` and `anext()` builtins require Python 3.10+ | Error | CPython ≤ 3.9 |
-| CPY043 | `math.lcm()` requires Python 3.9+ | Error | CPython ≤ 3.8 |
-| CPY044 | `math.gcd()` multi-arg form requires Python 3.9+ | Error | CPython ≤ 3.8 |
-| CPY045 | NaN hash behaviour changed in Python 3.10 | Warning | CPython ≥ 3.10 |
+| CPY009 | `ExceptionGroup` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY010 | `@dataclass(slots=True)` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
+| CPY011 | `typing.Self` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY012 | `typing.LiteralString` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY013 | `typing.override` requires Python 3.12+ | Error | CPython â‰¤ 3.11 |
+| CPY014 | `typing.TypeAlias` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
+| CPY015 | `typing.Never` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY016 | `typing.TypeVarTuple` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY017 | `typing.Unpack` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY018 | `typing.Required` / `NotRequired` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY019 | `distutils` removed in Python 3.12+ | Error | CPython â‰¥ 3.12 |
+| CPY020 | `datetime.UTC` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY021 | `asyncio.iscoroutinefunction()` deprecated since 3.12 | Warning | CPython â‰¥ 3.12 |
+| CPY022 | Bitwise inversion on bool deprecated in 3.12 | Warning | CPython â‰¥ 3.12 |
+| CPY023 | `multiprocessing` default start method changing in 3.14 | Warning | CPython â‰¥ 3.14 |
+| CPY024 | `typing.TypeGuard` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
+| CPY025 | `typing.ParamSpec` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
+| CPY026 | `typing.io` and `typing.re` removed in Python 3.13 | Error | CPython â‰¥ 3.13 |
+| CPY027 | `locale.resetlocale()` removed in Python 3.13 | Error | CPython â‰¥ 3.13 |
+| CPY028 | `lib2to3` removed in Python 3.13 | Error | CPython â‰¥ 3.13 |
+| CPY029 | `locals()` semantics changed in Python 3.13 | Warning | CPython â‰¥ 3.13 |
+| CPY030 | `sys.path` no longer accepts bytes in Python 3.11+ | Error | CPython â‰¥ 3.11 |
+| CPY031 | `typing.assert_never` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY032 | `typing.reveal_type` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
+| CPY033 | `pathlib.Path.is_relative_to()` requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
+| CPY034 | `int.bit_count()` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
+| CPY035 | `str.removeprefix/removesuffix` requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
+| CPY036 | `datetime.utcnow()` deprecated since Python 3.12 | Warning | CPython â‰¥ 3.12 |
+| CPY037 | `datetime.utcfromtimestamp()` deprecated since Python 3.12 | Warning | CPython â‰¥ 3.12 |
+| CPY038 | `asyncio.get_event_loop()` raises RuntimeError in 3.12+ | Error | CPython â‰¥ 3.12 |
+| CPY039 | `zoneinfo` module requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
+| CPY040 | `graphlib` module requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
+| CPY041 | dict `\|` merge operator requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
+| CPY042 | `aiter()` and `anext()` builtins require Python 3.10+ | Error | CPython â‰¤ 3.9 |
+| CPY043 | `math.lcm()` requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
+| CPY044 | `math.gcd()` multi-arg form requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
+| CPY045 | NaN hash behaviour changed in Python 3.10 | Warning | CPython â‰¥ 3.10 |
 
-### PyPy rules — runtime differences
+### PyPy rules - runtime differences
 
 | ID | Title | Severity | Affects |
 |---|---|---|---|
@@ -96,10 +94,10 @@ findings = pyrift.scan_file("./src/utils.py")
 | PPY008 | `threading.local()` cleanup timing differs on PyPy | Warning | PyPy all versions |
 | PPY009 | `id()` values not stable across GC cycles on PyPy | Warning | PyPy all versions |
 | PPY010 | `gc.collect()` behaviour differs on PyPy | Warning | PyPy all versions |
-| PPY011 | `array.array('u')` type code removed in Python 3.13 | Error | CPython ≥ 3.13 |
+| PPY011 | `array.array('u')` type code removed in Python 3.13 | Error | CPython â‰¥ 3.13 |
 | PPY012 | Overriding built-in methods behaves differently on PyPy | Warning | PyPy all versions |
 | PPY013 | `sys.getsizeof()` raises `TypeError` on PyPy | Error | PyPy all versions |
-| PPY014 | String concatenation in loops is O(n²) on PyPy | Warning | PyPy all versions |
+| PPY014 | String concatenation in loops is O(nÂ²) on PyPy | Warning | PyPy all versions |
 | PPY015 | Generator cleanup timing differs on PyPy | Warning | PyPy all versions |
 | PPY016 | Instance `__dict__` ordering not guaranteed on PyPy | Warning | PyPy all versions |
 | PPY017 | Adding `__del__` to existing class not called on PyPy | Error | PyPy all versions |
@@ -148,7 +146,7 @@ Add pyrift to your GitHub Actions workflow:
     pyrift scan .
 ```
 
-Exit code is `1` when errors are found — fails the CI build automatically.
+Exit code is `1` when errors are found - fails the CI build automatically.
 Use `--exit-zero` to report without failing.
 
 ---
@@ -182,22 +180,22 @@ pyrift does not replace any of these tools. It catches what they all miss.
 
 ## Roadmap
 
-Planned for upcoming versions — contributions welcome:
+Planned for upcoming versions - contributions welcome:
 
-- `CPY064+` — next CPython compatibility rules (open for contributions)
-- `PPY048+` — next PyPy runtime difference rules (open for contributions)
+- `CPY064+` - next CPython compatibility rules (open for contributions)
+- `PPY048+` - next PyPy runtime difference rules (open for contributions)
 - Pre-commit hook native support
 - VS Code extension
 - GitHub Action marketplace listing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) to add a rule yourself — rule IDs
+See [CONTRIBUTING.md](CONTRIBUTING.md) to add a rule yourself - rule IDs
 `CPY046+` and `PPY046+` are open for community contributions.
 
 ---
 
 ## Contributing
 
-Contributions are very welcome — especially new rules for behaviour differences
+Contributions are very welcome - especially new rules for behaviour differences
 you have personally encountered.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
@@ -216,11 +214,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## Author
 
-Built by [Bhuvansh Kataria](https://github.com/BHUVANSH855) —
+Built by [Bhuvansh Kataria](https://github.com/BHUVANSH855) -
 CPython contributor and PyPy toolkit author.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT - see [LICENSE](LICENSE)
+
