@@ -283,7 +283,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 - **Version:** 0.8.0
 - **Rules:** 101 total (57 CPython + 43 PyPy + 1 cross-runtime)
-- **Tests:** 1111 passing
+- **Tests:** 1117 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
