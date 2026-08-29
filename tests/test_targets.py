@@ -48,6 +48,19 @@ def test_greater_than_range(tmp_path):
     assert config.maximum is None
 
 
+def test_greater_than_311_range(tmp_path):
+    (tmp_path / "pyproject.toml").write_text(
+        "[project]\n"
+        'requires-python = ">3.11"\n'
+    )
+
+    config = load_project_targets(tmp_path)
+
+    assert config is not None
+    assert config.minimum == PythonVersion(3, 12)
+    assert config.maximum is None
+
+
 def test_less_than_range(tmp_path):
     (tmp_path / "pyproject.toml").write_text(
         "[project]\n"
@@ -59,6 +72,19 @@ def test_less_than_range(tmp_path):
     assert config is not None
     assert config.minimum is None
     assert config.maximum == PythonVersion(3, 13)
+
+
+def test_less_than_310_range(tmp_path):
+    (tmp_path / "pyproject.toml").write_text(
+        "[project]\n"
+        'requires-python = "<3.10"\n'
+    )
+
+    config = load_project_targets(tmp_path)
+
+    assert config is not None
+    assert config.minimum is None
+    assert config.maximum == PythonVersion(3, 9)
 
 
 def test_exact_version_range(tmp_path):

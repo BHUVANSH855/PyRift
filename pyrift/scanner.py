@@ -284,15 +284,28 @@ class ScanResult:
 
 
 def _python_files(path: Path) -> Iterator[Path]:
+    """Yield Python files in deterministic case-folded path order."""
     if path.is_file():
         if path.suffix == ".py":
             yield path
         return
+
+    python_files: list[Path] = []
+
     for root, dirs, files in os.walk(path):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-        for f in files:
-            if f.endswith(".py"):
-                yield Path(root) / f
+        dirs[:] = sorted(
+            (directory for directory in dirs if directory not in SKIP_DIRS),
+            key=str.casefold,
+        )
+
+        for filename in files:
+            if filename.endswith(".py"):
+                python_files.append(Path(root) / filename)
+
+    yield from sorted(
+        python_files,
+        key=lambda filepath: str(filepath).casefold(),
+    )
 
 
 def _scan_file_detailed(
@@ -310,7 +323,28 @@ def _scan_file_detailed(
         try:
             source = filepath.read_text(encoding="utf-8-sig")
         except UnicodeDecodeError:
-            logger.warning("Skipping %s: unable to decode with UTF-8", filepath)
+            logger.warning(
+                "Skipping %s: unable to decode with UTF-8",
+                filepath,
+            )
+            return findings, rule_errors
+        except OSError as exc:
+            from .finding import Runtime, Severity
+
+            findings.append(
+                Finding(
+                    file=str(filepath),
+                    line=1,
+                    rule_id="PARSE",
+                    title="File could not be read",
+                    description=(
+                        "The source file could not be read by pyrift: "
+                        f"{type(exc).__name__}: {exc}"
+                    ),
+                    severity=Severity.ERROR,
+                    runtime=Runtime.BOTH,
+                )
+            )
             return findings, rule_errors
 
         if "\x00" in source:
@@ -322,7 +356,10 @@ def _scan_file_detailed(
                     line=1,
                     rule_id="PARSE",
                     title="Null bytes — file could not be parsed",
-                    description="Source code contains null bytes, which Python cannot parse.",
+                    description=(
+                        "Source code contains null bytes, which Python "
+                        "cannot parse."
+                    ),
                     severity=Severity.ERROR,
                     runtime=Runtime.BOTH,
                 )
@@ -336,7 +373,7 @@ def _scan_file_detailed(
         findings.append(
             Finding(
                 file=str(filepath),
-                line=exc.lineno or 0,
+                line=exc.lineno or 1,
                 rule_id="PARSE",
                 title="Syntax error — file could not be parsed",
                 description=str(exc),
@@ -456,5 +493,17 @@ def scan(
 
         all_findings.extend(findings)
         files_scanned += 1
+
+    all_findings.sort(
+        key=lambda finding: (
+            finding.file.replace("\\", "/").casefold(),
+            finding.line,
+            finding.col,
+            finding.rule_id,
+            finding.title,
+        )
+    )
+
+    rule_errors.sort()
 
     return ScanResult(all_findings, files_scanned, rule_errors=rule_errors)

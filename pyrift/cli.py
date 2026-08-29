@@ -269,8 +269,303 @@ def _format_result(
 
     return to_text(result)
 
+def _scan_changed_files(
+    path: Path,
+    args: argparse.Namespace,
+    target_config: TargetConfig | None,
+) -> tuple[ScanResult, int]:
+    """Scan only Git-changed Python files."""
+    try:
+        changed = changed_python_files(path, args.base)
+    except GitError as exc:
+        print(f"pyrift: {exc}", file=sys.stderr)
+        sys.exit(2)
+
+    findings = []
+    rule_errors = []
+    files_scanned = 0
+
+    for changed_file in changed:
+        file_result = scan(
+            changed_file,
+            target_config=target_config,
+            use_project_config=not args.no_project_config,
+        )
+        findings.extend(file_result.findings)
+        rule_errors.extend(file_result.rule_errors)
+        files_scanned += file_result.files_scanned
+
+    result = ScanResult(
+        findings,
+        files_scanned,
+        rule_errors=rule_errors,
+    )
+
+    return result, len(changed)
+
+
+def _apply_baseline(
+    result: ScanResult,
+    path: Path,
+    args: argparse.Namespace,
+) -> ScanResult:
+    """Apply baseline or --new filtering to a scan result."""
+    if getattr(args, "new_only", False):
+        baseline_path = Path(DEFAULT_BASELINE_FILE)
+
+        if not baseline_path.exists():
+            print(
+                f"pyrift: --new requires a baseline file "
+                f"({DEFAULT_BASELINE_FILE}). Run "
+                f"'pyrift baseline create' first.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
+        try:
+            baseline = load_baseline(baseline_path)
+        except BaselineError as exc:
+            print(
+                f"pyrift: invalid baseline: {exc}",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
+        new_findings, baseline_findings = filter_baseline_findings(
+            result.findings,
+            baseline,
+            root=str(path),
+        )
+
+        return ScanResult(
+            new_findings,
+            result.files_scanned,
+            baseline_suppressed=len(baseline_findings),
+            rule_errors=result.rule_errors,
+        )
+
+    if args.no_baseline:
+        return result
+
+    baseline_path = Path(DEFAULT_BASELINE_FILE)
+
+    if not baseline_path.exists():
+        return result
+
+    try:
+        baseline = load_baseline(baseline_path)
+    except BaselineError as exc:
+        print(
+            f"pyrift: invalid baseline: {exc}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    new_findings, baseline_findings = filter_baseline_findings(
+        result.findings,
+        baseline,
+        root=str(path),
+    )
+
+    return ScanResult(
+        new_findings,
+        result.files_scanned,
+        baseline_suppressed=len(baseline_findings),
+        rule_errors=result.rule_errors,
+    )
+
+
+def _write_output(
+    output: str,
+    output_path: str | None,
+) -> None:
+    """Write formatted output to a file or stdout."""
+    if output_path:
+        try:
+            Path(output_path).write_text(
+                output,
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            print(
+                f"pyrift: unable to write output: {exc}",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+    else:
+        print(output)
+
+
+def _run_baseline_create(args: argparse.Namespace) -> None:
+    """Handle ``pyrift baseline create``."""
+    path = Path(args.path).resolve()
+
+    if not path.exists():
+        print(
+            f"pyrift: path not found: {path}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    target_config = _build_target_config(args)
+
+    result = scan(
+        path,
+        target_config=target_config,
+        use_project_config=not args.no_project_config,
+    )
+
+    try:
+        create_baseline(
+            result.findings,
+            args.output,
+            root=str(path),
+        )
+    except OSError as exc:
+        print(
+            f"pyrift: unable to create baseline: {exc}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    print(
+        f"Created baseline with {len(result.findings)} "
+        f"finding(s): {args.output}"
+    )
+    sys.exit(0)
+
+
+def _run_scan(args: argparse.Namespace) -> None:
+    """Handle ``pyrift scan``."""
+    path = Path(args.path).resolve()
+
+    if not path.exists():
+        print(
+            f"pyrift: path not found: {path}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    target_config = _build_target_config(args)
+    changed_count: int | None = None
+
+    if args.changed_only:
+        result, changed_count = _scan_changed_files(
+            path,
+            args,
+            target_config,
+        )
+    else:
+        result = scan(
+            path,
+            target_config=target_config,
+            use_project_config=not args.no_project_config,
+        )
+
+    result = _apply_baseline(result, path, args)
+
+    output = _format_result(result, args.format)
+
+    if args.changed_only and args.format == "text":
+        summary_lines = [
+            "PyRift changed-only scan",
+            f"Base: {args.base}",
+            f"Changed Python files: {changed_count}",
+            f"Files scanned: {result.files_scanned}",
+            "",
+        ]
+        output = "\n".join(summary_lines) + output
+
+    _write_output(output, args.output)
+
+    if not args.exit_zero and (result.errors or result.rule_errors):
+        sys.exit(1)
+
+    sys.exit(0)
+
+
+def _run_explain(args: argparse.Namespace) -> None:
+    """Handle ``pyrift explain``."""
+    rule_id = args.rule_id.upper()
+
+    rule = next(
+        (candidate for candidate in ALL_RULES
+         if candidate.rule_id == rule_id),
+        None,
+    )
+
+    if rule is None:
+        print(
+            f"pyrift: unknown rule ID: {rule_id}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    try:
+        from .rule_metadata import RULE_METADATA
+    except ImportError:
+        RULE_METADATA = {}
+
+    metadata = RULE_METADATA.get(rule_id, {})
+
+    lines = [
+        f"Rule:        {rule_id}",
+        f"Title:       {rule.title}",
+        f"Runtime:     {rule.runtime}",
+        f"Category:    {getattr(rule, 'category', 'compatibility')}",
+    ]
+
+    confidence = metadata.get("confidence", "low")
+    if hasattr(confidence, "value"):
+        confidence = confidence.value
+    lines.append(f"Confidence:  {confidence}")
+
+    affected_versions = metadata.get("affected_versions", "")
+    if affected_versions:
+        lines.append(f"Affected:    Python {affected_versions}")
+
+    evidence_type = metadata.get("evidence_type", "")
+    if hasattr(evidence_type, "value"):
+        evidence_type = evidence_type.value
+
+    evidence_source = metadata.get("evidence_source", "")
+    if hasattr(evidence_source, "value"):
+        evidence_source = evidence_source.value
+
+    lines.append(
+        f"Evidence:    {evidence_type} ({evidence_source})"
+    )
+
+    try:
+        from .finding import Finding
+
+        tmp = Finding(
+            file="<explain>",
+            line=1,
+            rule_id=rule_id,
+            title=rule.title,
+        )
+
+        if tmp.description:
+            lines.append(f"\nDescription:\n  {tmp.description}")
+
+        if tmp.suggestion:
+            lines.append(f"\nSuggestion:\n  {tmp.suggestion}")
+
+        if tmp.docs_url:
+            lines.append(f"\nDocs URL:    {tmp.docs_url}")
+    except (AttributeError, KeyError):
+        pass
+
+    last_verified = metadata.get("last_verified", "")
+    if last_verified:
+        lines.append(f"\nLast verified: {last_verified}")
+
+    print("\n".join(lines))
+    sys.exit(0)
 
 def main(argv: list[str] | None = None) -> None:
+    """Parse arguments and dispatch to the appropriate command."""
     parser = _build_parser()
     args = parser.parse_args(argv)
 
@@ -284,252 +579,16 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(0)
 
         if args.baseline_command == "create":
-            path = Path(args.path).resolve()
-
-            if not path.exists():
-                print(
-                    f"pyrift: path not found: {path}",
-                    file=sys.stderr,
-                )
-                sys.exit(2)
-
-            target_config = _build_target_config(args)
-
-            result = scan(
-                path,
-                target_config=target_config,
-                use_project_config=not args.no_project_config,
-            )
-
-            try:
-                create_baseline(
-                    result.findings,
-                    args.output,
-                    root=str(path),
-                )
-            except OSError as exc:
-                print(
-                    f"pyrift: unable to create baseline: {exc}",
-                    file=sys.stderr,
-                )
-                sys.exit(2)
-
-            print(
-                f"Created baseline with {len(result.findings)} "
-                f"finding(s): {args.output}"
-            )
-            sys.exit(0)
+            _run_baseline_create(args)
+            return
 
     if args.command == "scan":
-        path = Path(args.path).resolve()
-
-        if not path.exists():
-            print(
-                f"pyrift: path not found: {path}",
-                file=sys.stderr,
-            )
-            sys.exit(2)
-
-        target_config = _build_target_config(args)
-        changed_count: int | None = None
-
-        if args.changed_only:
-            try:
-                changed = changed_python_files(path, args.base)
-            except GitError as exc:
-                print(f"pyrift: {exc}", file=sys.stderr)
-                sys.exit(2)
-
-            changed_count = len(changed)
-
-            findings = []
-            rule_errors = []
-            files_scanned = 0
-
-            for changed_file in changed:
-                file_result = scan(
-                    changed_file,
-                    target_config=target_config,
-                    use_project_config=not args.no_project_config,
-                )
-                findings.extend(file_result.findings)
-                rule_errors.extend(file_result.rule_errors)
-                files_scanned += file_result.files_scanned
-
-            result = ScanResult(
-                findings,
-                files_scanned,
-                rule_errors=rule_errors,
-            )
-        else:
-            result = scan(
-                path,
-                target_config=target_config,
-                use_project_config=not args.no_project_config,
-            )
-
-        if getattr(args, "new_only", False):
-            baseline_path = Path(DEFAULT_BASELINE_FILE)
-
-            if not baseline_path.exists():
-                print(
-                    f"pyrift: --new requires a baseline file "
-                    f"({DEFAULT_BASELINE_FILE}). Run "
-                    f"'pyrift baseline create' first.",
-                    file=sys.stderr,
-                )
-                sys.exit(2)
-
-            try:
-                baseline = load_baseline(baseline_path)
-            except BaselineError as exc:
-                print(
-                    f"pyrift: invalid baseline: {exc}",
-                    file=sys.stderr,
-                )
-                sys.exit(2)
-
-            new_findings, baseline_findings = (
-                filter_baseline_findings(
-                    result.findings,
-                    baseline,
-                    root=str(path),
-                )
-            )
-
-            result = ScanResult(
-                new_findings,
-                result.files_scanned,
-                baseline_suppressed=len(baseline_findings),
-                rule_errors=result.rule_errors,
-            )
-        elif not args.no_baseline:
-            baseline_path = Path(DEFAULT_BASELINE_FILE)
-
-            if baseline_path.exists():
-                try:
-                    baseline = load_baseline(baseline_path)
-                except BaselineError as exc:
-                    print(
-                        f"pyrift: invalid baseline: {exc}",
-                        file=sys.stderr,
-                    )
-                    sys.exit(2)
-
-                new_findings, baseline_findings = (
-                    filter_baseline_findings(
-                        result.findings,
-                        baseline,
-                        root=str(path),
-                    )
-                )
-
-                result = ScanResult(
-                    new_findings,
-                    result.files_scanned,
-                    baseline_suppressed=len(baseline_findings),
-                    rule_errors=result.rule_errors,
-                )
-
-        output = _format_result(
-            result,
-            args.format,
-        )
-
-        if args.changed_only and args.format == "text":
-            summary_lines = [
-                "PyRift changed-only scan",
-                f"Base: {args.base}",
-                f"Changed Python files: {changed_count}",
-                f"Files scanned: {result.files_scanned}",
-                "",
-            ]
-            output = "\n".join(summary_lines) + output
-
-        if args.output:
-            Path(args.output).write_text(
-                output,
-                encoding="utf-8",
-            )
-        else:
-            print(output)
-
-        if not args.exit_zero and (result.errors or result.rule_errors):
-            sys.exit(1)
-
-        sys.exit(0)
+        _run_scan(args)
+        return
 
     if args.command == "explain":
-        rule_id = args.rule_id.upper()
-
-        rule = None
-        for r in ALL_RULES:
-            if r.rule_id == rule_id:
-                rule = r
-                break
-
-        if rule is None:
-            print(
-                f"pyrift: unknown rule ID: {rule_id}",
-                file=sys.stderr,
-            )
-            sys.exit(2)
-
-        try:
-            from .rule_metadata import RULE_METADATA
-        except ImportError:
-            RULE_METADATA = {}
-
-        metadata = RULE_METADATA.get(rule_id, {})
-
-        lines = [
-            f"Rule:        {rule_id}",
-            f"Title:       {rule.title}",
-            f"Runtime:     {rule.runtime}",
-            f"Category:    {getattr(rule, 'category', 'compatibility')}",
-        ]
-
-        confidence = metadata.get("confidence", "low")
-        if hasattr(confidence, "value"):
-            confidence = confidence.value
-        lines.append(f"Confidence:  {confidence}")
-
-        affected_versions = metadata.get("affected_versions", "")
-        if affected_versions:
-            lines.append(f"Affected:    Python {affected_versions}")
-
-        evidence_type = metadata.get("evidence_type", "")
-        if hasattr(evidence_type, "value"):
-            evidence_type = evidence_type.value
-        evidence_source = metadata.get("evidence_source", "")
-        if hasattr(evidence_source, "value"):
-            evidence_source = evidence_source.value
-        lines.append(f"Evidence:    {evidence_type} ({evidence_source})")
-
-        # Try to get description/suggestion/docs from a dummy finding
-        try:
-            from .finding import Finding
-            tmp = Finding(
-                file="<explain>",
-                line=0,
-                rule_id=rule_id,
-                title=rule.title,
-            )
-            if tmp.description:
-                lines.append(f"\nDescription:\n  {tmp.description}")
-            if tmp.suggestion:
-                lines.append(f"\nSuggestion:\n  {tmp.suggestion}")
-            if tmp.docs_url:
-                lines.append(f"\nDocs URL:    {tmp.docs_url}")
-        except (AttributeError, KeyError):
-            pass
-
-        last_verified = metadata.get("last_verified", "")
-        if last_verified:
-            lines.append(f"\nLast verified: {last_verified}")
-
-        print("\n".join(lines))
-        sys.exit(0)
+        _run_explain(args)
+        return
 
 
 if __name__ == "__main__":

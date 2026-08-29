@@ -62,6 +62,26 @@ class TestDeterministicOutput:
         files2 = list(_python_files(PYRIFT_SRC))
         assert files1 == files2
 
+    def test_file_list_is_sorted(self) -> None:
+        files = list(_python_files(PYRIFT_SRC))
+        assert files == sorted(files, key=lambda path: str(path).casefold())
+
+    def test_findings_are_sorted(self) -> None:
+        result = scan(PYRIFT_SRC, use_project_config=False)
+
+        keys = [
+            (
+                finding.file.replace("\\", "/").casefold(),
+                finding.line,
+                finding.col,
+                finding.rule_id,
+                finding.title,
+            )
+            for finding in result.findings
+        ]
+
+        assert keys == sorted(keys)
+
     def test_files_scanned_count_identical(self) -> None:
         result1 = scan(PYRIFT_SRC, use_project_config=False)
         result2 = scan(PYRIFT_SRC, use_project_config=False)
