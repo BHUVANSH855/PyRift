@@ -101,7 +101,7 @@ CORPUS = {
             "PPY014": 1,
         },
     },
-    "http": {
+"http": {
         "runtime": Runtime.CPYTHON,
         "max_findings": 30,
         "max_errors": 10,
@@ -114,6 +114,30 @@ CORPUS = {
             "PPY015": 1,
             "CPY046": 1,
             "PPY016": 1,
+        },
+    },
+    "urllib": {
+        "runtime": Runtime.CPYTHON,
+        "max_findings": 20,
+        "max_errors": 0,
+        "rules": {
+            "CPY008": 8,
+            "CPY051": 1,
+        },
+    },
+    "json": {
+        "runtime": Runtime.CPYTHON,
+        "max_findings": 5,
+        "max_errors": 0,
+        "rules": {},
+    },
+    "collections": {
+        "runtime": Runtime.CPYTHON,
+        "max_findings": 10,
+        "max_errors": 3,
+        "rules": {
+            "CPY035": 2,
+            "CPY041": 1,
         },
     },
 }
