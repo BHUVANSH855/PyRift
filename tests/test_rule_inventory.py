@@ -15,6 +15,7 @@ import json
 import re
 from pathlib import Path
 
+from pyrift.finding import Confidence, EvidenceType, Finding
 from pyrift.rule_metadata import RULE_METADATA
 from pyrift.scanner import ALL_RULES
 
@@ -96,3 +97,30 @@ def test_rule_inventory_has_dedicated_tests() -> None:
 
     assert not missing, f"Rules without dedicated tests: {sorted(missing)}"
     assert not extra, f"Tests without registered rules: {sorted(extra)}"
+
+
+def test_unmapped_rule_defaults_to_conservative_confidence() -> None:
+    """A rule with no RULE_METADATA entry must never claim HIGH confidence."""
+    finding = Finding(
+        file="x.py",
+        line=1,
+        rule_id="CPY999",
+    )
+
+    assert finding.confidence == Confidence.LOW
+    assert finding.evidence_type == EvidenceType.INFERRED
+
+
+def test_no_metadata_entry_validates_to_low_or_medium() -> None:
+    """Every reviewed rule's metadata must resolve to a supported enum."""
+    registered = {rule.rule_id for rule in ALL_RULES}
+
+    for rule_id in registered:
+        entry = RULE_METADATA.get(rule_id)
+        assert entry is not None, f"{rule_id} missing metadata"
+        assert entry["confidence"] in (
+            Confidence.HIGH,
+            Confidence.MEDIUM,
+            Confidence.LOW,
+        )
+        assert isinstance(entry["evidence_type"], EvidenceType)

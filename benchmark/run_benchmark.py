@@ -284,7 +284,10 @@ GOLDEN = {
     ],
     "PPY009": [
         ("if id(x) == id(y): pass", True, "id comparison"),
+        ("values.append(id(obj))", True, "retaining method"),
+        ("cached_id = id(obj)", True, "stored id"),
         ("parent_map[id(child)] = parent", False, "dict key ok"),
+        ("print(id(obj))", False, "transient arg ok"),
     ],
     "PPY013": [
         ("size = sys.getsizeof(obj)", True, "getsizeof"),
