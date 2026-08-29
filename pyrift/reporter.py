@@ -1,11 +1,12 @@
 """
 pyrift.reporter
-~~~~~~~~~~~~~~~
-Formats ScanResult into JSON, Markdown, or plain text.
+~~~~~~~~~~~~~~
+Formats ScanResult into JSON, Markdown, plain text, or SARIF 2.1.0.
 """
 from __future__ import annotations
 
 import json
+from collections import OrderedDict
 
 from .finding import Severity
 from .scanner import ScanResult
@@ -198,3 +199,85 @@ def to_text(result: ScanResult) -> str:
 
     lines.append(summary)
     return "\n".join(lines)
+
+
+def to_sarif(result: ScanResult) -> str:
+    """Generate a SARIF 2.1.0 JSON report from a ScanResult."""
+    from . import __version__
+
+    rules_map: dict[str, dict] = OrderedDict()
+    sarif_results: list[dict] = []
+
+    for finding in result.findings:
+        rule_id = finding.rule_id
+
+        if rule_id not in rules_map:
+            rules_map[rule_id] = {
+                "id": rule_id,
+                "shortDescription": {"text": finding.title},
+                "helpUri": finding.docs_url or "",
+                "properties": {
+                    "tags": [
+                        finding.severity.value,
+                        finding.confidence.value,
+                        finding.runtime.value,
+                    ],
+                    "category": getattr(finding, "category", "compatibility"),
+                },
+            }
+
+        message_text = finding.title
+        if finding.description:
+            message_text += f" — {finding.description}"
+
+        start_line = max(1, finding.line or 1)
+        start_column = max(1, finding.col or 1)
+
+        physical_location = {
+            "artifactLocation": {"uri": finding.file},
+            "region": {
+                "startLine": start_line,
+                "startColumn": start_column,
+            },
+        }
+
+        sarif_properties: dict[str, str | None] = {
+            "confidence": finding.confidence.value,
+            "evidence_type": finding.evidence_type.value,
+            "runtime": finding.runtime.value,
+            "affected_from": finding.affected_from or None,
+            "affected_until": finding.affected_until or None,
+            "suggestion": finding.suggestion or None,
+            "category": getattr(finding, "category", "compatibility"),
+        }
+
+        sarif_results.append({
+            "ruleId": rule_id,
+            "message": {"text": message_text},
+            "locations": [
+                {"physicalLocation": physical_location}
+            ],
+            "properties": sarif_properties,
+        })
+
+    sarif: dict = {
+        "$schema": (
+            "https://raw.githubusercontent.com/oasis-tcs/sarif-spec"
+            "/master/Schemata/sarif-schema-2.1.0.json"
+        ),
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "pyrift",
+                        "version": __version__,
+                        "rules": list(rules_map.values()),
+                    },
+                },
+                "results": sarif_results,
+            },
+        ],
+    }
+
+    return json.dumps(sarif, indent=2)

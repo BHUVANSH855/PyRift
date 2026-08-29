@@ -1,6 +1,6 @@
 """
-PPY006 — Subclassing built-in types behaves differently on PyPy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+PPY006 — Monkey-patching built-in types behaves differently on PyPy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 On CPython, adding attributes to built-in types like list, dict,
 str raises TypeError. On PyPy, the same operation may succeed but
 may not behave as expected due to how PyPy's JIT optimises built-in
@@ -22,7 +22,7 @@ BUILTIN_TYPES = {
 
 class BuiltinMonkeyPatchRule(BaseRule):
     rule_id = "PPY006"
-    title   = "Subclassing built-in types behaves differently on PyPy"
+    title   = "Monkey-patching built-in types behaves differently on PyPy"
     runtime = "pypy"
 
     def check(

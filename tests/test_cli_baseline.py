@@ -192,7 +192,10 @@ class TestBaselineCLI:
                 {
                     "version": 1,
                     "findings": [
-                        finding_fingerprint(finding),
+                        finding_fingerprint(
+                            finding,
+                            root=str(project.resolve()),
+                        ),
                     ],
                 }
             ),
@@ -251,7 +254,10 @@ class TestBaselineCLI:
                 {
                     "version": 1,
                     "findings": [
-                        finding_fingerprint(existing),
+                        finding_fingerprint(
+                            existing,
+                            root=str(project.resolve()),
+                        ),
                     ],
                 }
             ),
@@ -671,7 +677,10 @@ class TestBaselineCLI:
                 {
                     "version": 1,
                     "findings": [
-                        finding_fingerprint(existing),
+                        finding_fingerprint(
+                            existing,
+                            root=str(project.resolve()),
+                        ),
                     ],
                 }
             ),

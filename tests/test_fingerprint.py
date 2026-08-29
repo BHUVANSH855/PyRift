@@ -1,5 +1,5 @@
 from pyrift.finding import Finding, Runtime, Severity
-from pyrift.fingerprint import finding_fingerprint
+from pyrift.fingerprint import _normalize_path, finding_fingerprint
 
 
 def make_finding(
@@ -189,3 +189,131 @@ class TestNormalizePathWithRoot:
         fp_with_root = finding_fingerprint(f1, root="/home/user/project")
         fp_relative = finding_fingerprint(f2)
         assert fp_with_root == fp_relative
+
+
+class TestNormalizePathDotSlash:
+    """Verify that leading ./ is stripped consistently."""
+
+    def test_dot_slash_stripped(self):
+        assert _normalize_path("./src/example.py") == "src/example.py"
+
+    def test_double_dot_slash_stripped(self):
+        assert _normalize_path("././src/example.py") == "src/example.py"
+
+    def test_dot_slash_with_root(self):
+        result = _normalize_path(
+            "/home/user/project/./src/file.py",
+            root="/home/user/project",
+        )
+        assert result == "src/file.py"
+
+    def test_relative_dot_slash_matches_bare(self):
+        f1 = make_finding()
+        f1.file = "./src/example.py"
+        f2 = make_finding()
+        f2.file = "src/example.py"
+        fp1 = finding_fingerprint(f1)
+        fp2 = finding_fingerprint(f2)
+        assert fp1 == fp2
+
+
+class TestNormalizePathRegression:
+    """Regression tests for the fingerprint normalization bug fix."""
+
+    def test_relative_path_normalized(self):
+        assert _normalize_path("src/example.py") == "src/example.py"
+
+    def test_absolute_posix_path_normalized(self):
+        assert _normalize_path("/home/user/project/src/example.py") == "home/user/project/src/example.py"
+
+    def test_windows_absolute_path_normalized(self):
+        assert _normalize_path("C:/Users/dev/project/src/example.py") == "Users/dev/project/src/example.py"
+
+    def test_windows_backslash_path_normalized(self):
+        assert _normalize_path(r"C:\Users\dev\project\src\example.py") == "Users/dev/project/src/example.py"
+
+    def test_nested_repository_path_normalized(self):
+        assert _normalize_path("project/src/deep/nested/file.py") == "project/src/deep/nested/file.py"
+
+    def test_dot_slash_relative_path(self):
+        assert _normalize_path("./project/src/file.py") == "project/src/file.py"
+
+    def test_absolute_with_root(self):
+        result = _normalize_path(
+            "/home/user/project/src/file.py",
+            root="/home/user/project",
+        )
+        assert result == "src/file.py"
+
+    def test_relative_with_root(self):
+        result = _normalize_path("src/file.py", root="/home/user/project")
+        assert result == "src/file.py"
+
+    def test_dot_slash_with_root(self):
+        result = _normalize_path("./src/file.py", root="/home/user/project")
+        assert result == "src/file.py"
+
+    def test_windows_path_with_root(self):
+        result = _normalize_path(
+            r"C:\Users\dev\project\src\file.py",
+            root=r"C:\Users\dev\project",
+        )
+        assert result == "src/file.py"
+
+    def test_unicode_path_normalized(self):
+        result = _normalize_path("./src/café/naïve.py")
+        assert result == "src/café/naïve.py"
+
+    def test_whitespace_in_path(self):
+        result = _normalize_path("./src/my folder/my file.py")
+        assert result == "src/my folder/my file.py"
+
+    def test_fingerprint_identical_across_invocation_styles(self):
+        """The same finding must produce the same fingerprint regardless
+        of how the scan was invoked (relative, absolute, dot-prefixed)."""
+        root = "/home/user/project"
+
+        f_abs = make_finding()
+        f_abs.file = "/home/user/project/src/file.py"
+        absolute_fp = finding_fingerprint(f_abs, root=root)
+
+        f_rel = make_finding()
+        f_rel.file = "src/file.py"
+        relative_fp = finding_fingerprint(f_rel)
+
+        f_dot = make_finding()
+        f_dot.file = "./src/file.py"
+        dot_slash_fp = finding_fingerprint(f_dot)
+
+        assert absolute_fp == relative_fp
+        assert relative_fp == dot_slash_fp
+
+    def test_baseline_create_and_filter_consistency(self):
+        """Create baseline with one path style, filter with another."""
+        import os
+        import tempfile
+
+        from pyrift.baseline import (
+            create_baseline,
+            filter_baseline_findings,
+            load_baseline,
+        )
+
+        f = make_finding()
+        f.file = "/home/user/project/src/file.py"
+        findings = [f]
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w") as tmp:
+            baseline_path = tmp.name
+
+        try:
+            create_baseline(findings, baseline_path, root="/home/user/project")
+            baseline = load_baseline(baseline_path)
+
+            new_findings, baseline_findings = filter_baseline_findings(
+                findings, baseline, root="/home/user/project",
+            )
+            assert len(baseline_findings) == 1
+            assert len(new_findings) == 0
+        finally:
+            os.unlink(baseline_path)

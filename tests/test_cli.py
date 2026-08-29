@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests for pyrift CLI error handling paths.
 """
 from __future__ import annotations
@@ -114,3 +114,123 @@ class TestCliErrorPaths:
         )
         assert code == 2
         assert "not found" in err.lower()
+
+
+class TestSarifFormat:
+    def test_sarif_format(self, tmp_path):
+        py_file = tmp_path / "test.py"
+        py_file.write_text("x = 1\n")
+        code, out, _err = run_cli(
+            "scan",
+            str(tmp_path),
+            "--format",
+            "sarif",
+        )
+        assert code == 0
+        data = json.loads(out)
+        assert data["version"] == "2.1.0"
+        assert "runs" in data
+
+    def test_sarif_format_with_findings(self, tmp_path):
+        py_file = tmp_path / "test.py"
+        py_file.write_text("import cgi\n")
+        _code, out, _err = run_cli(
+            "scan",
+            str(tmp_path),
+            "--format",
+            "sarif",
+        )
+        data = json.loads(out)
+        assert len(data["runs"][0]["results"]) > 0
+
+
+class TestNewFlag:
+    def test_new_requires_baseline(self, tmp_path):
+        py_file = tmp_path / "test.py"
+        py_file.write_text("x = 1\n")
+        code, _out, err = run_cli(
+            "scan",
+            str(tmp_path),
+            "--new",
+        )
+        assert code != 0
+        assert "baseline" in err.lower()
+
+    def test_new_with_baseline_shows_only_new(self, tmp_path):
+        import os
+        py_file = tmp_path / "test.py"
+        py_file.write_text("import cgi\n")
+
+        import json as _json
+        baseline = {
+            "version": 1,
+            "findings": ["some_fingerprint"],
+        }
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            baseline_path = tmp_path / ".pyrift-baseline.json"
+            baseline_path.write_text(_json.dumps(baseline))
+
+            _code, out, _err = run_cli(
+                "scan",
+                str(tmp_path),
+                "--new",
+                "--no-project-config",
+                "--exit-zero",
+            )
+            assert _code == 0
+            assert "CPY007" in out
+        finally:
+            os.chdir(old_cwd)
+
+    def test_new_with_empty_baseline(self, tmp_path):
+        import os
+        py_file = tmp_path / "test.py"
+        py_file.write_text("x = 1\n")
+
+        import json as _json
+        baseline = {"version": 1, "findings": []}
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            baseline_path = tmp_path / ".pyrift-baseline.json"
+            baseline_path.write_text(_json.dumps(baseline))
+
+            code, _out, _err = run_cli(
+                "scan",
+                str(tmp_path),
+                "--new",
+            )
+            assert code == 0
+        finally:
+            os.chdir(old_cwd)
+
+
+class TestExplainCommand:
+    def test_explain_valid_rule(self):
+        code, out, _err = run_cli("explain", "CPY055")
+        assert code == 0
+        assert "CPY055" in out
+        assert "NotImplemented" in out
+
+    def test_explain_invalid_rule(self):
+        code, _out, err = run_cli("explain", "INVALID")
+        assert code != 0
+        assert "unknown" in err.lower() or "rule" in err.lower()
+
+    def test_explain_lowercase_input(self):
+        code, out, _err = run_cli("explain", "cpy001")
+        assert code == 0
+        assert "CPY001" in out
+
+    def test_explain_pypy_rule(self):
+        code, out, _err = run_cli("explain", "PPY001")
+        assert code == 0
+        assert "PPY001" in out
+
+    def test_explain_shows_category(self):
+        code, out, _err = run_cli("explain", "CPY007")
+        assert code == 0
+        assert "CPY007" in out
+        assert "compatibility" in out.lower()

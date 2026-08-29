@@ -17,7 +17,7 @@ Quick start::
 
 """
 from .finding import Finding, Runtime, Severity
-from .reporter import to_json, to_markdown, to_text
+from .reporter import to_json, to_markdown, to_sarif, to_text
 from .scanner import ALL_RULES, ScanResult, scan, scan_file
 from .targets import PythonVersion, TargetConfig
 
@@ -38,5 +38,6 @@ __all__ = [
     "scan_file",
     "to_json",
     "to_markdown",
+    "to_sarif",
     "to_text",
 ]

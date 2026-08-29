@@ -25,8 +25,8 @@ from .baseline import (
     load_baseline,
 )
 from .git import GitError, changed_python_files
-from .reporter import to_json, to_markdown, to_text
-from .scanner import ScanResult, scan
+from .reporter import to_json, to_markdown, to_sarif, to_text
+from .scanner import ALL_RULES, ScanResult, scan
 from .targets import PythonVersion, TargetConfig
 
 
@@ -60,7 +60,7 @@ def _build_parser() -> argparse.ArgumentParser:
     scan_cmd.add_argument(
         "--format",
         "-f",
-        choices=["text", "json", "markdown"],
+        choices=["text", "json", "markdown", "sarif"],
         default="text",
         help="Output format (default: text)",
     )
@@ -120,6 +120,16 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Scan only Python files changed relative to the Git base "
             "revision."
+        ),
+    )
+
+    scan_cmd.add_argument(
+        "--new",
+        action="store_true",
+        dest="new_only",
+        help=(
+            "PR mode: require a baseline and show only NEW findings "
+            "not present in the baseline."
         ),
     )
 
@@ -184,6 +194,15 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    explain_cmd = sub.add_parser(
+        "explain",
+        help="Explain a rule by its ID (e.g. CPY055)",
+    )
+    explain_cmd.add_argument(
+        "rule_id",
+        help="Rule ID to explain (e.g. CPY055)",
+    )
+
     return parser
 
 
@@ -245,6 +264,9 @@ def _format_result(
     if output_format == "markdown":
         return to_markdown(result)
 
+    if output_format == "sarif":
+        return to_sarif(result)
+
     return to_text(result)
 
 
@@ -262,7 +284,7 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(0)
 
         if args.baseline_command == "create":
-            path = Path(args.path)
+            path = Path(args.path).resolve()
 
             if not path.exists():
                 print(
@@ -283,6 +305,7 @@ def main(argv: list[str] | None = None) -> None:
                 create_baseline(
                     result.findings,
                     args.output,
+                    root=str(path),
                 )
             except OSError as exc:
                 print(
@@ -298,7 +321,7 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(0)
 
     if args.command == "scan":
-        path = Path(args.path)
+        path = Path(args.path).resolve()
 
         if not path.exists():
             print(
@@ -345,7 +368,42 @@ def main(argv: list[str] | None = None) -> None:
                 use_project_config=not args.no_project_config,
             )
 
-        if not args.no_baseline:
+        if getattr(args, "new_only", False):
+            baseline_path = Path(DEFAULT_BASELINE_FILE)
+
+            if not baseline_path.exists():
+                print(
+                    f"pyrift: --new requires a baseline file "
+                    f"({DEFAULT_BASELINE_FILE}). Run "
+                    f"'pyrift baseline create' first.",
+                    file=sys.stderr,
+                )
+                sys.exit(2)
+
+            try:
+                baseline = load_baseline(baseline_path)
+            except BaselineError as exc:
+                print(
+                    f"pyrift: invalid baseline: {exc}",
+                    file=sys.stderr,
+                )
+                sys.exit(2)
+
+            new_findings, baseline_findings = (
+                filter_baseline_findings(
+                    result.findings,
+                    baseline,
+                    root=str(path),
+                )
+            )
+
+            result = ScanResult(
+                new_findings,
+                result.files_scanned,
+                baseline_suppressed=len(baseline_findings),
+                rule_errors=result.rule_errors,
+            )
+        elif not args.no_baseline:
             baseline_path = Path(DEFAULT_BASELINE_FILE)
 
             if baseline_path.exists():
@@ -362,6 +420,7 @@ def main(argv: list[str] | None = None) -> None:
                     filter_baseline_findings(
                         result.findings,
                         baseline,
+                        root=str(path),
                     )
                 )
 
@@ -398,6 +457,78 @@ def main(argv: list[str] | None = None) -> None:
         if not args.exit_zero and (result.errors or result.rule_errors):
             sys.exit(1)
 
+        sys.exit(0)
+
+    if args.command == "explain":
+        rule_id = args.rule_id.upper()
+
+        rule = None
+        for r in ALL_RULES:
+            if r.rule_id == rule_id:
+                rule = r
+                break
+
+        if rule is None:
+            print(
+                f"pyrift: unknown rule ID: {rule_id}",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
+        try:
+            from .rule_metadata import RULE_METADATA
+        except ImportError:
+            RULE_METADATA = {}
+
+        metadata = RULE_METADATA.get(rule_id, {})
+
+        lines = [
+            f"Rule:        {rule_id}",
+            f"Title:       {rule.title}",
+            f"Runtime:     {rule.runtime}",
+            f"Category:    {getattr(rule, 'category', 'compatibility')}",
+        ]
+
+        confidence = metadata.get("confidence", "low")
+        if hasattr(confidence, "value"):
+            confidence = confidence.value
+        lines.append(f"Confidence:  {confidence}")
+
+        affected_versions = metadata.get("affected_versions", "")
+        if affected_versions:
+            lines.append(f"Affected:    Python {affected_versions}")
+
+        evidence_type = metadata.get("evidence_type", "")
+        if hasattr(evidence_type, "value"):
+            evidence_type = evidence_type.value
+        evidence_source = metadata.get("evidence_source", "")
+        if hasattr(evidence_source, "value"):
+            evidence_source = evidence_source.value
+        lines.append(f"Evidence:    {evidence_type} ({evidence_source})")
+
+        # Try to get description/suggestion/docs from a dummy finding
+        try:
+            from .finding import Finding
+            tmp = Finding(
+                file="<explain>",
+                line=0,
+                rule_id=rule_id,
+                title=rule.title,
+            )
+            if tmp.description:
+                lines.append(f"\nDescription:\n  {tmp.description}")
+            if tmp.suggestion:
+                lines.append(f"\nSuggestion:\n  {tmp.suggestion}")
+            if tmp.docs_url:
+                lines.append(f"\nDocs URL:    {tmp.docs_url}")
+        except (AttributeError, KeyError):
+            pass
+
+        last_verified = metadata.get("last_verified", "")
+        if last_verified:
+            lines.append(f"\nLast verified: {last_verified}")
+
+        print("\n".join(lines))
         sys.exit(0)
 
 

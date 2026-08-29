@@ -4,7 +4,7 @@ Thank you for contributing to **PyRift** — a static-analysis scanner that dete
 
 The most valuable contributions fix **real compatibility problems**: verified runtime behaviour, a minimal reproduction, a precise AST pattern, and regression tests. Correctness and evidence matter more than finding count.
 
-> Current baseline: `0.8.0` · 845 tests · 101 rules · ~97% coverage. If a section conflicts with the tree, the code is the source of truth — open an issue.
+> Current baseline: `0.8.0` · 980 tests · 101 rules · ~97% coverage. If a section conflicts with the tree, the code is the source of truth — open an issue.
 
 ---
 

@@ -57,6 +57,18 @@ def _metadata(
     }
 
 
+REQUIRED_METADATA_FIELDS = ("confidence", "evidence_type", "evidence_source", "status", "last_verified")
+
+
+def validate_metadata() -> bool:
+    """Return True if every RULE_METADATA entry has all required fields."""
+    for entry in RULE_METADATA.values():
+        for field in REQUIRED_METADATA_FIELDS:
+            if field not in entry:
+                return False
+    return True
+
+
 RULE_METADATA: dict[str, dict[str, object]] = {
     "CPY001": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY002": _metadata("high", "pep:678", last_verified="2026-08-29"),

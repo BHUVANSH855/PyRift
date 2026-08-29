@@ -8,8 +8,8 @@ raises TypeError at runtime.
 Detection strategy:
 - Flag d1 | d2 only when at least one operand is a dict literal {}
   (bare Name | Name is too broad — could be int, set, etc.)
-- Always flag d |= other (augmented assign on dicts is unambiguous
-  in practice since sets and ints rarely use |=)
+- Flag d |= other only when the target looks like a dict variable
+  (based on naming conventions), to avoid false positives on sets and ints.
 """
 from __future__ import annotations
 
@@ -27,6 +27,16 @@ def _is_dict_literal(node: ast.AST) -> bool:
 def _looks_like_dict(node: ast.AST) -> bool:
     """True only for clear dict signals — literals or subscripts of known names."""
     return isinstance(node, ast.Dict)
+
+
+_DICT_LIKE_NAMES = frozenset({
+    "d", "data", "config", "options", "settings", "kwargs", "params",
+    "attrs", "props", "state", "env", "ctx", "context", "table", "map",
+    "mapping", "cache", "registry", "store", "db", "result", "output",
+    "info", "meta", "metadata", "extra", "defaults", "overrides", "merged",
+    "combined", "base", "patch", "updates", "changes", "diff", "delta",
+    "new", "old", "src", "source", "target", "dest", "destination",
+})
 
 
 class DictMergeOperatorRule(BaseRule):
@@ -71,11 +81,12 @@ class DictMergeOperatorRule(BaseRule):
                         docs_url="https://peps.python.org/pep-0584/",
                     ))
 
-            # d |= other — augmented assign; flag all uses
+            # d |= other — augmented assign; only flag dict-like names
             if (
                 isinstance(n, ast.AugAssign)
                 and isinstance(n.op, ast.BitOr)
                 and isinstance(n.target, ast.Name)
+                and n.target.id in _DICT_LIKE_NAMES
             ):
                 findings.append(Finding(
                     file=filename,
