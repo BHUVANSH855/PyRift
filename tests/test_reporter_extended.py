@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from pyrift.finding import Confidence, Finding, Runtime, Severity
 from pyrift.reporter import to_json, to_markdown, to_sarif, to_text
@@ -241,6 +242,41 @@ class TestToSarif:
         data = json.loads(to_sarif(result))
         assert data["runs"][0]["tool"]["driver"]["rules"][0]["helpUri"] == ""
 
+    def test_sarif_absolute_path_is_relative_to_scan_root(self, tmp_path):
+        source_root = tmp_path / "project"
+        source_file = source_root / "src" / "example.py"
+        source_file.parent.mkdir(parents=True)
+        source_file.write_text("print('test')", encoding="utf-8")
+
+        finding = make_finding()
+        finding.file = str(source_file)
+
+        result = make_result(findings=[finding])
+        result.base_path = source_root.resolve()
+
+        data = json.loads(to_sarif(result))
+
+        uri = (
+            data["runs"][0]["results"][0]["locations"][0]
+            ["physicalLocation"]["artifactLocation"]["uri"]
+        )
+
+        assert uri == "src/example.py"
+        assert not Path(uri).is_absolute()
+
+    def test_sarif_relative_path_is_normalized_to_posix(self):
+        finding = make_finding()
+        finding.file = r"src\package\example.py"
+
+        result = make_result(findings=[finding])
+        data = json.loads(to_sarif(result))
+
+        uri = (
+            data["runs"][0]["results"][0]["locations"][0]
+            ["physicalLocation"]["artifactLocation"]["uri"]
+        )
+
+        assert uri == "src/package/example.py"
 
 class TestFindingCategory:
     def test_default_category(self):
