@@ -169,6 +169,98 @@ class TestPPY009:
 
         assert findings == []
 
+    def test_detects_id_appended_to_list(self):
+        findings = run(
+            self.rule,
+            "def f():\n    values.append(id(obj))",
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY009"
+
+    def test_detects_id_added_to_set(self):
+        findings = run(
+            self.rule,
+            "def f():\n    seen.add(id(x))",
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY009"
+
+    def test_detects_id_inserted_into_list(self):
+        findings = run(
+            self.rule,
+            "def f():\n    parts.insert(0, id(x))",
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY009"
+
+    def test_clean_dict_key_storage_of_id(self):
+        findings = run(
+            self.rule,
+            "def f():\n    registry[id(obj)] = 1",
+        )
+
+        assert findings == []
+
+    def test_does_not_flag_arbitrary_function_argument(self):
+        findings = run(
+            self.rule,
+            "def f():\n    g(id(x))",
+        )
+
+        assert findings == []
+
+    def test_detects_named_expression_walrus(self):
+        findings = run(
+            self.rule,
+            "def f():\n    if (k := id(x)):\n        pass",
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY009"
+
+    def test_detects_augmented_assignment(self):
+        findings = run(
+            self.rule,
+            "def f():\n    k = 0\n    k += id(x)",
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY009"
+
+    def test_detects_yielded_id(self):
+        findings = run(
+            self.rule,
+            "def gen():\n    yield id(x)",
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY009"
+
+    def test_clean_id_in_tuple_subscript_key(self):
+        # d[(id(x), y)] = ... uses id() as part of a dictionary key — the
+        # transient AST-dedup style usage is left alone.
+        findings = run(
+            self.rule,
+            "def f():\n    d[(id(x), id(y))] = 1",
+        )
+
+        assert findings == []
+
+    def test_clean_id_stored_with_attribute_then_indexed(self):
+        # list element indexed by id() is a transient lookup, not retention.
+        findings = run(self.rule, "v = lst[id(x)]")
+
+        assert findings == []
+
+    def test_clean_id_as_module_expression(self):
+        # A bare id() expression with no retention context is not flagged.
+        findings = run(self.rule, "id(x)")
+
+        assert findings == []
+
     def test_suggestion_mentions_is(self):
         findings = run(
             self.rule,

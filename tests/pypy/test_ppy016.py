@@ -173,7 +173,33 @@ class TestPPY016:
     def test_suggestion_mentions_order(self):
         findings = run(
             self.rule,
-            "for k in obj.__dict__: pass",
+            "list(obj.__dict__)",
         )
-
         assert "order" in findings[0].suggestion.lower()
+
+    def test_plain_access_with_no_parent_is_not_flagged(self):
+        # A bare obj.__dict__ expression (module-level usage, no parent
+        # context) is not treated as order-sensitive.
+        findings = run(
+            self.rule,
+            "obj.__dict__",
+        )
+        assert findings == []
+
+    def test_custom_method_on_dict_is_not_order_sensitive(self):
+        # obj.__dict__.custom() is not keys()/values()/items(), so it is
+        # not assumed to iterate in a contract-defined order.
+        findings = run(
+            self.rule,
+            "obj.__dict__.custom_method()",
+        )
+        assert findings == []
+
+    def test_plain_call_with_object_func_is_not_order_sensitive(self):
+        # A call whose callee is not a built-in name (e.g. an attribute
+        # call) does not imply order dependence.
+        findings = run(
+            self.rule,
+            "result = factory(obj.__dict__)",
+        )
+        assert findings == []

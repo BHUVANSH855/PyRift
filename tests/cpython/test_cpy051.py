@@ -453,3 +453,276 @@ class TestCPY051:
             """,
         )
         assert "lock" in findings[0].suggestion.lower()
+
+    # ── Coverage-expansion cases (async-with lock alias, handlers, nested
+    #    function collection, bare lock constructors, recursion, edge paths) ──
+
+    def test_clean_mutation_inside_async_with_lock_as_alias(self):
+        findings = run(
+            self.rule,
+            """
+            import asyncio
+
+            _cache = []
+            _lock = asyncio.Lock()
+
+            async def update():
+                async with _lock as held:
+                    _cache.append(1)
+            """,
+        )
+        assert findings == []
+
+    def test_unsynchronized_mutation_in_try_handler_is_detected(self):
+        findings = run(
+            self.rule,
+            """
+            _cache = {}
+
+            def update():
+                try:
+                    pass
+                except Exception:
+                    _cache["x"] = 1
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_clean_mutation_in_try_handler_under_lock(self):
+        findings = run(
+            self.rule,
+            """
+            import threading
+
+            _cache = {}
+            _lock = threading.Lock()
+
+            def update():
+                with _lock:
+                    try:
+                        _cache["x"] = 1
+                    except Exception:
+                        _cache["y"] = 2
+            """,
+        )
+        assert findings == []
+
+    def test_detects_mutation_in_function_nested_inside_function(self):
+        findings = run(
+            self.rule,
+            """
+            _cache = {}
+
+            def outer():
+                def inner():
+                    _cache["x"] = 1
+                return inner
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_detects_mutation_using_bare_lock_constructor(self):
+        findings = run(
+            self.rule,
+            """
+            _cache = {}
+
+            def update():
+                _cache["x"] = 1
+            """,
+        )
+        assert len(findings) == 1
+
+    def test_clean_mutation_under_bare_lock_constructor(self):
+        findings = run(
+            self.rule,
+            """
+            _cache = {}
+            _lock = Lock()
+
+            def update():
+                with _lock:
+                    _cache["x"] = 1
+            """,
+        )
+        assert findings == []
+
+    def test_non_module_node_returns_no_findings(self):
+        findings = self.rule.check(parse("def f(): pass"), "<test>")
+        assert findings == []
+
+    def test_nested_class_function_mutation_recurses(self):
+        findings = run(
+            self.rule,
+            """
+            _cache = {}
+
+            class Outer:
+                class Inner:
+                    def mutate(self):
+                        _cache["x"] = 1
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_lambda_body_does_not_crash(self):
+        findings = run(
+            self.rule,
+            """
+            _cache = {}
+
+            def update():
+                fn = lambda: _cache.get("x")
+                return fn
+            """,
+        )
+        assert findings == []
+
+    def test_mutation_in_with_using_acquire_release_alias(self):
+        findings = run(
+            self.rule,
+            """
+            import threading
+
+            _cache = {}
+            _lock = threading.Lock()
+
+            def update():
+                _lock.acquire()
+                try:
+                    _cache["x"] = 1
+                finally:
+                    _lock.release()
+                _cache["after"] = 2
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_clean_mutation_inside_inline_lock_constructor(self):
+        findings = run(
+            self.rule,
+            """
+            import threading
+
+            _cache = {}
+
+            def update():
+                with threading.Lock():
+                    _cache["x"] = 1
+            """,
+        )
+        assert findings == []
+
+    def test_clean_mutation_inside_bare_lock_constructor_import(self):
+        findings = run(
+            self.rule,
+            """
+            from threading import Lock
+
+            _cache = {}
+
+            def update():
+                with Lock():
+                    _cache["x"] = 1
+            """,
+        )
+        assert findings == []
+
+    def test_async_def_mutation_inside_module_scope_function(self):
+        findings = run(
+            self.rule,
+            """
+            _cache = {}
+
+            async def update():
+                _cache["x"] = 1
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_mutation_inside_coroutine_nested_function(self):
+        findings = run(
+            self.rule,
+            """
+            _cache = {}
+
+            async def outer():
+                async def inner():
+                    _cache["x"] = 1
+                await inner()
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_attribute_path_chained_lock_is_recognized(self):
+        # a chained attribute is still a recognizable lock expression,
+        # so a mutation under it is not flagged.
+        from pyrift.rules.cpython.cpy051_free_threaded_global_state import (
+            _attribute_path,
+        )
+
+        assert _attribute_path(ast.parse("a.b._lock").body[0].value)
+
+    def test_lock_key_is_none_for_constant_expression(self):
+        from pyrift.rules.cpython.cpy051_free_threaded_global_state import _lock_key
+
+        assert _lock_key(ast.parse("1").body[0].value) is None
+
+    def test_is_lock_expression_false_for_constant(self):
+        from pyrift.rules.cpython.cpy051_free_threaded_global_state import (
+            _is_lock_expression,
+        )
+
+        assert not _is_lock_expression(ast.parse("1").body[0].value)
+
+    def test_bare_lock_constructor_is_lock(self):
+        from pyrift.rules.cpython.cpy051_free_threaded_global_state import (
+            _is_lock_constructor,
+        )
+
+        calls = [
+            n
+            for n in ast.walk(ast.parse("Lock()"))
+            if isinstance(n, ast.Call)
+        ]
+        assert _is_lock_constructor(calls[0])
+
+    def test_foreign_call_constructor_is_not_lock(self):
+        from pyrift.rules.cpython.cpy051_free_threaded_global_state import (
+            _is_lock_constructor,
+        )
+
+        calls = [
+            n
+            for n in ast.walk(ast.parse("foo()"))
+            if isinstance(n, ast.Call)
+        ]
+        assert not _is_lock_constructor(calls[0])
+
+    def test_function_nested_under_if_statement_is_discovered(self):
+        # A function defined inside an ``if`` block still mutates module
+        # state and must be discovered via statement recursion.
+        findings = run(
+            self.rule,
+            """
+            _cache = {}
+
+            if True:
+                def update():
+                    _cache["x"] = 1
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_check_non_module_returns_empty(self):
+        # Pass an expression node (not a Module) directly to check().
+        tree = ast.parse("_cache = []").body[0]
+        findings = self.rule.check(tree, "<test>")
+        assert findings == []

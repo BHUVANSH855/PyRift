@@ -40,3 +40,20 @@ class TestCPY001:
     def test_suggestion_mentions_set(self):
         findings = run(self.rule, "d.keys() == ['a']")
         assert "set" in findings[0].suggestion.lower()
+
+    def test_clean_vs_frozenset_call(self):
+        findings = run(
+            self.rule,
+            "assert d.keys() == frozenset(['a'])",
+        )
+        assert len(findings) == 0
+
+    def test_clean_vs_plain_name_comparison(self):
+        # Comparing a dict view to a non-literal, non-set expression is
+        # not an ordering assumption the rule can prove, so it is skipped.
+        findings = run(self.rule, "assert d.keys() == expected")
+        assert len(findings) == 0
+
+    def test_clean_no_comparison(self):
+        findings = run(self.rule, "x = 1")
+        assert len(findings) == 0

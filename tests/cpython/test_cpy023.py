@@ -72,6 +72,28 @@ class TestCPY023:
 
         assert len(findings) == 0
 
+    def test_does_not_flag_explicit_start_method(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing
+            multiprocessing.set_start_method('fork')
+            """,
+        )
+
+        assert findings == []
+
+    def test_does_not_flag_explicit_get_context(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing
+            ctx = multiprocessing.get_context('fork')
+            """,
+        )
+
+        assert findings == []
+
     def test_suggestion_mentions_set_start_method(self):
         findings = run(self.rule, "import multiprocessing")
 

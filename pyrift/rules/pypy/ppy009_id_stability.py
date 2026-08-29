@@ -37,6 +37,13 @@ The rule deliberately avoids flagging arbitrary transient uses such as:
 
 because a static AST check cannot determine whether an arbitrary callee
 retains its argument.
+
+Retention on a *known mutating container method* is flagged because such
+methods (append/add/insert/push/store/setdefault/...) persist the value
+by nature:
+
+    values.append(id(obj))
+    registry[id(obj)] = value
 """
 
 from __future__ import annotations
@@ -193,7 +200,42 @@ def _is_persistence_context(
         ):
             return True
 
+    if isinstance(parent, ast.Call) and _is_retaining_method_call(parent):
+        return True
+
     return isinstance(parent, ast.Compare)
+
+
+_RETAINING_METHODS = frozenset(
+    {
+        "append",
+        "appendleft",
+        "add",
+        "extend",
+        "push",
+        "insert",
+        "store",
+        "put",
+        "setdefault",
+        "update",
+    }
+)
+
+
+def _is_retaining_method_call(call: ast.Call) -> bool:
+    """
+    Return whether *call* is a method that retains its id() argument.
+
+    Detects reads like ``values.append(id(obj))`` where the result is
+    stored into an existing container. Bare function calls (including
+    a ``print``, ``log``, or user-defined ``g``) are deliberately left
+    alone because a static check cannot tell whether the callee retains
+    its argument (see the module docstring).
+    """
+    if not isinstance(call.func, ast.Attribute):
+        return False
+
+    return call.func.attr in _RETAINING_METHODS
 
 
 def _make_finding(

@@ -13,6 +13,16 @@ for shared mutable state accessed or mutated from functions or methods.
 
 Mutations performed while protected by a recognizable lock or
 synchronization context are not reported.
+
+Conservative scope: this is a *heuristic*, not proof of a data race.
+A lock is only recognized from a small, hand-picked set of synchronization
+objects (threading.Lock/RLock/Condition/Semaphore/Event/Barrier and
+asyncio.Lock) used through a ``with`` block or acquire/release. Any other
+synchronization primitive, user lock wrapper, or lock used indirectly is
+treated as unprotected, which may under-report. The rule also does not
+attempt flow-sensitive data-race analysis: two functions touching the
+same name are considered independently. Severity is WARNING because a
+static check cannot prove the code is actually run concurrently.
 """
 from __future__ import annotations
 
@@ -179,16 +189,6 @@ def _inspect_function(
 ) -> None:
     """Inspect a function for unsynchronized mutations of module-level state."""
     nested_functions: list[ast.FunctionDef | ast.AsyncFunctionDef] = []
-
-    def collect_nested(node: ast.AST) -> None:
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            if node is not function:
-                nested_functions.append(node)
-            return
-        if isinstance(node, ast.Lambda):
-            return
-        for child in ast.iter_child_nodes(node):
-            collect_nested(child)
 
     def walk(node: ast.AST, protected: set[tuple[str, ...]]) -> None:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node is not function:

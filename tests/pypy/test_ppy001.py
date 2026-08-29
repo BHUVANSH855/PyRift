@@ -39,3 +39,15 @@ class MyResource:
 """
         findings = run(self.rule, src)
         assert len(findings) == 0
+
+    def test_detects_bare_function_resource_call(self):
+        # A bare function call named like a resource-release operation is
+        # still flagged as resource cleanup inside __del__.
+        src = """
+class MyResource:
+    def __del__(self):
+        close()
+"""
+        findings = run(self.rule, src)
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY001"
