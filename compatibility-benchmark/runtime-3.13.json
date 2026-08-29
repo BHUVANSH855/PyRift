@@ -1,4 +1,13 @@
-{
+﻿{
+  "asyncio_get_event_loop": {
+    "raised": null,
+    "warnings": [
+      "DeprecationWarning"
+    ]
+  },
+  "bool_inversion": [
+    "DeprecationWarning"
+  ],
   "datetime_utcnow": {
     "result": "datetime",
     "warnings": [

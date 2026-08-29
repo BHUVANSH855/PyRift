@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import json
 import sys
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -46,13 +45,16 @@ PROBE_DIR = ROOT / "compatibility-benchmark"
 #   verify_not:
 #       Predicate validating the non-affected-version observation.
 VERIFIED_RULES: dict[str, dict[str, Any]] = {
-    "CPY036": {
-        "probe_key": "datetime_utcnow",
-        "description": "datetime.utcnow() raises DeprecationWarning",
+    "CPY022": {
+        "probe_key": "bool_inversion",
+        "description": (
+            "bitwise inversion on bool emits DeprecationWarning "
+            "(Python 3.12+)"
+        ),
         "versions_affected": ["3.12", "3.13", "3.14"],
         "verify": lambda v: (
-            isinstance(v, dict)
-            and "DeprecationWarning" in v.get("warnings", [])
+            isinstance(v, list)
+            and "DeprecationWarning" in v
         ),
     },
     "CPY027": {
@@ -63,13 +65,46 @@ VERIFIED_RULES: dict[str, dict[str, Any]] = {
             isinstance(v, str) and "AttributeError" in v
         ),
     },
-    "CPY057": {
-        "probe_key": "pickle_default_protocol",
-        "description": "pickle default protocol is 5 (changed in 3.14)",
-        "versions_affected": ["3.14", "3.15"],
-        "versions_not_affected": ["3.13"],
-        "verify": lambda v: v == 5,
-        "verify_not": lambda v: v == 4,
+    "CPY029": {
+        "probe_key": "locals_mutation",
+        "description": "locals() mutation returns 0 (no effect)",
+        "versions_affected": ["3.13", "3.14"],
+        "verify": lambda v: v == 0,
+    },
+    "CPY036": {
+        "probe_key": "datetime_utcnow",
+        "description": "datetime.utcnow() raises DeprecationWarning",
+        "versions_affected": ["3.12", "3.13", "3.14"],
+        "verify": lambda v: (
+            isinstance(v, dict)
+            and "DeprecationWarning" in v.get("warnings", [])
+        ),
+    },
+    "CPY038": {
+        "probe_key": "asyncio_get_event_loop",
+        "description": (
+            "asyncio.get_event_loop() without a running loop "
+            "warns in Python 3.12-3.13 and raises RuntimeError "
+            "in Python 3.14"
+        ),
+        "versions_affected": ["3.12", "3.13", "3.14"],
+        "verify_by_version": {
+            "3.12": lambda v: (
+                isinstance(v, dict)
+                and v.get("raised") is None
+                and "DeprecationWarning" in v.get("warnings", [])
+            ),
+            "3.13": lambda v: (
+                isinstance(v, dict)
+                and v.get("raised") is None
+                and "DeprecationWarning" in v.get("warnings", [])
+            ),
+            "3.14": lambda v: (
+                isinstance(v, dict)
+                and v.get("raised") == "RuntimeError"
+                and not v.get("warnings", [])
+            ),
+        },
     },
     "CPY050": {
         "probe_key": "purepath_is_reserved",
@@ -80,31 +115,13 @@ VERIFIED_RULES: dict[str, dict[str, Any]] = {
         "versions_affected": ["3.13", "3.14"],
         "verify": lambda v: v is False,
     },
-    "CPY029": {
-        "probe_key": "locals_mutation",
-        "description": "locals() mutation returns 0 (no effect)",
-        "versions_affected": ["3.13", "3.14"],
-        "verify": lambda v: v == 0,
-    },
-    "CPY022": {
-        "probe_key": "bool_inversion",
-        "description": "bitwise inversion on bool emits DeprecationWarning (3.12+)",
-        "versions_affected": ["3.12", "3.13", "3.14"],
-        "verify": lambda v: (
-            isinstance(v, list) and "DeprecationWarning" in v
-        ),
-    },
-    "CPY038": {
-        "probe_key": "asyncio_get_event_loop",
-        "description": (
-            "asyncio.get_event_loop() without a running loop "
-            "emits DeprecationWarning (3.12+)"
-        ),
-        "versions_affected": ["3.12", "3.13", "3.14"],
-        "verify": lambda v: (
-            isinstance(v, dict)
-            and "DeprecationWarning" in v.get("warnings", [])
-        ),
+    "CPY057": {
+        "probe_key": "pickle_default_protocol",
+        "description": "pickle default protocol is 5 (changed in 3.14)",
+        "versions_affected": ["3.14", "3.15"],
+        "versions_not_affected": ["3.13"],
+        "verify": lambda v: v == 5,
+        "verify_not": lambda v: v == 4,
     },
 }
 
@@ -179,7 +196,8 @@ def main() -> int:
         not_affected = set(
             entry.get("versions_not_affected", [])
         )
-        verify_fn: Callable[[Any], bool] = entry["verify"]
+        verify_fn = entry.get("verify")
+        verify_by_version = entry.get("verify_by_version")
         verify_not_fn = entry.get("verify_not")
 
         rule_ok = True
@@ -214,10 +232,38 @@ def main() -> int:
             value = probe[key]
 
             if version in affected:
-                if not verify_fn(value):
+                if verify_by_version is not None:
+                    version_verify = verify_by_version.get(version)
+
+                    if version_verify is None:
+                        print(
+                            f"    [FAIL] v{version}: no verifier is defined "
+                            f"for {rule_id}"
+                        )
+                        rule_ok = False
+                        failed = True
+                        continue
+
+                    if not version_verify(value):
+                        print(
+                            f"    [FAIL] v{version}: expected "
+                            f"'{desc}' but got {value!r}"
+                        )
+                        rule_ok = False
+                        failed = True
+
+                elif verify_fn is not None and not verify_fn(value):
                     print(
                         f"    [FAIL] v{version}: expected "
                         f"'{desc}' but got {value!r}"
+                    )
+                    rule_ok = False
+                    failed = True
+
+                elif verify_fn is None:
+                    print(
+                        f"    [FAIL] v{version}: no affected-version "
+                        f"verifier is defined for {rule_id}"
                     )
                     rule_ok = False
                     failed = True

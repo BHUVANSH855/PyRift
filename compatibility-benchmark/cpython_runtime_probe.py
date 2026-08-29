@@ -27,22 +27,33 @@ def _bool_inversion_probe():
 
 
 def _get_event_loop_probe():
-    """CPY038 - asyncio.get_event_loop() may warn/raise on 3.12+."""
+    """CPY038 - asyncio.get_event_loop() behaviour across Python versions."""
     import warnings
+
+    created_loop = None
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
+
         try:
-            asyncio.get_event_loop()
-            return {
-                "raised": None,
-                "warnings": [type(w.message).__name__ for w in caught],
-            }
-        except Exception as exc:  # noqa: BLE001
-            return {
-                "raised": type(exc).__name__,
-                "warnings": [type(w.message).__name__ for w in caught],
-            }
+            try:
+                created_loop = asyncio.get_event_loop()
+                return {
+                    "raised": None,
+                    "warnings": [
+                        type(w.message).__name__ for w in caught
+                    ],
+                }
+            except Exception as exc:  # noqa: BLE001
+                return {
+                    "raised": type(exc).__name__,
+                    "warnings": [
+                        type(w.message).__name__ for w in caught
+                    ],
+                }
+        finally:
+            if created_loop is not None and not created_loop.is_closed():
+                created_loop.close()
 
 
 def run_probe():
