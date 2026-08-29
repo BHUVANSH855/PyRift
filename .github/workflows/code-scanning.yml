@@ -1,0 +1,44 @@
+name: Code Scanning
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: code-scanning-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pyrift-sarif:
+    name: PyRift SARIF Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install pyrift
+        run: python -m pip install -e .
+
+      - name: Run pyrift scan (SARIF)
+        run: pyrift scan . --format sarif --output results.sarif
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: pyrift

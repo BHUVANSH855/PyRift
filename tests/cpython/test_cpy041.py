@@ -26,17 +26,33 @@ class TestCPY041:
         findings = run(self.rule, "d = other | {}")
         assert len(findings) == 1
 
-    def test_detects_augmented_assign(self):
+    def test_detects_augmented_assign_dict_name(self):
         findings = run(self.rule, "d |= {'key': 'val'}")
         assert len(findings) == 1
 
-    def test_detects_augmented_assign_bare(self):
-        # |= on a name is always dict-like in practice
-        findings = run(self.rule, "d |= other")
-        assert len(findings) == 1
+    def test_detects_augmented_assign_dict_like_names(self):
+        for name in ("data", "config", "options", "settings", "kwargs",
+                      "params", "cache", "result", "output", "info"):
+            code = f"{name} |= {{}}"
+            findings = run(self.rule, code)
+            assert len(findings) == 1, f"Expected flag for {name}"
+
+    def test_clean_augmented_assign_int_like(self):
+        code = "flags |= FLAG_A"
+        assert len(run(self.rule, code)) == 0
+
+    def test_clean_augmented_assign_set_like(self):
+        code = "set1 |= set2"
+        assert len(run(self.rule, code)) == 0
+
+    def test_clean_augmented_assign_non_dict_names(self):
+        for name in ("x", "y", "count", "total", "value", "flag", "mask",
+                      "size", "length", "index", "level", "mode", "type",
+                      "kind", "code", "status", "error", "i", "j", "n"):
+            code = f"{name} |= other"
+            assert len(run(self.rule, code)) == 0, f"Should not flag {name}"
 
     def test_clean_bare_name_bitor(self):
-        # a | b — too ambiguous (could be sets, ints, flags)
         findings = run(self.rule, "x = a | b")
         assert len(findings) == 0
 

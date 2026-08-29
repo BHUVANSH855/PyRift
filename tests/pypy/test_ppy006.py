@@ -26,3 +26,11 @@ class TestPPY006:
     def test_suggestion_mentions_subclass(self):
         findings = run(self.rule, "str.shout = lambda self: self.upper()")
         assert "subclass" in findings[0].suggestion.lower()
+
+    def test_subclassing_does_not_trigger(self):
+        code = "class MyDict(dict):\n    def custom(self): pass"
+        assert len(run(self.rule, code)) == 0
+
+    def test_subclassing_builtin_list(self):
+        code = "class MyList(list):\n    pass"
+        assert len(run(self.rule, code)) == 0

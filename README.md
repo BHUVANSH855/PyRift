@@ -1,4 +1,4 @@
-﻿## Quick start - Python API
+## Quick start - Python API
 
 ```python
 import pyrift
@@ -101,7 +101,7 @@ findings = pyrift.scan_file("./src/utils.py")
 | PPY003 | sys.getrefcount() is meaningless on PyPy | PyPy | Active |
 | PPY004 | weakref.proxy() lifetime differs on PyPy due to GC model | PyPy | Active |
 | PPY005 | File write without explicit lifecycle management on PyPy | PyPy | Active |
-| PPY006 | Subclassing built-in types behaves differently on PyPy | PyPy | Active |
+| PPY006 | Monkey-patching built-in types behaves differently on PyPy | PyPy | Active |
 | PPY007 | sys.intern() identity guarantees differ on PyPy | PyPy | Active |
 | PPY008 | threading.local() cleanup timing differs on PyPy | PyPy | Active |
 | PPY009 | id() stability depends on PyPy GC configuration | PyPy | Active |
@@ -283,7 +283,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 - **Version:** 0.8.0
 - **Rules:** 101 total (57 CPython + 43 PyPy + 1 cross-runtime)
-- **Tests:** 894 passing
+- **Tests:** 1102 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 

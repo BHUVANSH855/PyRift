@@ -22,18 +22,22 @@ class BaselineError(ValueError):
 def create_baseline(
     findings: list[Finding],
     path: str | Path,
+    root: str = "",
 ) -> None:
     """
     Write the fingerprints of findings to a baseline file.
 
     The output is deterministic so the baseline can be committed
     cleanly and reviewed in version control.
+
+    *root* is the repository root used for path normalization so
+    that absolute and relative scans produce identical fingerprints.
     """
     baseline_path = Path(path)
 
     fingerprints = sorted(
         {
-            finding_fingerprint(finding)
+            finding_fingerprint(finding, root)
             for finding in findings
         }
     )
@@ -105,9 +109,13 @@ def load_baseline(path: str | Path) -> set[str]:
 def filter_baseline_findings(
     findings: list[Finding],
     baseline: set[str],
+    root: str = "",
 ) -> tuple[list[Finding], list[Finding]]:
     """
     Split findings into baseline and new findings.
+
+    *root* must be the same value passed to :func:`create_baseline`
+    so that fingerprints are computed consistently.
 
     Returns:
 
@@ -117,7 +125,7 @@ def filter_baseline_findings(
     baseline_findings: list[Finding] = []
 
     for finding in findings:
-        fingerprint = finding_fingerprint(finding)
+        fingerprint = finding_fingerprint(finding, root)
 
         if fingerprint in baseline:
             baseline_findings.append(finding)

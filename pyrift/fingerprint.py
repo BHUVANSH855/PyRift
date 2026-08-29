@@ -46,6 +46,11 @@ def _normalize_path(path: str, root: str = "") -> str:
         # Strip leading slashes to make relative
         p = p.lstrip("/")
 
+    # Strip leading ./ so that ./src/file.py and src/file.py normalize
+    # to the same value regardless of how the scan was invoked.
+    while p.startswith("./"):
+        p = p[2:]
+
     return p
 
 def finding_fingerprint(finding: Finding, root: str = "") -> str:

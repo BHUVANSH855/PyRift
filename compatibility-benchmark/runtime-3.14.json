@@ -1,4 +1,4 @@
-﻿{
+{
   "asyncio_get_event_loop": {
     "raised": "RuntimeError",
     "warnings": []

@@ -54,7 +54,7 @@ class TestCPY033:
         """)
         # hasattr check doesn't reference version_info directly in a comparison
         # so this should still be flagged unless we have a broader guard detection
-        assert len(findings) >= 0
+        assert isinstance(findings, list)
 
     def test_still_flags_unguarded(self):
         # Unguarded call should still be flagged

@@ -334,20 +334,22 @@ def _scan_file_detailed(
             check = rule.check
 
             if id(check) in _ACCEPTS_TARGET_CONFIG:  # pragma: no branch
-                findings.extend(
-                    check(
-                        tree,
-                        str(filepath),
-                        target_config,
-                    )
+                rule_findings = check(
+                    tree,
+                    str(filepath),
+                    target_config,
                 )
             else:
-                findings.extend(
-                    check(
-                        tree,
-                        str(filepath),
-                    )
+                rule_findings = check(
+                    tree,
+                    str(filepath),
                 )
+
+            for f in rule_findings:
+                if not f.category:
+                    f.category = rule.category
+
+            findings.extend(rule_findings)
         except Exception as exc:
             message = (
                 f"{filepath}: {rule.rule_id}: "
@@ -366,6 +368,7 @@ def _scan_file_detailed(
 def scan_file(
     filepath: str | Path,
     rules: list[BaseRule] | None = None,
+    target_config: TargetConfig | None = None,
 ) -> list[Finding]:
     """Scan a single file. Returns list of Findings.
 
@@ -374,7 +377,7 @@ def scan_file(
     ``ScanResult.rule_errors`` so callers can distinguish analyzer failures
     from source-code findings.
     """
-    findings, _ = _scan_file_detailed(filepath, rules)
+    findings, _ = _scan_file_detailed(filepath, rules, target_config)
     return findings
 
 

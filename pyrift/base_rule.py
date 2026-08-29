@@ -22,6 +22,7 @@ class BaseRule(ABC):
     rule_id: str = ""
     title: str = ""
     runtime: str = "both"
+    category: str = "compatibility"
 
     @abstractmethod
     def check(
