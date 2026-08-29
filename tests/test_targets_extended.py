@@ -1,10 +1,12 @@
 """Extended tests for pyrift.targets covering edge cases."""
 import pytest
 
+import pyrift.targets as targets_module
 from pyrift.finding import Finding, Runtime, Severity
 from pyrift.targets import (
     PythonVersion,
     TargetConfig,
+    _load_requires_python_without_tomllib,
     _parse_version_specifier,
     load_project_targets,
 )
@@ -214,3 +216,66 @@ class TestLoadProjectTargets:
         isolated.mkdir()
         config = load_project_targets(isolated)
         assert config is None
+
+
+class TestVersionSpecifierErrors:
+    def test_invalid_range_raises_value_error(self):
+        with pytest.raises(ValueError):
+            _parse_version_specifier(">=3.13,<=3.11")
+
+    def test_unsupported_operator_raises(self):
+        with pytest.raises(ValueError):
+            _parse_version_specifier("~=3.11")
+
+
+class TestFallbackParser:
+    def test_returns_requires_python_from_project_table(self, tmp_path):
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text('[project]\nrequires-python = ">=3.11"\n')
+        assert _load_requires_python_without_tomllib(pyproject) == ">=3.11"
+
+    def test_returns_none_when_read_fails(self, tmp_path):
+        missing = tmp_path / "missing.toml"
+        assert _load_requires_python_without_tomllib(missing) is None
+
+    def test_ignores_other_tables(self, tmp_path):
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text(
+            '[tool.ruff]\nrequires-python = ">=3.12"\n'
+            "[project]\nrequires-python = '>=3.10'\n"
+        )
+        assert _load_requires_python_without_tomllib(pyproject) == ">=3.10"
+
+    def test_returns_none_when_no_requires_python(self, tmp_path):
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text("[project]\nname = 'x'\n")
+        assert _load_requires_python_without_tomllib(pyproject) is None
+
+
+class TestLoadProjectTargetsBranches:
+    def test_fallback_parser_used_when_tomllib_unavailable(
+        self, tmp_path, monkeypatch
+    ):
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text('[project]\nrequires-python = ">=3.11"\n')
+
+        # Force targets.tomllib to None to exercise the fallback parser.
+        monkeypatch.setattr(targets_module, "tomllib", None)
+        config = load_project_targets(tmp_path)
+        assert config is not None
+        assert config.minimum == PythonVersion(3, 11)
+
+    def test_invalid_specifier_returns_none(self, tmp_path):
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text('[project]\nrequires-python = "bogus"\n')
+        config = load_project_targets(tmp_path)
+        assert config is None
+
+    def test_file_path_resolves_to_parent_pyproject(self, tmp_path):
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text('[project]\nrequires-python = ">=3.10"\n')
+        target_file = tmp_path / "src" / "mod.py"
+        target_file.parent.mkdir()
+        target_file.write_text("x = 1\n")
+        config = load_project_targets(target_file)
+        assert config is not None

@@ -72,6 +72,44 @@ def test_inside_function_detection():
     )
 
 
+def test_not_inside_function():
+    tree = ast.parse(
+        textwrap.dedent(
+            """
+            x = 1
+            """
+        )
+    )
+
+    parent_map = build_parent_map(tree)
+    assignment = tree.body[0]
+
+    assert not is_inside_function(
+        assignment,
+        parent_map,
+    )
+
+
+def test_not_inside_class_but_inside_function():
+    tree = ast.parse(
+        textwrap.dedent(
+            """
+            def outer():
+                x = 1
+            """
+        )
+    )
+
+    parent_map = build_parent_map(tree)
+    assignment = tree.body[0].body[0]
+
+    # inside a function, but not inside any class.
+    assert not is_inside_class(
+        assignment,
+        parent_map,
+    )
+
+
 def test_inside_class_detection():
     tree = ast.parse(
         textwrap.dedent(
