@@ -10,7 +10,7 @@ import ast
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from .finding import Finding
+from .finding import Finding, Runtime
 
 if TYPE_CHECKING:
     from .targets import TargetConfig
@@ -21,7 +21,7 @@ class BaseRule(ABC):
 
     rule_id: str = ""
     title: str = ""
-    runtime: str = "both"
+    runtime: Runtime = Runtime.BOTH
 
     @abstractmethod
     def check(

@@ -78,7 +78,20 @@ findings = pyrift.scan_file("./src/utils.py")
 | CPY042 | `aiter()` and `anext()` builtins require Python 3.10+ | Error | CPython â‰¤ 3.9 |
 | CPY043 | `math.lcm()` requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
 | CPY044 | `math.gcd()` multi-arg form requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
-| CPY045 | NaN hash behaviour changed in Python 3.10 | Warning | CPython â‰¥ 3.10 |
+| CPY045 | NaN hash behaviour changed in Python 3.10 | Warning | CPython >= 3.10 |
+| CPY046 | `open()` without encoding= has platform-dependent default | Warning | CPython < 3.15 |
+| CPY047 | `collections.abc.ByteString` removed in Python 3.15 | Error | CPython >= 3.15 |
+| CPY048 | `concurrent.interpreters` requires Python 3.14+ | Error | CPython <= 3.13 |
+| CPY049 | `compression.zstd` requires Python 3.14+ | Error | CPython <= 3.13 |
+| CPY050 | `PurePath.is_reserved()` deprecated in 3.13 | Warning | CPython >= 3.13 |
+| CPY051 | Unsynchronized module state unsafe in free-threaded 3.13+ | Warning | CPython >= 3.13 |
+| CPY052 | `threading.local()` atomicity in free-threaded 3.13+ | Warning | CPython >= 3.13 |
+| CPY053 | `typing.get_overloads()` requires Python 3.11+ | Error | CPython <= 3.10 |
+| CPY054 | `int()` no longer delegates to `__trunc__()` in 3.14 | Error | CPython <= 3.13 |
+| CPY055 | `NotImplemented` in boolean context raises TypeError in 3.14 | Error | CPython <= 3.13 |
+| CPY057 | pickle default protocol changed to 5 in Python 3.14 | Warning | CPython >= 3.14 |
+| CPY062 | `string.templatelib` requires Python 3.14+ | Error | CPython <= 3.13 |
+| CPY063 | `annotationlib` requires Python 3.14+ | Error | CPython <= 3.13 |
 
 ### PyPy rules - runtime differences
 
@@ -129,6 +142,8 @@ findings = pyrift.scan_file("./src/utils.py")
 | PPY043 | `__slots__` memory savings differ on PyPy | Info | PyPy all versions |
 | PPY044 | Exception variable cleanup timing differs on PyPy | Info | PyPy all versions |
 | PPY045 | `sys.settrace()` disables JIT on PyPy | Warning | PyPy all versions |
+| PPY046 | `__debug__` constant always True on PyPy | Warning | PyPy all versions |
+| PPY047 | `ctypes.util.find_library()` unreliable on PyPy | Warning | PyPy all versions |
 
 Full rule documentation: [docs/rules.md](docs/rules.md)
 
@@ -265,7 +280,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 - **Version:** 0.8.0
 - **Rules:** 104 total (58 CPython + 44 PyPy + 2 cross-runtime)
-- **Tests:** 800 passing
+- **Tests:** 810 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 

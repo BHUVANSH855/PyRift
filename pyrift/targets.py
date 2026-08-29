@@ -145,7 +145,10 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
 
         if part.startswith(">"):
             version = PythonVersion.parse(part[1:])
-            candidate = PythonVersion(version.major, version.minor + 1)
+            if version.minor < 11:
+                candidate = PythonVersion(version.major, version.minor + 1)
+            else:
+                candidate = PythonVersion(version.major + 1, 0)
 
             if minimum is None or candidate > minimum:
                 minimum = candidate
@@ -162,8 +165,10 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
 
         if part.startswith("<"):
             version = PythonVersion.parse(part[1:])
-            candidate = PythonVersion(version.major, version.minor - 1)
-
+            if version.minor > 0:
+                candidate = PythonVersion(version.major, version.minor - 1)
+            else:
+                candidate = PythonVersion(version.major - 1, 11)
             if maximum is None or candidate < maximum:
                 maximum = candidate
 

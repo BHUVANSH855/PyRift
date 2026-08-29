@@ -105,7 +105,11 @@ class ImportMap:
 
 def _extract_version_guard(parent_map: dict[int, ast.AST],
                            n: ast.AST) -> tuple[int, ...] | None:
-    """If n is inside an if sys.version_info >= (x,y): block, return (x,y)."""
+    """If n is inside an if sys.version_info >= (x,y): block, return (x,y).
+
+    For > (x,y) guards, returns (x, y+1) to represent the effective
+    minimum version (e.g., > (3, 10) means the code runs on 3.11+).
+    """
     current = parent_map.get(id(n))
     while current is not None:
         if isinstance(current, ast.If):
@@ -125,11 +129,15 @@ def _extract_version_guard(parent_map: dict[int, ast.AST],
                 if all(isinstance(e, ast.Constant) for e in elts):
                     from typing import cast
 
+                    version = [
+                        cast(ast.Constant, e).value for e in elts
+                    ]
+                    # For > (x, y), the effective minimum is (x, y+1)
+                    if isinstance(test.ops[0], ast.Gt) and len(version) >= 2:
+                        version[-1] = version[-1] + 1
                     return cast(
                         "tuple[int, ...]",
-                        tuple(
-                            cast(ast.Constant, e).value for e in elts
-                        ),
+                        tuple(version),
                     )
         current = parent_map.get(id(current))
     return None

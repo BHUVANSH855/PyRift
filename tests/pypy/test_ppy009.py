@@ -178,14 +178,14 @@ class TestPPY009:
         assert len(findings) == 1
         assert findings[0].rule_id == "PPY009"
 
-    def test_detects_id_added_to_set(self):
+    def test_no_flag_id_added_to_set(self):
+        """set.add(id(x)) is a legitimate dedup pattern, not a persistence risk."""
         findings = run(
             self.rule,
             "def f():\n    seen.add(id(x))",
         )
 
-        assert len(findings) == 1
-        assert findings[0].rule_id == "PPY009"
+        assert len(findings) == 0
 
     def test_detects_id_inserted_into_list(self):
         findings = run(

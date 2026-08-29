@@ -15,6 +15,9 @@ from pathlib import Path
 
 from .base_rule import BaseRule
 from .finding import Finding, Runtime
+
+# Cache which rules accept target_config to avoid repeated inspect.signature() calls
+_ACCEPTS_TARGET_CONFIG: set[int] = set()
 from .rules.cpython.cpy001_dict_ordering import DictOrderingRule
 from .rules.cpython.cpy002_exception_notes import ExceptionNotesRule
 from .rules.cpython.cpy003_union_type_syntax import UnionTypeSyntaxRule
@@ -103,7 +106,7 @@ from .rules.pypy.ppy025_set_ordering import SetOrderingRule
 from .rules.pypy.ppy026_builtins_module import BuiltinsModuleRule
 from .rules.pypy.ppy027_module_attr_delete import ModuleAttrDeleteRule
 from .rules.pypy.ppy028_readline_parse_bind import ReadlineParseBindRule
-from .rules.pypy.ppy029_dict_kwargs_nonstring import BuiltinsAssignRule
+from .rules.pypy.ppy029_builtins_assign import BuiltinsAssignRule
 from .rules.pypy.ppy030_sys_flags import SysFlagsRule
 from .rules.pypy.ppy031_integer_identity import IntegerIdentityRule
 from .rules.pypy.ppy032_dict_key_mutation import DictKeyMutationRule
@@ -126,6 +129,7 @@ from .targets import TargetConfig, load_project_targets
 logger = logging.getLogger(__name__)
 
 ALL_RULES: list[BaseRule] = [
+    # CPython rules (sorted by rule ID)
     DictOrderingRule(),
     ExceptionNotesRule(),
     UnionTypeSyntaxRule(),
@@ -136,13 +140,6 @@ ALL_RULES: list[BaseRule] = [
     SlotsDictRule(),
     ExceptionGroupRule(),
     DataclassSlotsRule(),
-    GcFinalizerRule(),
-    CtypesRule(),
-    GetRefcountRule(),
-    WeakrefProxyRule(),
-    IoBufferingRule(),
-    BuiltinMonkeyPatchRule(),
-    SysInternRule(),
     TypingSelfRule(),
     LiteralStringRule(),
     OverrideRule(),
@@ -151,70 +148,33 @@ ALL_RULES: list[BaseRule] = [
     TypeVarTupleRule(),
     UnpackRule(),
     RequiredRule(),
-    ThreadingLocalRule(),
-    IdStabilityRule(),
-    GcCollectRule(),
-    ArrayTypeCodeRule(),
-    SubclassingBuiltinsRule(),
     DistutilsRule(),
     DatetimeUTCRule(),
-    GetSizeofRule(),
-    StringConcatLoopRule(),
-    GeneratorGCRule(),
-    InstanceDictOrderRule(),
-    DelExistingClassRule(),
-    RecursionLimitRule(),
-    NanIdentityRule(),
-    KwargsStringKeysRule(),
     AsyncioIsCoroutineRule(),
     BoolInversionRule(),
     MultiprocessingForkRule(),
     TypeGuardRule(),
     ParamSpecRule(),
-    SocketGCRule(),
-    HashRandomisationRule(),
-    InspectIsMethodRule(),
-    TimeitRule(),
-    SetOrderingRule(),
     TypingIoReRule(),
     LocaleResetlocaleRule(),
     Lib2to3Rule(),
     LocalsBehaviourRule(),
     SysPathBytesRule(),
-    BuiltinsModuleRule(),
-    ModuleAttrDeleteRule(),
-    ReadlineParseBindRule(),
-    BuiltinsAssignRule(),
-    SysFlagsRule(),
     AssertNeverRule(),
     RevealTypeRule(),
     IsRelativeToRule(),
     BitCountRule(),
     RemovePrefixRule(),
-    IntegerIdentityRule(),
-    DictKeyMutationRule(),
-    DelIgnoredExceptionsRule(),
-    HashMinusOneRule(),
-    CExtensionsRule(),
     DatetimeUtcnowRule(),
     DatetimeUtcfromtimestampRule(),
     AsyncioGetEventLoopRule(),
     ZoneInfoRule(),
     GraphlibRule(),
-    OpenFlushRule(),
-    OsUrandomRule(),
-    DecimalBackendRule(),
-    OsForkRule(),
-    SubprocessPipeRule(),
     DictMergeOperatorRule(),
     AiterAnextRule(),
     MathLcmRule(),
     MathGcdMultiRule(),
     NanHashRule(),
-    DictMergePypyRule(),
-    PrintFlushRule(),
-    ExceptionChainingRule(),
-    SysSettraceRule(),
     OpenEncodingRule(),
     ByteStringRemovedRule(),
     ConcurrentInterpretersRule(),
@@ -223,14 +183,66 @@ ALL_RULES: list[BaseRule] = [
     FreeThreadedGlobalStateRule(),
     FreeThreadedThreadingLocalRule(),
     TypingGetOverloadsRule(),
-    DebugConstantRule(),
-    CtypesFindLibraryRule(),
     IntTruncRule(),
     NotImplementedBoolRule(),
     PickleProtocolRule(),
     TemplateStringRule(),
     AnnotationLibRule(),
+    # PyPy rules (sorted by rule ID)
+    GcFinalizerRule(),
+    CtypesRule(),
+    GetRefcountRule(),
+    WeakrefProxyRule(),
+    IoBufferingRule(),
+    BuiltinMonkeyPatchRule(),
+    SysInternRule(),
+    ThreadingLocalRule(),
+    IdStabilityRule(),
+    GcCollectRule(),
+    ArrayTypeCodeRule(),
+    SubclassingBuiltinsRule(),
+    GetSizeofRule(),
+    StringConcatLoopRule(),
+    GeneratorGCRule(),
+    InstanceDictOrderRule(),
+    DelExistingClassRule(),
+    RecursionLimitRule(),
+    NanIdentityRule(),
+    KwargsStringKeysRule(),
+    SocketGCRule(),
+    HashRandomisationRule(),
+    InspectIsMethodRule(),
+    TimeitRule(),
+    SetOrderingRule(),
+    BuiltinsModuleRule(),
+    ModuleAttrDeleteRule(),
+    ReadlineParseBindRule(),
+    BuiltinsAssignRule(),
+    SysFlagsRule(),
+    IntegerIdentityRule(),
+    DictKeyMutationRule(),
+    DelIgnoredExceptionsRule(),
+    HashMinusOneRule(),
+    CExtensionsRule(),
+    OpenFlushRule(),
+    OsUrandomRule(),
+    DecimalBackendRule(),
+    OsForkRule(),
+    SubprocessPipeRule(),
+    DictMergePypyRule(),
+    PrintFlushRule(),
+    ExceptionChainingRule(),
+    SysSettraceRule(),
+    DebugConstantRule(),
+    CtypesFindLibraryRule(),
 ]
+
+# Pre-compute which rules accept target_config (cached at import time)
+for _rule in ALL_RULES:
+    _params = inspect.signature(_rule.check).parameters
+    if "target_config" in _params:
+        _ACCEPTS_TARGET_CONFIG.add(id(_rule.check))
+del _rule, _params
 
 SKIP_DIRS = {
     ".git", "__pycache__", ".venv", "venv", "env",
@@ -324,9 +336,8 @@ def _scan_file_detailed(
     for rule in rules:
         try:
             check = rule.check
-            parameters = inspect.signature(check).parameters
 
-            if "target_config" in parameters:
+            if id(check) in _ACCEPTS_TARGET_CONFIG:
                 findings.extend(
                     check(
                         tree,

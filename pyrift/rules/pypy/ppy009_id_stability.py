@@ -205,14 +205,21 @@ def _is_persistence_context(
     if isinstance(parent, ast.Call) and _is_retaining_method_call(parent):
         return True
 
-    return isinstance(parent, ast.Compare)
+    # Compare: only flag when the result is stored, not when used as
+    # a transient membership check like ``id(x) in some_set``.
+    if isinstance(parent, ast.Compare):
+        for op in parent.ops:
+            if isinstance(op, (ast.In, ast.Is, ast.IsNot)):
+                return False
+        return True
+
+    return False
 
 
 _RETAINING_METHODS = frozenset(
     {
         "append",
         "appendleft",
-        "add",
         "extend",
         "push",
         "insert",

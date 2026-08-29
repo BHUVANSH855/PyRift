@@ -61,12 +61,14 @@ def is_version_guarded(node: ast.AST,
     This suppresses false positives when code is properly guarded:
         if sys.version_info >= (3, 11):
             from typing import Self  # correctly guarded
+
+    For > (x, y) guards, the effective minimum version is (x, y+1).
     """
     current = parent_map.get(id(node))
     while current is not None:
         if isinstance(current, ast.If):
             test = current.test
-            # Pattern: sys.version_info >= (x, y)
+            # Pattern: sys.version_info >= (x, y) or sys.version_info > (x, y)
             if (
                 isinstance(test, ast.Compare)
                 and len(test.ops) == 1
@@ -84,9 +86,13 @@ def is_version_guarded(node: ast.AST,
                     isinstance(e, ast.Constant) and isinstance(e.value, int)
                     for e in elts
                 ):
-                    guard_version = tuple(
+                    version = [
                         cast(ast.Constant, e).value for e in elts
-                    )
+                    ]
+                    # For > (x, y), the effective minimum is (x, y+1)
+                    if isinstance(test.ops[0], ast.Gt) and len(version) >= 2:
+                        version[-1] = version[-1] + 1
+                    guard_version = tuple(version)
                     if guard_version >= min_version:
                         return True
         current = parent_map.get(id(current))

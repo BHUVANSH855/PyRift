@@ -1,7 +1,7 @@
 import ast
 import textwrap
 
-from pyrift.rules.pypy.ppy029_dict_kwargs_nonstring import BuiltinsAssignRule
+from pyrift.rules.pypy.ppy029_builtins_assign import BuiltinsAssignRule
 
 
 def parse(src): return ast.parse(textwrap.dedent(src))
