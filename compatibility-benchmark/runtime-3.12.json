@@ -1,4 +1,13 @@
-{
+﻿{
+  "asyncio_get_event_loop": {
+    "raised": null,
+    "warnings": [
+      "DeprecationWarning"
+    ]
+  },
+  "bool_inversion": [
+    "DeprecationWarning"
+  ],
   "datetime_utcnow": {
     "result": "datetime",
     "warnings": [
@@ -10,10 +19,10 @@
   "multiprocessing_start_method": "spawn",
   "pickle_default_protocol": 4,
   "purepath_is_reserved": false,
-  "python": "3.12.13 (main, Aug  7 2026, 02:26:41) [MSC v.1944 64 bit (AMD64)]",
+  "python": "3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)]",
   "version_info": [
     3,
     12,
-    13
+    6
   ]
 }
