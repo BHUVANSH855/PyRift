@@ -33,7 +33,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "pytest-cov", "pytest-xdist", "ruff", "build", "twine"]
+dev = ["pytest>=7.0", "pytest-cov", "pytest-xdist", "ruff", "mypy", "build", "twine"]
 
 [project.scripts]
 pyrift = "pyrift.cli:main"
