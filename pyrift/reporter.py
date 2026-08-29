@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 from collections import OrderedDict
+from pathlib import Path
 
 from .finding import Severity
 from .scanner import ScanResult
@@ -208,8 +209,29 @@ def to_text(result: ScanResult) -> str:
 
 
 def to_sarif(result: ScanResult) -> str:
-    """Generate a SARIF 2.1.0 JSON report from a ScanResult."""
+    """Generate a SARIF 2.1.0 JSON report from a ScanResult.
+
+    Artifact locations are emitted as repository/project-relative POSIX
+    paths whenever the scan root is known. This keeps SARIF stable across
+    local machines and CI runners and avoids leaking absolute filesystem
+    paths into code-scanning results.
+    """
     from . import __version__
+
+    def artifact_uri(filepath: str) -> str:
+        """Return a stable SARIF artifact URI for a finding."""
+        path = Path(filepath)
+
+        if result.base_path is not None and path.is_absolute():
+            try:
+                path = path.resolve().relative_to(result.base_path)
+            except ValueError:
+                # A finding outside the scan root should not produce a
+                # misleading repository-relative path. Keep the normalized
+                # path so the location remains identifiable.
+                path = path.resolve()
+
+        return path.as_posix()
 
     rules_map: dict[str, dict] = OrderedDict()
     sarif_results: list[dict] = []
@@ -228,7 +250,11 @@ def to_sarif(result: ScanResult) -> str:
                         finding.confidence.value,
                         finding.runtime.value,
                     ],
-                    "category": getattr(finding, "category", "compatibility"),
+                    "category": getattr(
+                        finding,
+                        "category",
+                        "compatibility",
+                    ),
                 },
             }
 
@@ -240,7 +266,9 @@ def to_sarif(result: ScanResult) -> str:
         start_column = max(1, finding.col or 1)
 
         physical_location = {
-            "artifactLocation": {"uri": finding.file},
+            "artifactLocation": {
+                "uri": artifact_uri(finding.file),
+            },
             "region": {
                 "startLine": start_line,
                 "startColumn": start_column,
@@ -255,17 +283,25 @@ def to_sarif(result: ScanResult) -> str:
             "affected_from": finding.affected_from or None,
             "affected_until": finding.affected_until or None,
             "suggestion": finding.suggestion or None,
-            "category": getattr(finding, "category", "compatibility"),
+            "category": getattr(
+                finding,
+                "category",
+                "compatibility",
+            ),
         }
 
-        sarif_results.append({
-            "ruleId": rule_id,
-            "message": {"text": message_text},
-            "locations": [
-                {"physicalLocation": physical_location}
-            ],
-            "properties": sarif_properties,
-        })
+        sarif_results.append(
+            {
+                "ruleId": rule_id,
+                "message": {"text": message_text},
+                "locations": [
+                    {
+                        "physicalLocation": physical_location,
+                    }
+                ],
+                "properties": sarif_properties,
+            }
+        )
 
     sarif: dict = {
         "$schema": (
@@ -286,5 +322,7 @@ def to_sarif(result: ScanResult) -> str:
             },
         ],
     }
+
+    return json.dumps(sarif, indent=2)
 
     return json.dumps(sarif, indent=2)

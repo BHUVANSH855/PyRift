@@ -251,11 +251,17 @@ class ScanResult:
         files_scanned: int,
         baseline_suppressed: int = 0,
         rule_errors: list[str] | None = None,
+        base_path: str | Path | None = None,
     ):
         self.findings = findings
         self.files_scanned = files_scanned
         self.baseline_suppressed = baseline_suppressed
         self.rule_errors = rule_errors or []
+        self.base_path = (
+            Path(base_path).resolve()
+            if base_path is not None
+            else None
+        )
 
     @property
     def errors(self) -> list[Finding]:
@@ -505,4 +511,11 @@ def scan(
 
     rule_errors.sort()
 
-    return ScanResult(all_findings, files_scanned, rule_errors=rule_errors)
+    scan_base_path = path.resolve() if path.is_dir() else path.resolve().parent
+
+    return ScanResult(
+        all_findings,
+        files_scanned,
+        rule_errors=rule_errors,
+        base_path=scan_base_path,
+    )
