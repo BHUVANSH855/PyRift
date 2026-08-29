@@ -65,3 +65,14 @@ check_untyped_defs = true
 ignore_missing_imports = true
 warn_return_any = true
 no_implicit_optional = true
+
+[tool.coverage.run]
+branch = false
+source = ["pyrift"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]

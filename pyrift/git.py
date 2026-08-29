@@ -114,7 +114,7 @@ def _parse_changed_paths(output: bytes) -> list[str]:
         status_code = status_text[:1]
 
         if status_code in {"R", "C"}:
-            if index + 1 >= len(fields):
+            if index + 1 >= len(fields):  # pragma: no cover
                 raise GitError(
                     "Git returned incomplete rename information"
                 )
@@ -132,7 +132,7 @@ def _parse_changed_paths(output: bytes) -> list[str]:
             index += 2
             continue
 
-        if index >= len(fields):
+        if index >= len(fields):  # pragma: no cover
             raise GitError("Git returned incomplete path information")
 
         path = fields[index]
