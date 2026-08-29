@@ -146,3 +146,46 @@ class TestFindingFingerprint:
         fp1 = finding_fingerprint(finding)
         fp2 = finding_fingerprint(finding)
         assert fp1 == fp2
+
+class TestNormalizePathWithRoot:
+    def test_root_makes_path_relative(self):
+        from pyrift.fingerprint import _normalize_path
+        result = _normalize_path("/home/user/project/src/file.py",
+                                  root="/home/user/project")
+        assert result == "src/file.py"
+
+    def test_root_trailing_slash_handled(self):
+        from pyrift.fingerprint import _normalize_path
+        result = _normalize_path("/home/user/project/src/file.py",
+                                  root="/home/user/project/")
+        assert result == "src/file.py"
+
+    def test_root_exact_match_returns_empty(self):
+        from pyrift.fingerprint import _normalize_path
+        result = _normalize_path("/home/user/project",
+                                  root="/home/user/project")
+        assert result == ""
+
+    def test_root_not_matching_falls_through(self):
+        from pyrift.fingerprint import _normalize_path
+        result = _normalize_path("/other/path/file.py",
+                                  root="/home/user/project")
+        assert "file.py" in result
+
+    def test_fingerprint_with_root_stable(self):
+        from pyrift.fingerprint import finding_fingerprint
+        f = make_finding()
+        f.file = "/home/user/project/src/test.py"
+        fp1 = finding_fingerprint(f, root="/home/user/project")
+        fp2 = finding_fingerprint(f, root="/home/user/project")
+        assert fp1 == fp2
+
+    def test_fingerprint_root_vs_no_root_differ(self):
+        from pyrift.fingerprint import finding_fingerprint
+        f1 = make_finding()
+        f1.file = "/home/user/project/src/test.py"
+        f2 = make_finding()
+        f2.file = "src/test.py"
+        fp_with_root = finding_fingerprint(f1, root="/home/user/project")
+        fp_relative = finding_fingerprint(f2)
+        assert fp_with_root == fp_relative

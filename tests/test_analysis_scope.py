@@ -250,3 +250,25 @@ def test_nested_function_not_class():
     inner_assignment = tree.body[0].body[0].body[0]
     assert is_inside_function(inner_assignment, parent_map)
     assert not is_inside_class(inner_assignment, parent_map)
+
+class TestVersionGuardGtOperator:
+    """Test is_version_guarded with strict > operator (lines 94-96)."""
+
+    def test_strict_gt_increments_minor(self):
+        """if sys.version_info > (3, 10) means >= (3, 11)."""
+        import ast
+
+        from pyrift.analysis.scope import build_parent_map, is_version_guarded
+        src = """
+import sys
+if sys.version_info > (3, 10):
+    from typing import Self
+"""
+        tree = ast.parse(src)
+        parent_map = build_parent_map(tree)
+        # Find the import node
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module == "typing":
+                # Should be guarded as >= (3, 11)
+                result = is_version_guarded(node, parent_map, (3, 11))
+                assert result is True

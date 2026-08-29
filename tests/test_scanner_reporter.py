@@ -264,3 +264,23 @@ class TestScanResultRepr:
         txt_file.write_text("import cgi\n")
         result = scan(txt_file)
         assert result.files_scanned == 0
+
+class TestScannerEdgeCases:
+    def test_unicode_decode_error_skipped(self, tmp_path):
+        """Files with invalid UTF-8 are skipped gracefully."""
+        from pyrift.scanner import scan
+        # Write a file with invalid UTF-8 bytes
+        bad_file = tmp_path / "bad_encoding.py"
+        bad_file.write_bytes(b"x = 1\n\xff\xfe invalid bytes\n")
+        result = scan(tmp_path)
+        # Should not crash — file is skipped
+        assert result is not None
+
+    def test_parse_error_reported_as_finding(self, tmp_path):
+        """Files with syntax errors produce a PARSE finding."""
+        from pyrift.scanner import scan
+        bad_file = tmp_path / "syntax_error.py"
+        bad_file.write_text("def broken(\n")  # Invalid syntax
+        result = scan(tmp_path)
+        parse_findings = [f for f in result.findings if f.rule_id == "PARSE"]
+        assert len(parse_findings) == 1
