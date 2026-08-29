@@ -80,6 +80,60 @@ class TestBaselineCLI:
         assert data["version"] == 1
         assert len(data["findings"]) == 1
 
+    def test_baseline_create_missing_path_exits_with_code_2(
+        self,
+        tmp_path,
+    ):
+        missing = tmp_path / "does-not-exist"
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "baseline",
+                    "create",
+                    str(missing),
+                ]
+            )
+
+        assert exc.value.code == 2
+
+    def test_baseline_create_oserror_exits_with_code_2(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+        write_python_file(project / "example.py")
+
+        def _scan_and_write(*args, **kwargs):
+            return ScanResult(
+                [make_finding()],
+                1,
+            )
+
+        monkeypatch.setattr("pyrift.cli.scan", _scan_and_write)
+
+        from pyrift import cli
+
+        def _fail_create(*_args, **_kwargs):
+            raise OSError("permission denied")
+
+        monkeypatch.setattr(cli, "create_baseline", _fail_create)
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "baseline",
+                    "create",
+                    str(project),
+                    "--output",
+                    str(tmp_path / "out.json"),
+                ]
+            )
+
+        assert exc.value.code == 2
+
     def test_scan_without_baseline_preserves_findings(
         self,
         tmp_path,
