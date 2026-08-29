@@ -1,4 +1,4 @@
-﻿## [0.8.0] - 2026-08-26
+## [0.8.0] - 2026-08-26
 
 ### Added
 - `CPY046` - open() without encoding= (platform-dependent before 3.15)
