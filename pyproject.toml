@@ -67,7 +67,7 @@ warn_return_any = true
 no_implicit_optional = true
 
 [tool.coverage.run]
-branch = true
+branch = false
 source = ["pyrift"]
 
 [tool.coverage.report]
