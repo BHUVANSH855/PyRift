@@ -34,7 +34,7 @@ class SetOrderingRule(BaseRule):
                         func.id in ("list", "tuple") and
                         n.args):
                     arg = n.args[0]
-                    if isinstance(arg, (ast.Set, ast.Name)):
+                    if isinstance(arg, ast.Set):
                         findings.append(self._make_call_finding(
                             filename, n, func.id, arg))
 
@@ -53,12 +53,13 @@ class SetOrderingRule(BaseRule):
                             filename, n,
                             "next(iter(s)) on a set"))
 
-            # Detect: for x in set_literal / for x in set_var
+            # Detect: for x in {1, 2, 3} (literal set only)
+            # ast.Name is too broad — any variable could be a set
             if (isinstance(n, ast.For)
-                    and isinstance(n.iter, (ast.Set, ast.Name))):
+                    and isinstance(n.iter, ast.Set)):
                 findings.append(self._make_finding(
                     filename, n,
-                    "for-loop over a set"))
+                    "for-loop over a set literal"))
 
         return findings
 
