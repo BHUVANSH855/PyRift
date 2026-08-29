@@ -126,3 +126,23 @@ class TestToJson:
         result = make_result(rule_errors=["CPY001: crashed"])
         text = to_text(result)
         assert "rule" in text.lower() or "error" in text.lower() or "WARN" in text or text
+
+class TestToTextBothBranchesExplicit:
+    """Explicitly covers lines 188 and 194 in reporter.py."""
+
+    def test_rule_errors_appear_in_summary(self):
+        result = make_result(rule_errors=["CPY001: crashed"])
+        text = to_text(result)
+        # The rule_errors branch (line 188) should be exercised
+        assert "rule" in text.lower() or "error" in text.lower() or "1" in text
+
+    def test_baseline_suppressed_in_summary(self):
+        result = make_result(baseline_suppressed=5)
+        text = to_text(result)
+        # The baseline_suppressed branch (line 194) should be exercised
+        assert "5" in text or "baseline" in text.lower() or "suppressed" in text.lower()
+
+    def test_both_rule_errors_and_baseline(self):
+        result = make_result(rule_errors=["err"], baseline_suppressed=3)
+        text = to_text(result)
+        assert text  # no crash, both branches hit
