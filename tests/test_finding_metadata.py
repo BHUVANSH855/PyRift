@@ -2,6 +2,7 @@ from pyrift.finding import (
     Confidence,
     EvidenceType,
     Finding,
+    IntentBasis,
     Runtime,
 )
 
@@ -17,6 +18,7 @@ def test_reviewed_rule_gets_authoritative_metadata():
     assert finding.confidence == Confidence.MEDIUM
     assert finding.evidence_type == EvidenceType.PEP
     assert finding.evidence_source == "pep:703"
+    assert finding.intent_basis == IntentBasis.DOCUMENTED
 
 
 def test_unreviewed_rule_uses_conservative_defaults():
@@ -29,6 +31,7 @@ def test_unreviewed_rule_uses_conservative_defaults():
     assert finding.confidence == Confidence.LOW
     assert finding.evidence_type == EvidenceType.INFERRED
     assert finding.evidence_source == ""
+    assert finding.intent_basis == IntentBasis.INFERRED
 
 
 def test_evidence_is_serialized():
@@ -43,3 +46,4 @@ def test_evidence_is_serialized():
     assert data["confidence"] == "medium"
     assert data["evidence_type"] == "pep"
     assert data["evidence_source"] == "pep:703"
+    assert data["intent_basis"] == "documented"

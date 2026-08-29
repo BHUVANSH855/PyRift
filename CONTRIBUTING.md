@@ -58,6 +58,14 @@ Each rule returns `Finding` objects with `severity` (`ERROR`/`WARNING`/`INFO`), 
 
 **Conservation rule:** an unreviewed rule (no `RULE_METADATA` entry) stays at `LOW`/`INFERRED` — it must never claim high confidence silently.
 
+**Intentionality rule:** `evidence_type` and `intent_basis` are separate. A
+runtime probe proves that a difference occurs; it does not prove that CPython
+intended the difference. Use `documented` for authoritative PEP/official-doc
+evidence, `deprecation` for an explicit deprecation/removal path,
+`implementation_defined` when the documented contract permits implementation
+differences, and `observed`/`inferred` when intent is not established. See
+[`docs/behavior-evidence.md`](docs/behavior-evidence.md) for the full model.
+
 ---
 
 ## Adding a rule
@@ -111,10 +119,13 @@ Each rule returns `Finding` objects with `severity` (`ERROR`/`WARNING`/`INFO`), 
    ```
 
    Don't weaken existing contracts to make a rule pass.
-7. **Update metadata** in `pyrift/rule_metadata.py` — be honest:
+7. **Update metadata** in `pyrift/rule_metadata.py` — be honest about both
+   evidence and intent basis:
 
    ```python
-   "CPYXXX": _metadata("high", "pep:XXXX")   # or "runtime_probe", "official_docs", "observed", "inferred"
+   "CPYXXX": _metadata("high", "pep:XXXX")
+   # Use intent_basis="implementation_defined" when the documented contract
+   # explicitly leaves the behavior to the implementation.
    ```
 8. **Verify runtime claims** where practical:
 
@@ -143,6 +154,21 @@ can place in a finding.
 | `pep` | Described in a PEP with clear version bounds | Tier A |
 | `observed` | Reproduced manually, not yet probe-verified | Tier C (Medium) |
 | `inferred` | Inferred from code patterns or AST analysis | Tier C (Low) |
+
+### Intent basis
+
+Evidence and intent are separate review questions. Use:
+
+- `documented` when a PEP or official documentation explicitly describes the
+  compatibility change.
+- `deprecation` when the change follows an explicit deprecation/removal path.
+- `implementation_defined` when the documented contract permits
+  implementation-specific behavior.
+- `observed` when runtime evidence establishes the difference but intent is not
+  established.
+- `inferred` when neither documentation nor runtime evidence is sufficient.
+
+Do not use a runtime probe alone to label a change intentional.
 
 ### How to add a new rule with proper evidence
 

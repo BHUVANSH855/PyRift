@@ -106,6 +106,9 @@ def to_markdown(result: ScanResult) -> str:
                 )
                 + "  "
             )
+            lines.append(
+                f"**Intent basis:** `{finding.intent_basis.value}`  "
+            )
 
             if finding.affected_from:
                 lines.append(
@@ -169,6 +172,9 @@ def to_text(result: ScanResult) -> str:
                 if finding.evidence_source
                 else ""
             )
+        )
+        lines.append(
+            f"    intent basis: {finding.intent_basis.value}"
         )
 
         if finding.suggestion:
@@ -244,6 +250,7 @@ def to_sarif(result: ScanResult) -> str:
         sarif_properties: dict[str, str | None] = {
             "confidence": finding.confidence.value,
             "evidence_type": finding.evidence_type.value,
+            "intent_basis": finding.intent_basis.value,
             "runtime": finding.runtime.value,
             "affected_from": finding.affected_from or None,
             "affected_until": finding.affected_until or None,

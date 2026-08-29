@@ -400,8 +400,7 @@ def _scan_file_detailed(
                 )
 
             for f in rule_findings:
-                if not f.category:
-                    f.category = rule.category
+                f.category = rule.category
 
             findings.extend(rule_findings)
         except Exception as exc:

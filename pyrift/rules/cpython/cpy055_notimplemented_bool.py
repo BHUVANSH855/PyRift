@@ -28,8 +28,8 @@ class NotImplementedBoolRule(BaseRule):
         findings: list[Finding] = []
 
         for n in ast.walk(node):
-            # Detect: if NotImplemented: ...
-            if isinstance(n, ast.If):
+            # Detect: if NotImplemented: ... / while NotImplemented: ...
+            if isinstance(n, (ast.If, ast.While)):
                 test = n.test
                 if (isinstance(test, ast.Name) and
                         test.id == "NotImplemented") or (isinstance(test, ast.UnaryOp) and

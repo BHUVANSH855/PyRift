@@ -283,7 +283,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 - **Version:** 0.8.0
 - **Rules:** 101 total (57 CPython + 43 PyPy + 1 cross-runtime)
-- **Tests:** 1109 passing
+- **Tests:** 1111 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -294,14 +294,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 Every finding carries a confidence level and evidence type. Rules are
 classified into three tiers:
 
-| Tier | Confidence | Evidence | Description |
-|---|---|---|---|
-| **A** | High | `official_docs` | Verified against official CPython/PyPy documentation |
-| **B** | High | `runtime_probe` | Verified via automated runtime probes in `benchmark/runtime_harness.py` |
-| **C** | Medium / Low | `observed`, `inferred` | Observed behaviour or inferred from code patterns; needs independent verification |
+| Tier | Confidence | Evidence | Intent basis | Description |
+|---|---|---|---|---|
+| **A** | High | `official_docs`, `pep`, `deprecation_warn` | `documented` / `deprecation` | Authoritative compatibility evidence; supports claims about documented changes. |
+| **B** | High | `runtime_probe` | `observed` unless separately documented | Runtime-verified behavior; confirms the difference but does not by itself prove maintainer intent. |
+| **C** | Medium / Low | `observed`, `inferred` | `observed` / `inferred` | Empirical or inferred behavior needing independent verification. |
+
+Rule evidence and intentionality are documented in [`docs/behavior-evidence.md`](docs/behavior-evidence.md).
 
 Unreviewed rules (no entry in `pyrift/rule_metadata.py`) default to
-**low** confidence and `inferred` evidence type. See the
+**low** confidence, `inferred` evidence, and `inferred` intent basis. See the
 [Confidence and evidence](#confidence-and-evidence) feature description
 for details.
 
@@ -341,4 +343,3 @@ MIT - see [LICENSE](LICENSE)
 Found a security issue in PyRift itself? Please follow our
 [Security Policy](SECURITY.md) and report it privately rather than
 opening a public issue.
-
