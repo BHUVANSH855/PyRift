@@ -231,7 +231,7 @@ def to_sarif(result: ScanResult) -> str:
                 # path so the location remains identifiable.
                 path = path.resolve()
 
-        return path.as_posix()
+        return path.as_posix().replace("\\", "/")
 
     rules_map: dict[str, dict] = OrderedDict()
     sarif_results: list[dict] = []
