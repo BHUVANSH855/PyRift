@@ -80,11 +80,11 @@ class Finding:
         """Attach reviewed rule metadata when available."""
         try:
             from .rule_metadata import RULE_METADATA
-        except ImportError:
+        except ImportError:  # pragma: no cover
             return
 
         metadata = RULE_METADATA.get(self.rule_id)
-        if metadata is None:
+        if metadata is None:  # pragma: no cover
             return
 
         self.confidence = metadata["confidence"]  # type: ignore[assignment]

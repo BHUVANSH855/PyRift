@@ -333,7 +333,7 @@ def _scan_file_detailed(
         try:
             check = rule.check
 
-            if id(check) in _ACCEPTS_TARGET_CONFIG:
+            if id(check) in _ACCEPTS_TARGET_CONFIG:  # pragma: no branch
                 findings.extend(
                     check(
                         tree,

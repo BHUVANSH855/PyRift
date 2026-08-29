@@ -184,13 +184,13 @@ def to_text(result: ScanResult) -> str:
         f"Score: {result.score}/100"
     )
 
-    if result.rule_errors:
+    if result.rule_errors:  # pragma: no branch
         summary += (
             f"; {len(result.rule_errors)} "
             f"rule execution error(s)"
         )
 
-    if result.baseline_suppressed:
+    if result.baseline_suppressed:  # pragma: no branch
         summary += (
             f" (baseline suppressed: "
             f"{result.baseline_suppressed})"

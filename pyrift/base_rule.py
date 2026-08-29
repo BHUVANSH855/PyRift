@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from .finding import Finding
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .targets import TargetConfig
 
 
@@ -38,4 +38,4 @@ class BaseRule(ABC):
 
         Return a possibly empty list of findings.
         """
-        ...
+        ...  # pragma: no cover
