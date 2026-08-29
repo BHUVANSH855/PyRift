@@ -107,11 +107,37 @@ def get_changelog_test_count(version: str) -> int:
     return int(count.group(1))
 
 
+def get_readme_version() -> str | None:
+    content = README.read_text(encoding="utf-8")
+
+    match = re.search(
+        r"- \*\*Version:\*\* ([0-9.]+)",
+        content,
+    )
+
+    return match.group(1) if match else None
+
+
+def get_module_version() -> str | None:
+    init = (ROOT / "pyrift" / "__init__.py").read_text(
+        encoding="utf-8",
+    )
+
+    match = re.search(
+        r'__version__\s*=\s*"([^"]+)"',
+        init,
+    )
+
+    return match.group(1) if match else None
+
+
 def main() -> None:
     version = get_current_version()
     actual = get_test_count()
     readme = get_readme_test_count()
     changelog = get_changelog_test_count(version)
+    readme_version = get_readme_version()
+    module_version = get_module_version()
 
     failures: list[str] = []
 
@@ -125,6 +151,22 @@ def main() -> None:
         failures.append(
             f"CHANGELOG.md says {changelog} tests for {version}, "
             f"but pytest collected {actual}"
+        )
+
+    if readme_version is None:
+        failures.append("README.md does not contain a version.")
+    elif readme_version != version:
+        failures.append(
+            f"README.md version {readme_version!r} "
+            f"does not match pyproject version {version!r}"
+        )
+
+    if module_version is None:
+        failures.append("pyrift/__init__.py does not define __version__.")
+    elif module_version != version:
+        failures.append(
+            f"pyrift/__init__.py __version__ {module_version!r} "
+            f"does not match pyproject version {version!r}"
         )
 
     if failures:

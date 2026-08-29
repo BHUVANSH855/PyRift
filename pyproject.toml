@@ -33,7 +33,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "pytest-cov", "ruff", "build", "twine"]
+dev = ["pytest>=7.0", "pytest-cov", "pytest-xdist", "ruff", "build", "twine"]
 
 [project.scripts]
 pyrift = "pyrift.cli:main"
@@ -45,6 +45,9 @@ Repository = "https://github.com/BHUVANSH855/pyrift"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pyrift"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"pyrift/py.typed" = "pyrift/py.typed"
 
 [tool.ruff]
 exclude = ["compatibility-benchmark/"]
