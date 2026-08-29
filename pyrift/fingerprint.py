@@ -17,23 +17,38 @@ import hashlib
 from .finding import Finding
 
 
-def _normalize_path(path: str) -> str:
+def _normalize_path(path: str, root: str = "") -> str:
     """Normalize file path to be portable across OS and scan invocation styles.
 
     Converts backslashes to forward slashes and makes the path relative
     by stripping any leading drive letter or absolute root, so that
     baselines remain valid when scanning with . vs absolute paths.
+
+    If *root* is provided, the path is made relative to it so that
+    absolute and relative scans of the same file produce the same
+    normalized path.
     """
     # Normalize separators
     p = path.replace("\\", "/")
-    # Strip leading drive letter on Windows (C:/...)
-    if len(p) >= 2 and p[1] == ":":
-        p = p[2:]
-    # Strip leading slashes to make relative
-    p = p.lstrip("/")
+    root_normalized = root.replace("\\", "/") if root else ""
+
+    if root_normalized:
+        # Make path relative to root
+        root_normalized = root_normalized.rstrip("/") + "/"
+        if p.startswith(root_normalized):
+            p = p[len(root_normalized):]
+        elif p == root_normalized.rstrip("/"):
+            p = ""
+    else:
+        # Strip leading drive letter on Windows (C:/...)
+        if len(p) >= 2 and p[1] == ":":
+            p = p[2:]
+        # Strip leading slashes to make relative
+        p = p.lstrip("/")
+
     return p
 
-def finding_fingerprint(finding: Finding) -> str:
+def finding_fingerprint(finding: Finding, root: str = "") -> str:
     """
     Return a stable fingerprint for a finding.
 
@@ -64,7 +79,7 @@ def finding_fingerprint(finding: Finding) -> str:
             finding.runtime.value,
             finding.affected_from,
             finding.affected_until,
-            _normalize_path(finding.file),
+            _normalize_path(finding.file, root),
             finding.title,
         )
     )

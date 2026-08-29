@@ -1,10 +1,11 @@
 """
-PPY004 — weakref.proxy() raises ReferenceError differently on PyPy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+PPY004 — weakref.proxy() lifetime differs on PyPy due to GC model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 On CPython, a weakref.proxy() to a dead object raises ReferenceError
-only when the proxy is accessed. On PyPy, it may raise ReferenceError
-at unpredictable times due to GC differences — even before the object
-appears to be dead from CPython's perspective.
+only when the proxy is accessed. On PyPy, a proxy may remain valid
+longer or become dead at a different point because PyPy's garbage
+collector is not reference-count based. Code that assumes proxy death
+coincides with reference count reaching zero may behave differently.
 """
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ from pyrift.targets import TargetConfig
 
 class WeakrefProxyRule(BaseRule):
     rule_id = "PPY004"
-    title   = "weakref.proxy() behaviour differs on PyPy"
+    title   = "weakref.proxy() lifetime differs on PyPy due to GC model"
     runtime = "pypy"
 
     def check(
@@ -47,11 +48,13 @@ class WeakrefProxyRule(BaseRule):
                     rule_id=self.rule_id,
                     title=self.title,
                     description=(
-                        "weakref.proxy() can raise ReferenceError at "
-                        "unpredictable points on PyPy due to its tracing GC — "
-                        "not just when the proxied object is accessed after death "
-                        "as on CPython. Code must catch ReferenceError at every "
-                        "access point, not just at the final dereference."
+                        "weakref.proxy() lifetime can differ between "
+                        "CPython and PyPy because PyPy's garbage collector "
+                        "is not reference-count based. A proxy may remain "
+                        "valid longer on PyPy, or become dead at a "
+                        "different point than on CPython. Code that assumes "
+                        "proxy death coincides with reference count "
+                        "reaching zero may behave differently."
                     ),
                     severity=Severity.WARNING,
                     runtime=Runtime.PYPY,

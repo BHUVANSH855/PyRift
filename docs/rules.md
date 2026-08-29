@@ -1,6 +1,6 @@
 # pyrift — Rule Reference
 
-Complete documentation for all 104 pyrift rules.
+Complete documentation for all 101 pyrift rules.
 
 ## Confidence levels
 
@@ -452,12 +452,6 @@ without GIL protection in free-threaded builds.
 
 ---
 
-### CPY052 — threading.local() atomicity assumptions break in free-threaded 3.13+
-
-**Severity:** Info | **Confidence:** Medium | **Affects:** CPython ≥ 3.13 (free-threaded) | PEP 703
-
----
-
 ### CPY053 — typing.get_overloads() requires Python 3.11+
 
 **Severity:** Error | **Confidence:** High | **Affects:** CPython ≤ 3.10
@@ -657,12 +651,6 @@ Sets stack space to `n * 768` bytes — actual depth ≈ n/5.
 
 ---
 
-### PPY020 — dict(**kwargs) requires string keys on PyPy and Python 3
-
-**Severity:** Error | **Confidence:** High | **Affects:** PyPy all versions
-
----
-
 ### PPY021 — Socket not closed promptly on PyPy
 
 **Severity:** Warning | **Confidence:** High | **Affects:** PyPy all versions
@@ -829,14 +817,6 @@ Best practice: call `sys.stdout.flush()` explicitly after critical output.
 **Severity:** Warning | **Confidence:** High | **Affects:** PyPy all versions
 
 10-100x performance degradation. Affects debuggers and coverage tools.
-
----
-
-### PPY046 — __debug__ constant behaviour differs with -O on PyPy
-
-**Severity:** Warning | **Confidence:** Low | **Affects:** PyPy all versions
-
-Observed behaviour — use explicit environment variables instead of `__debug__`.
 
 ---
 

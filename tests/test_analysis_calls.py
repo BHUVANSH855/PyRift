@@ -78,3 +78,40 @@ class TestGetKeywordValue:
         tree = ast.parse("open('f')")
         call = tree.body[0].value
         assert get_keyword_value(call, "encoding") is None
+
+    def test_doublestar_spread_not_in_kwargs(self):
+        """**kwargs spread (arg=None) should not match named keyword lookup."""
+        tree = ast.parse("open('f', **extra)")
+        call = tree.body[0].value
+        assert has_keyword_arg(call, "encoding") is False
+        assert get_keyword_value(call, "extra") is None
+
+    def test_keyword_only_args(self):
+        """Keyword-only args (after *) appear as regular keyword args."""
+        tree = ast.parse("f(x, encoding='utf-8', errors='strict')")
+        call = tree.body[0].value
+        assert has_keyword_arg(call, "encoding")
+        assert has_keyword_arg(call, "errors")
+        assert get_keyword_value(call, "encoding").value == "utf-8"
+        assert get_keyword_value(call, "errors").value == "strict"
+
+    def test_nested_call_detection(self):
+        """collect_calls finds calls inside nested expressions."""
+        tree = ast.parse("print(open('f').read())")
+        results = collect_calls(tree, "open")
+        assert len(results) == 1
+        results = collect_calls(tree, "print")
+        assert len(results) == 1
+
+    def test_multiple_calls_same_function(self):
+        """Multiple calls to the same function are all collected."""
+        tree = ast.parse("open('a'); open('b')")
+        results = collect_calls(tree, "open")
+        assert len(results) == 2
+
+    def test_lambda_call_not_collected(self):
+        """Lambda invocations are not collected by walk."""
+        tree = ast.parse("(lambda: open('f'))()")
+        # The Call wraps a Lambda; open() inside the lambda body should be found.
+        results = collect_calls(tree, "open")
+        assert len(results) == 1

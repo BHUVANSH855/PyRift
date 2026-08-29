@@ -1,6 +1,6 @@
 """
 CPY046 — open() without encoding= silently uses platform encoding before 3.15
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Before Python 3.15, open() in text mode uses the platform's locale encoding
 by default — UTF-8 on Linux/Mac but often CP1252 or Latin-1 on Windows.
 Python 3.15 makes UTF-8 the default on all platforms (PEP 686).
@@ -17,11 +17,32 @@ from pyrift.targets import TargetConfig
 
 WRITE_READ_MODES = {"r", "w", "a", "r+", "w+", "a+", "x"}
 
+# Standard streams that already have their own encoding
+STDSTREAM_NAMES = {"stdin", "stdout", "stderr"}
+
 
 class OpenEncodingRule(BaseRule):
     rule_id = "CPY046"
     title   = "open() without encoding= uses platform-dependent encoding before 3.15"
     runtime = "cpython"
+
+    def _is_stdstream(self, node: ast.Call) -> bool:
+        """Return True if the first argument is sys.stdin/stdout/stderr."""
+        if not node.args:
+            return False
+        arg = node.args[0]
+        return (isinstance(arg, ast.Attribute)
+                and isinstance(arg.value, ast.Name)
+                and arg.value.id == "sys"
+                and arg.attr in STDSTREAM_NAMES)
+
+    def _is_io_open(self, node: ast.Call) -> bool:
+        """Return True if the call is io.open() (same as builtin open)."""
+        func = node.func
+        return (isinstance(func, ast.Attribute) and
+                func.attr == "open" and
+                isinstance(func.value, ast.Name) and
+                func.value.id == "io")
 
     def check(
         self,
@@ -39,6 +60,10 @@ class OpenEncodingRule(BaseRule):
             )
             if not is_open:
                 continue
+            # Exclusion: io.open() — same semantics, but often used in
+            # compatibility shims where the caller is aware
+            if self._is_io_open(n):
+                continue
             # Check mode — only flag text mode (not binary)
             mode = "r"
             for i, arg in enumerate(n.args):
@@ -50,6 +75,10 @@ class OpenEncodingRule(BaseRule):
 
             # Binary mode — skip
             if "b" in mode:
+                continue
+
+            # Exclusion: stdin/stdout/stderr — encoding is inherited
+            if self._is_stdstream(n):
                 continue
 
             # Check if encoding= is already specified

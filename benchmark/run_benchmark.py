@@ -376,10 +376,6 @@ GOLDEN = {
         ("_cache = []\ndef f():\n    _cache.append(1)", True, "unsynced mutation"),
         ("_cache = []\ndef f():\n    pass", False, "no mutation"),
     ],
-    "CPY052": [
-        ("import threading\n_local = threading.local()", True, "threading.local"),
-        ("import threading\nt = threading.Thread()", False, "Thread ok"),
-    ],
     "PPY006": [
         ("list.custom = lambda: None", True, "monkey-patch builtin"),
         ("MyList.custom = lambda: None", False, "custom class ok"),
@@ -408,10 +404,6 @@ GOLDEN = {
         ("x = float('nan')", True, "nan identity"),
         ("x = float('inf')", False, "inf ok"),
     ],
-    "PPY020": [
-        ("d = dict(**{1: 'a'})", True, "non-string key in kwargs"),
-        ("d = dict(**{'a': 1})", False, "string key ok"),
-    ],
     "PPY025": [
         ("list({1, 2, 3})", True, "set to list conversion"),
         ("list([1, 2, 3])", False, "list ok"),
@@ -423,10 +415,6 @@ GOLDEN = {
     "PPY041": [
         ("a = {}\nb = {}\nc = a | b", True, "dict merge pipe"),
         ("a = {}\nb = {}\na.update(b)", False, "update ok"),
-    ],
-    "PPY046": [
-        ("if __debug__:\n    check()", True, "__debug__ check"),
-        ("if True:\n    check()", False, "literal True ok"),
     ],
     "PPY047": [
         ("from ctypes.util import find_library\nfind_library('ssl')", True, "find_library"),

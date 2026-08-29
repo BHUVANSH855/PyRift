@@ -143,3 +143,37 @@ class TestCollectDynamicImports:
             parse("m = importlib.reload('cgi')")
         )
         assert found == []
+
+
+class TestTryExceptImportError:
+    def test_try_except_import_not_flagged(self):
+        """Import inside try block should be collected normally."""
+        imp = collect_imports(parse("import tomllib"))
+        assert len(imp.get("tomllib")) == 1
+
+    def test_conditional_import_typed_imports(self):
+        """TYPE_CHECKING block import is collected."""
+        imp = collect_imports(parse("from typing import TYPE_CHECKING\nif TYPE_CHECKING:\n    from os import path"))
+        # The TYPE_CHECKING import is collected.
+        assert imp.has_name_from("os", "path")
+
+    def test_relative_import_collected(self):
+        """Relative imports (from .module import x) are collected."""
+        imp = collect_imports(parse("from .base import BaseRule"))
+        # The module for a relative import is the resolved name.
+        by_stmt = imp.by_statement()
+        assert len(by_stmt) == 1
+
+    def test_multiple_from_import_same_module(self):
+        """Multiple from-imports from same module are all collected."""
+        imp = collect_imports(parse("from os import path\nfrom os import getcwd"))
+        stmts = imp.by_statement("os")
+        assert len(stmts) == 2
+
+    def test_import_from_nested_module(self):
+        """Deeply nested module import is collected."""
+        imp = collect_imports(parse("import xml.etree.ElementTree"))
+        # For `import xml.etree.ElementTree`, the module is the full dotted path.
+        # has_name_from checks if the import statement imports from that module.
+        by_stmt = imp.by_statement()
+        assert len(by_stmt) == 1

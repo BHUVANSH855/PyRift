@@ -166,3 +166,87 @@ def test_version_guard_detection():
         parent_map,
         (3, 12),
     )
+
+
+def test_inside_class_nested():
+    """Node inside a class inside a class is inside a class."""
+    tree = ast.parse(
+        textwrap.dedent(
+            """
+            class Outer:
+                class Inner:
+                    x = 1
+            """
+        )
+    )
+    parent_map = build_parent_map(tree)
+    inner_assignment = tree.body[0].body[0].body[0]
+    assert is_inside_class(inner_assignment, parent_map)
+
+
+def test_comprehension_scope():
+    """Node inside a list comprehension is inside a function (via listcomp)."""
+    tree = ast.parse(
+        textwrap.dedent(
+            """
+            result = [x for x in range(10)]
+            """
+        )
+    )
+    parent_map = build_parent_map(tree)
+    # The comprehension variable x is inside a ListComp node.
+    listcomp = tree.body[0].value  # ListComp
+    elt = listcomp.elt  # Name('x')
+    # ListComp is not a function, but comprehension variables have their own scope.
+    assert not is_module_level(elt, parent_map)
+
+
+def test_walrus_operator():
+    """Walrus operator creates a NamedExpr inside an If's test clause."""
+    tree = ast.parse(
+        textwrap.dedent(
+            """
+            if (n := 10) > 5:
+                x = n
+            """
+        )
+    )
+    parent_map = build_parent_map(tree)
+    # The If node is at module level.
+    if_node = tree.body[0]
+    assert is_module_level(if_node, parent_map)
+    # The NamedExpr is inside the If's test, not at module level.
+    named_expr = if_node.test.left  # Compare -> left is the NamedExpr
+    assert not is_module_level(named_expr, parent_map)
+
+
+def test_inside_async_function():
+    """AsyncFunctionDef is detected as inside a function."""
+    tree = ast.parse(
+        textwrap.dedent(
+            """
+            async def coro():
+                x = 1
+            """
+        )
+    )
+    parent_map = build_parent_map(tree)
+    assignment = tree.body[0].body[0]
+    assert is_inside_function(assignment, parent_map)
+
+
+def test_nested_function_not_class():
+    """Function inside a function is not inside a class."""
+    tree = ast.parse(
+        textwrap.dedent(
+            """
+            def outer():
+                def inner():
+                    x = 1
+            """
+        )
+    )
+    parent_map = build_parent_map(tree)
+    inner_assignment = tree.body[0].body[0].body[0]
+    assert is_inside_function(inner_assignment, parent_map)
+    assert not is_inside_class(inner_assignment, parent_map)

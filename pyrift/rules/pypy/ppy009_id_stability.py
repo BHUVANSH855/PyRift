@@ -1,11 +1,12 @@
 """
-PPY009 -- id() values not stable across GC cycles on PyPy
+PPY009 -- id() stability depends on PyPy GC configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On CPython, id() commonly corresponds to a stable memory address for an
-object's lifetime. PyPy uses a moving garbage collector, so code must not
-assume that an id() value remains stable when it is retained across GC
-activity.
+object's lifetime. With PyPy's default minimark GC, id() behaves like
+CPython and is stable. However, alternative GC configurations (e.g.,
+incminimark with a moving collector) can make id() unstable. The risk
+is real but depends on the GC configuration in use.
 
 This rule reports id() when its result is likely to escape the immediate
 expression and therefore be retained or compared later.
@@ -257,12 +258,14 @@ def _make_finding(
         line=node.lineno,
         col=node.col_offset,
         rule_id="PPY009",
-        title="id() values not stable across GC cycles on PyPy",
+        title="id() stability depends on PyPy GC configuration",
         description=(
             "id() is used in a context where its numeric result may be "
-            f"retained or compared ({context}). On PyPy, the garbage "
-            "collector may move objects, so code must not rely on an "
-            "id() value remaining stable across GC cycles. Use object "
+            f"retained or compared ({context}). On PyPy, id() is stable "
+            "with the default minimark GC, but alternative GC "
+            "configurations (e.g., incminimark with a moving collector) "
+            "can cause id() values to change across GC cycles. Code must "
+            "not assume id() stability when targeting PyPy. Use object "
             "identity directly with 'is', or retain the object itself "
             "instead of its id() value."
         ),
@@ -284,7 +287,7 @@ def _make_finding(
 
 class IdStabilityRule(BaseRule):
     rule_id = "PPY009"
-    title = "id() values not stable across GC cycles on PyPy"
+    title = "id() stability depends on PyPy GC configuration"
     runtime = "pypy"
 
     def check(

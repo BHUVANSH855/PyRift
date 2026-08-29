@@ -18,7 +18,7 @@ from pyrift.targets import TargetConfig
 
 class HashRandomisationRule(BaseRule):
     rule_id = "PPY022"
-    title   = "PYTHONHASHSEED=0 does not disable hash randomisation on PyPy"
+    title   = "PYTHONHASHSEED=0 has no effect on PyPy hash randomisation"
     runtime = "pypy"
 
     def check(
@@ -56,11 +56,10 @@ class HashRandomisationRule(BaseRule):
             rule_id=self.rule_id,
             title=self.title,
             description=(
-                "PYTHONHASHSEED is being read. On CPython, setting "
-                "PYTHONHASHSEED=0 disables hash randomisation for "
-                "deterministic dict/set ordering in tests. On PyPy, "
-                "hash randomisation is always active and PYTHONHASHSEED=0 "
-                "has no effect — tests relying on deterministic hash "
+                "PYTHONHASHSEED is being read. Modern PyPy3 always uses "
+                "SipHash with randomisation. Setting PYTHONHASHSEED=0 for "
+                "deterministic test ordering does not work on PyPy — use "
+                "sorted() instead. Tests relying on deterministic hash "
                 "order may fail silently on PyPy."
             ),
             severity=Severity.WARNING,

@@ -29,7 +29,7 @@ class ParamSpecRule(BaseRule):
                     description="typing.ParamSpec requires Python 3.10+. Raises ImportError on Python 3.9 and below.",
                     severity=Severity.ERROR, runtime=Runtime.CPYTHON,
                     affected_from="3.0", affected_until="3.9",
-                    suggestion="Guard with: if sys.version_info >= (10,): from typing import ParamSpec -- or use typing_extensions.",
+                    suggestion="Guard with: if sys.version_info >= (3, 10): from typing import ParamSpec -- or use typing_extensions.",
                     docs_url="https://peps.python.org/pep-612/",
                 ))
         return findings

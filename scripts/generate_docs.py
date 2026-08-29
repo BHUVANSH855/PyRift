@@ -6,9 +6,9 @@ Run:
 
     python scripts/generate_docs.py
 
-The script updates the current README statistics and the current
-CHANGELOG test count so documentation does not silently drift from
-the repository.
+The script updates the current README statistics, the rule table,
+and the current CHANGELOG test count so documentation does not
+silently drift from the repository.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pyrift
+from pyrift.scanner import ALL_RULES
 
 ROOT = Path(__file__).parent.parent
 README = ROOT / "README.md"
@@ -160,6 +161,63 @@ def update_changelog(
     return outside[:0] + updated_section + outside
 
 
+def generate_rule_table() -> str:
+    """Generate a markdown rule table from ALL_RULES."""
+    cpy_rules = sorted(
+        (r for r in ALL_RULES if r.runtime == "cpython"),
+        key=lambda r: r.rule_id,
+    )
+    ppy_rules = sorted(
+        (r for r in ALL_RULES if r.runtime == "pypy"),
+        key=lambda r: r.rule_id,
+    )
+    both_rules = sorted(
+        (r for r in ALL_RULES if r.runtime == "both"),
+        key=lambda r: r.rule_id,
+    )
+
+    lines = [
+        "### CPython rules - version compatibility",
+        "",
+        "| Rule ID | Title | Runtime | Status |",
+        "|---|---|---|---|",
+    ]
+    for rule in cpy_rules:
+        lines.append(
+            f"| {rule.rule_id} | {rule.title} | CPython | Active |"
+        )
+
+    lines.extend([
+        "",
+        "### PyPy rules - runtime differences",
+        "",
+        "| Rule ID | Title | Runtime | Status |",
+        "|---|---|---|---|",
+    ])
+    for rule in ppy_rules:
+        lines.append(
+            f"| {rule.rule_id} | {rule.title} | PyPy | Active |"
+        )
+
+    if both_rules:
+        lines.extend([
+            "",
+            "### Cross-runtime rules",
+            "",
+            "| Rule ID | Title | Runtime | Status |",
+            "|---|---|---|---|",
+        ])
+        for rule in both_rules:
+            lines.append(
+                f"| {rule.rule_id} | {rule.title} | Both | Active |"
+            )
+
+    lines.append("")
+    lines.append("Full rule documentation: [docs/rules.md](docs/rules.md)")
+
+    return "\n".join(lines)
+
+
 def main() -> None:
     rules = pyrift.ALL_RULES
 
@@ -206,6 +264,15 @@ def main() -> None:
         len(ppy),
         len(both),
         test_count,
+    )
+
+    # Auto-generate rule table
+    rule_table = generate_rule_table()
+    readme_content = re.sub(
+        r"### CPython rules - version compatibility.*?Full rule documentation: \[docs/rules\.md\]\(docs/rules\.md\)",
+        rule_table,
+        readme_content,
+        flags=re.DOTALL,
     )
 
     README.write_text(

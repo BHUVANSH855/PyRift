@@ -29,6 +29,18 @@ class TestPPY035:
         findings = run(self.rule, "import requests")
         assert len(findings) == 0
 
+    def test_detects_ujson(self):
+        findings = run(self.rule, "import ujson")
+        assert len(findings) == 1
+
+    def test_detects_hiredis(self):
+        findings = run(self.rule, "import hiredis")
+        assert len(findings) == 1
+
+    def test_detects_grpcio(self):
+        findings = run(self.rule, "import grpc")
+        assert len(findings) == 1
+
     def test_suggestion_mentions_cffi(self):
         findings = run(self.rule, "import numpy")
         assert "cffi" in findings[0].suggestion.lower()

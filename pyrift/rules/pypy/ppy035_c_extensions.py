@@ -12,6 +12,12 @@ KNOWN_PROBLEMATIC = {
     "numpy", "pandas", "scipy", "torch", "tensorflow",
     "psycopg2", "lxml", "Pillow", "PIL", "cv2",
     "sklearn", "matplotlib", "cryptography",
+    "h5py", "pyyaml", "ujson", "orjson", "msgpack",
+    "pycurl", "pyzmq", "grpcio", "protobuf",
+    "hiredis", "regex", "xxhash", "blake3",
+    "greenlet", "gevent", "eventlet", "bcrypt",
+    "pydantic", "mypy_extensions", "Cython",
+    "pybind11", "MarkupSafe", "grpc",
 }
 
 

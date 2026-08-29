@@ -69,9 +69,6 @@ from .rules.cpython.cpy048_concurrent_interpreters import ConcurrentInterpreters
 from .rules.cpython.cpy049_compression_zstd import CompressionZstdRule
 from .rules.cpython.cpy050_purepath_is_reserved import PurePathIsReservedRule
 from .rules.cpython.cpy051_free_threaded_global_state import FreeThreadedGlobalStateRule
-from .rules.cpython.cpy052_free_threaded_threading_local import (
-    FreeThreadedThreadingLocalRule,
-)
 from .rules.cpython.cpy053_typing_get_overloads import TypingGetOverloadsRule
 from .rules.cpython.cpy054_int_trunc import IntTruncRule
 from .rules.cpython.cpy055_notimplemented_bool import NotImplementedBoolRule
@@ -97,7 +94,6 @@ from .rules.pypy.ppy016_instance_dict_order import InstanceDictOrderRule
 from .rules.pypy.ppy017_del_existing_class import DelExistingClassRule
 from .rules.pypy.ppy018_recursion_limit import RecursionLimitRule
 from .rules.pypy.ppy019_nan_identity import NanIdentityRule
-from .rules.pypy.ppy020_kwargs_string_keys import KwargsStringKeysRule
 from .rules.pypy.ppy021_socket_gc import SocketGCRule
 from .rules.pypy.ppy022_hash_randomisation import HashRandomisationRule
 from .rules.pypy.ppy023_inspect_ismethod import InspectIsMethodRule
@@ -122,7 +118,6 @@ from .rules.pypy.ppy041_dict_merge_pypy import DictMergePypyRule
 from .rules.pypy.ppy042_print_flush import PrintFlushRule
 from .rules.pypy.ppy044_exception_chaining import ExceptionChainingRule
 from .rules.pypy.ppy045_sys_settrace import SysSettraceRule
-from .rules.pypy.ppy046_debug_constant import DebugConstantRule
 from .rules.pypy.ppy047_ctypes_find_library import CtypesFindLibraryRule
 from .targets import TargetConfig, load_project_targets
 
@@ -181,7 +176,6 @@ ALL_RULES: list[BaseRule] = [
     CompressionZstdRule(),
     PurePathIsReservedRule(),
     FreeThreadedGlobalStateRule(),
-    FreeThreadedThreadingLocalRule(),
     TypingGetOverloadsRule(),
     IntTruncRule(),
     NotImplementedBoolRule(),
@@ -208,7 +202,6 @@ ALL_RULES: list[BaseRule] = [
     DelExistingClassRule(),
     RecursionLimitRule(),
     NanIdentityRule(),
-    KwargsStringKeysRule(),
     SocketGCRule(),
     HashRandomisationRule(),
     InspectIsMethodRule(),
@@ -233,7 +226,6 @@ ALL_RULES: list[BaseRule] = [
     PrintFlushRule(),
     ExceptionChainingRule(),
     SysSettraceRule(),
-    DebugConstantRule(),
     CtypesFindLibraryRule(),
 ]
 
@@ -315,7 +307,11 @@ def _scan_file_detailed(
     rule_errors: list[str] = []
 
     try:
-        source = filepath.read_text(encoding="utf-8-sig", errors="replace")
+        try:
+            source = filepath.read_text(encoding="utf-8-sig")
+        except UnicodeDecodeError:
+            logger.warning("Skipping %s: unable to decode with UTF-8", filepath)
+            return findings, rule_errors
         tree = ast.parse(source, filename=str(filepath))
     except SyntaxError as exc:
         from .finding import Runtime, Severity

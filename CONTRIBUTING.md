@@ -4,7 +4,7 @@ Thank you for contributing to **PyRift** — a static-analysis scanner that dete
 
 The most valuable contributions fix **real compatibility problems**: verified runtime behaviour, a minimal reproduction, a precise AST pattern, and regression tests. Correctness and evidence matter more than finding count.
 
-> Current baseline: `0.8.0` · 706 tests · 104 rules · ~97% coverage. If a section conflicts with the tree, the code is the source of truth — open an issue.
+> Current baseline: `0.8.0` · 845 tests · 101 rules · ~97% coverage. If a section conflicts with the tree, the code is the source of truth — open an issue.
 
 ---
 
@@ -43,7 +43,7 @@ tests/  test_*.py + cpython/ and pypy/ (one test module per rule)
 benchmark/  run_benchmark.py, expected.json, self_scan.py, corpus.py, runtime_harness.py
 compatibility-benchmark/   (historical runtime probe data)
 scripts/  generate_docs.py, check_docs.py
-docs/rules.md  (auto-generated, 104/104)
+docs/rules.md  (auto-generated, 101/101)
 ```
 
 Follow the style of the code already present. Update tests + docs alongside any behaviour change.
@@ -107,7 +107,7 @@ Each rule returns `Finding` objects with `severity` (`ERROR`/`WARNING`/`INFO`), 
 6. **Add a benchmark contract** in `benchmark/run_benchmark.py` + `benchmark/expected.json`:
 
    ```bash
-   python benchmark/run_benchmark.py   # must stay 104/104, 100% correct
+   python benchmark/run_benchmark.py   # must stay 101/101, 100% correct
    ```
 
    Don't weaken existing contracts to make a rule pass.
@@ -124,6 +124,74 @@ Each rule returns `Finding` objects with `severity` (`ERROR`/`WARNING`/`INFO`), 
 
    Don't claim a runtime difference from memory.
 9. **Document the rule** in `docs/rules.md` (what, why, versions, example, fix, official link).
+
+---
+
+## Rule evidence guidelines
+
+Every rule must have honest metadata in `pyrift/rule_metadata.py`.
+The evidence type and confidence level determine how much trust users
+can place in a finding.
+
+### Evidence types
+
+| Evidence | Meaning | Required for |
+|---|---|---|
+| `official_docs` | Verified against CPython/PyPy docs or PEP | Tier A (High) |
+| `runtime_probe` | Confirmed by `benchmark/runtime_harness.py` | Tier B (High) |
+| `deprecation_warn` | Confirmed via deprecation warnings in CPython | Tier A/B |
+| `pep` | Described in a PEP with clear version bounds | Tier A |
+| `observed` | Reproduced manually, not yet probe-verified | Tier C (Medium) |
+| `inferred` | Inferred from code patterns or AST analysis | Tier C (Low) |
+
+### How to add a new rule with proper evidence
+
+1. **Start with evidence.** Before writing the rule, verify the behaviour
+   you want to detect:
+   - Check the official documentation for version-specific changes
+   - Run `python benchmark/runtime_harness.py` to probe runtime behaviour
+   - Read the relevant PEP for version bounds
+2. **Write the rule** following the existing patterns in `pyrift/rules/`.
+3. **Add metadata** in `pyrift/rule_metadata.py`:
+   ```python
+   "CPYXXX": _metadata("high", "official_docs")  # or "runtime_probe", "pep", etc.
+   ```
+4. **Add tests** covering positive, negative, and edge cases.
+5. **Add a benchmark contract** in `benchmark/expected.json`.
+6. **Document** in `docs/rules.md`.
+
+### Required evidence for HIGH confidence rules
+
+HIGH confidence requires **one of**:
+- `official_docs`: link to the specific documentation page
+- `runtime_probe`: passing probe in `benchmark/runtime_harness.py`
+- `pep`: reference to the PEP number and section
+
+Rules without verified evidence default to LOW/inferred.
+
+### How to mark rules as deprecated or obsolete
+
+When a rule no longer applies (e.g., the behaviour changed or the
+rule was wrong):
+
+1. Remove the rule class from `ALL_RULES` in `pyrift/scanner.py`.
+2. Add a comment in the rule file explaining why it was removed:
+   ```python
+   # CPY052 — REMOVED (wrong detector)
+   ```
+3. Keep the rule file in the repository for historical reference.
+4. Remove the entry from `pyrift/rule_metadata.py`.
+5. Remove the rule from `docs/rules.md`.
+6. Update counts in README.md and CONTRIBUTING.md.
+
+### Rule lifecycle states
+
+| State | Description |
+|---|---|
+| **Active** | Registered in `ALL_RULES`, produces findings |
+| **Deprecated** | Still registered but may be removed in a future version |
+| **Obsolete** | No longer registered; file retained for reference |
+| **Removed** | File retained with a REMOVED comment; not in `ALL_RULES` |
 
 ---
 
@@ -177,7 +245,7 @@ python -m ruff check .
 python -m pytest tests/ --tb=no -q
 git diff --check
 python scripts/generate_docs.py && python scripts/check_docs.py
-python benchmark/run_benchmark.py   # golden, 104/104
+python benchmark/run_benchmark.py   # golden, 101/101
 python benchmark/self_scan.py       # 0 findings on the project itself
 python benchmark/corpus.py          # real-package corpus
 python benchmark/runtime_harness.py # runtime probes
@@ -193,11 +261,28 @@ Tests define the compatibility contract. They must be deterministic and network-
 
 ---
 
-## Code quality & commits
+## Commit Message Convention
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` — New feature or rule
+- `fix:` — Bug fix
+- `test:` — Adding or updating tests
+- `docs:` — Documentation changes
+- `ci:` — CI/CD changes
+- `chore:` — Maintenance tasks
+- `refactor:` — Code refactoring (no feature change)
+- `quality:` — Quality improvements
+
+Examples:
+- `feat: add CPY058 rule for PEP 738`
+- `fix: correct PPY009 false positive on id() as dict key`
+- `test: expand edge cases for CPY001`
+
+## Code quality
 
 - `python -m ruff check .` and `git diff --check` must both pass.
 - Prefer clear, maintainable Python; keep functions focused.
-- Use concise commit messages: `feat:`, `fix:`, `test:`, `docs:`, `chore:`.
 
 ---
 

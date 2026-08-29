@@ -29,7 +29,7 @@ class OverrideRule(BaseRule):
                     description="typing.override requires Python 3.12+. Raises ImportError on Python 3.11 and below.",
                     severity=Severity.ERROR, runtime=Runtime.CPYTHON,
                     affected_from="3.0", affected_until="3.11",
-                    suggestion="Guard with: if sys.version_info >= (12,): from typing import override -- or use typing_extensions.",
+                    suggestion="Guard with: if sys.version_info >= (3, 12): from typing import override -- or use typing_extensions.",
                     docs_url="https://peps.python.org/pep-698/",
                 ))
         return findings

@@ -29,7 +29,7 @@ class RevealTypeRule(BaseRule):
                     description="typing.reveal_type requires Python 3.11+. Raises ImportError on Python 3.10 and below.",
                     severity=Severity.ERROR, runtime=Runtime.CPYTHON,
                     affected_from="3.0", affected_until="3.10",
-                    suggestion="Guard with: if sys.version_info >= (11,): from typing import reveal_type -- or use typing_extensions.",
+                    suggestion="Guard with: if sys.version_info >= (3, 11): from typing import reveal_type -- or use typing_extensions.",
                     docs_url="https://peps.python.org/pep-544/",
                 ))
         return findings

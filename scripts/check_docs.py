@@ -10,6 +10,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from pyrift.scanner import ALL_RULES
+
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 CHANGELOG = ROOT / "CHANGELOG.md"
@@ -131,6 +135,12 @@ def get_module_version() -> str | None:
     return match.group(1) if match else None
 
 
+def get_readme_rule_ids() -> list[str]:
+    """Return the rule IDs found in the README rule table."""
+    content = README.read_text(encoding="utf-8")
+    return re.findall(r"^\| (CPY\d+|PPY\d+) \|", content, re.MULTILINE)
+
+
 def main() -> None:
     version = get_current_version()
     actual = get_test_count()
@@ -138,6 +148,8 @@ def main() -> None:
     changelog = get_changelog_test_count(version)
     readme_version = get_readme_version()
     module_version = get_module_version()
+    readme_rule_ids = get_readme_rule_ids()
+    actual_rule_ids = sorted(r.rule_id for r in ALL_RULES)
 
     failures: list[str] = []
 
@@ -168,6 +180,16 @@ def main() -> None:
             f"pyrift/__init__.py __version__ {module_version!r} "
             f"does not match pyproject version {version!r}"
         )
+
+    if sorted(readme_rule_ids) != actual_rule_ids:
+        missing = set(actual_rule_ids) - set(readme_rule_ids)
+        extra = set(readme_rule_ids) - set(actual_rule_ids)
+        msg = "README.md rule table does not match ALL_RULES"
+        if missing:
+            msg += f" (missing: {', '.join(sorted(missing))})"
+        if extra:
+            msg += f" (extra: {', '.join(sorted(extra))})"
+        failures.append(msg)
 
     if failures:
         print("[FAIL] Documentation statistics are stale:")

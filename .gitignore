@@ -37,11 +37,16 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 htmlcov/
 
-# VS Code
+# IDE
 .vscode/
+.idea/
 *.code-workspace
+*.swp
+*.swo
 
 # OS
 .DS_Store

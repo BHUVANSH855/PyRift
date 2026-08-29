@@ -68,6 +68,10 @@ class Finding:
     affected_from: str = ""
     affected_until: str = ""
 
+    # Rule lifecycle (populated from rule_metadata)
+    rule_status: str = ""
+    rule_last_verified: str = ""
+
     # Fix guidance
     suggestion: str = ""
     docs_url: str = ""
@@ -86,6 +90,8 @@ class Finding:
         self.confidence = metadata["confidence"]  # type: ignore[assignment]
         self.evidence_type = metadata["evidence_type"]  # type: ignore[assignment]
         self.evidence_source = metadata["evidence_source"]  # type: ignore[assignment]
+        self.rule_status = str(metadata.get("status", ""))
+        self.rule_last_verified = str(metadata.get("last_verified", ""))
 
     def __str__(self) -> str:
         loc = f"{self.file}:{self.line}"
@@ -112,6 +118,8 @@ class Finding:
             "confidence": self.confidence.value,
             "evidence_type": self.evidence_type.value,
             "evidence_source": self.evidence_source,
+            "rule_status": self.rule_status,
+            "rule_last_verified": self.rule_last_verified,
             "runtime": self.runtime.value,
             "affected_from": self.affected_from,
             "affected_until": self.affected_until,

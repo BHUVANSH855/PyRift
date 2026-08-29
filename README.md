@@ -32,118 +32,119 @@ findings = pyrift.scan_file("./src/utils.py")
 
 ### CPython rules - version compatibility
 
-| ID | Title | Severity | Affects |
+| Rule ID | Title | Runtime | Status |
 |---|---|---|---|
-| CPY001 | Dict ordering assumption | Warning | CPython < 3.7 |
-| CPY002 | `Exception.add_note()` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY003 | `X \| Y` union type syntax requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
-| CPY004 | `tomllib` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY005 | `match/case` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
-| CPY006 | `asyncio.timeout()` / `TaskGroup` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY007 | Module removed in Python 3.13 (21 modules) | Error | CPython â‰¥ 3.13 |
-| CPY008 | `__slots__` may not prevent `__dict__` with base classes | Info | All versions |
-| CPY009 | `ExceptionGroup` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY010 | `@dataclass(slots=True)` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
-| CPY011 | `typing.Self` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY012 | `typing.LiteralString` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY013 | `typing.override` requires Python 3.12+ | Error | CPython â‰¤ 3.11 |
-| CPY014 | `typing.TypeAlias` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
-| CPY015 | `typing.Never` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY016 | `typing.TypeVarTuple` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY017 | `typing.Unpack` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY018 | `typing.Required` / `NotRequired` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY019 | `distutils` removed in Python 3.12+ | Error | CPython â‰¥ 3.12 |
-| CPY020 | `datetime.UTC` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY021 | `asyncio.iscoroutinefunction()` deprecated since 3.12 | Warning | CPython â‰¥ 3.12 |
-| CPY022 | Bitwise inversion on bool deprecated in 3.12 | Warning | CPython â‰¥ 3.12 |
-| CPY023 | `multiprocessing` default start method changing in 3.14 | Warning | CPython â‰¥ 3.14 |
-| CPY024 | `typing.TypeGuard` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
-| CPY025 | `typing.ParamSpec` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
-| CPY026 | `typing.io` and `typing.re` removed in Python 3.13 | Error | CPython â‰¥ 3.13 |
-| CPY027 | `locale.resetlocale()` removed in Python 3.13 | Error | CPython â‰¥ 3.13 |
-| CPY028 | `lib2to3` removed in Python 3.13 | Error | CPython â‰¥ 3.13 |
-| CPY029 | `locals()` semantics changed in Python 3.13 | Warning | CPython â‰¥ 3.13 |
-| CPY030 | `sys.path` no longer accepts bytes in Python 3.11+ | Error | CPython â‰¥ 3.11 |
-| CPY031 | `typing.assert_never` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY032 | `typing.reveal_type` requires Python 3.11+ | Error | CPython â‰¤ 3.10 |
-| CPY033 | `pathlib.Path.is_relative_to()` requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
-| CPY034 | `int.bit_count()` requires Python 3.10+ | Error | CPython â‰¤ 3.9 |
-| CPY035 | `str.removeprefix/removesuffix` requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
-| CPY036 | `datetime.utcnow()` deprecated since Python 3.12 | Warning | CPython â‰¥ 3.12 |
-| CPY037 | `datetime.utcfromtimestamp()` deprecated since Python 3.12 | Warning | CPython â‰¥ 3.12 |
-| CPY038 | `asyncio.get_event_loop()` raises RuntimeError in 3.12+ | Error | CPython â‰¥ 3.12 |
-| CPY039 | `zoneinfo` module requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
-| CPY040 | `graphlib` module requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
-| CPY041 | dict `\|` merge operator requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
-| CPY042 | `aiter()` and `anext()` builtins require Python 3.10+ | Error | CPython â‰¤ 3.9 |
-| CPY043 | `math.lcm()` requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
-| CPY044 | `math.gcd()` multi-arg form requires Python 3.9+ | Error | CPython â‰¤ 3.8 |
-| CPY045 | NaN hash behaviour changed in Python 3.10 | Warning | CPython >= 3.10 |
-| CPY046 | `open()` without encoding= has platform-dependent default | Warning | CPython < 3.15 |
-| CPY047 | `collections.abc.ByteString` removed in Python 3.15 | Error | CPython >= 3.15 |
-| CPY048 | `concurrent.interpreters` requires Python 3.14+ | Error | CPython <= 3.13 |
-| CPY049 | `compression.zstd` requires Python 3.14+ | Error | CPython <= 3.13 |
-| CPY050 | `PurePath.is_reserved()` deprecated in 3.13 | Warning | CPython >= 3.13 |
-| CPY051 | Unsynchronized module state unsafe in free-threaded 3.13+ | Warning | CPython >= 3.13 |
-| CPY052 | `threading.local()` atomicity in free-threaded 3.13+ | Warning | CPython >= 3.13 |
-| CPY053 | `typing.get_overloads()` requires Python 3.11+ | Error | CPython <= 3.10 |
-| CPY054 | `int()` no longer delegates to `__trunc__()` in 3.14 | Error | CPython <= 3.13 |
-| CPY055 | `NotImplemented` in boolean context raises TypeError in 3.14 | Error | CPython <= 3.13 |
-| CPY057 | pickle default protocol changed to 5 in Python 3.14 | Warning | CPython >= 3.14 |
-| CPY062 | `string.templatelib` requires Python 3.14+ | Error | CPython <= 3.13 |
-| CPY063 | `annotationlib` requires Python 3.14+ | Error | CPython <= 3.13 |
+| CPY001 | Dict ordering assumption — comparing dict view to ordered sequence | CPython | Active |
+| CPY002 | Exception.add_note() requires Python 3.11+ | CPython | Active |
+| CPY003 | X | Y union type syntax requires Python 3.10+ | CPython | Active |
+| CPY004 | tomllib requires Python 3.11+ | CPython | Active |
+| CPY005 | match/case requires Python 3.10+ | CPython | Active |
+| CPY006 | asyncio.timeout() / TaskGroup requires Python 3.11+ | CPython | Active |
+| CPY007 | Module removed in Python 3.13 | CPython | Active |
+| CPY008 | __slots__ may not prevent __dict__ on Python < 3.10 | CPython | Active |
+| CPY009 | ExceptionGroup requires Python 3.11+ | CPython | Active |
+| CPY010 | @dataclass(slots=True) requires Python 3.10+ | CPython | Active |
+| CPY011 | typing.Self requires Python 3.11+ | CPython | Active |
+| CPY012 | typing.LiteralString requires Python 3.11+ | CPython | Active |
+| CPY013 | typing.override requires Python 3.12+ | CPython | Active |
+| CPY014 | typing.TypeAlias requires Python 3.10+ | CPython | Active |
+| CPY015 | typing.Never requires Python 3.11+ | CPython | Active |
+| CPY016 | typing.TypeVarTuple requires Python 3.11+ | CPython | Active |
+| CPY017 | typing.Unpack requires Python 3.11+ | CPython | Active |
+| CPY018 | typing.Required / NotRequired requires Python 3.11+ | CPython | Active |
+| CPY019 | distutils removed in Python 3.12+ | CPython | Active |
+| CPY020 | datetime.UTC requires Python 3.11+ | CPython | Active |
+| CPY021 | asyncio.iscoroutinefunction() deprecated since 3.12 | CPython | Active |
+| CPY022 | Bitwise inversion on bool (~True/~False) deprecated in 3.12 | CPython | Active |
+| CPY023 | multiprocessing default start method changing in Python 3.14 | CPython | Active |
+| CPY024 | typing.TypeGuard requires Python 3.10+ | CPython | Active |
+| CPY025 | typing.ParamSpec requires Python 3.10+ | CPython | Active |
+| CPY026 | typing.io and typing.re removed in Python 3.13 | CPython | Active |
+| CPY027 | locale.resetlocale() removed in Python 3.13 | CPython | Active |
+| CPY028 | lib2to3 removed in Python 3.13 | CPython | Active |
+| CPY029 | locals() semantics changed in Python 3.13 (PEP 667) | CPython | Active |
+| CPY030 | sys.path no longer accepts bytes entries in Python 3.11+ | CPython | Active |
+| CPY031 | typing.assert_never requires Python 3.11+ | CPython | Active |
+| CPY032 | typing.reveal_type requires Python 3.11+ | CPython | Active |
+| CPY033 | pathlib.Path.is_relative_to() requires Python 3.9+ | CPython | Active |
+| CPY034 | int.bit_count() requires Python 3.10+ | CPython | Active |
+| CPY035 | str.removeprefix/removesuffix requires Python 3.9+ | CPython | Active |
+| CPY036 | datetime.utcnow() deprecated since Python 3.12 | CPython | Active |
+| CPY037 | datetime.utcfromtimestamp() deprecated since Python 3.12 | CPython | Active |
+| CPY038 | asyncio.get_event_loop() raises RuntimeError in Python 3.14+ | CPython | Active |
+| CPY039 | zoneinfo module requires Python 3.9+ | CPython | Active |
+| CPY040 | graphlib module requires Python 3.9+ | CPython | Active |
+| CPY041 | dict | merge operator requires Python 3.9+ | CPython | Active |
+| CPY042 | aiter() and anext() builtins require Python 3.10+ | CPython | Active |
+| CPY043 | math.lcm() requires Python 3.9+ | CPython | Active |
+| CPY044 | math.gcd() with multiple args requires Python 3.9+ | CPython | Active |
+| CPY045 | NaN hash behaviour changed in Python 3.10 | CPython | Active |
+| CPY046 | open() without encoding= uses platform-dependent encoding before 3.15 | CPython | Active |
+| CPY047 | collections.abc.ByteString removed in Python 3.15 | CPython | Active |
+| CPY048 | concurrent.interpreters requires Python 3.14+ | CPython | Active |
+| CPY049 | compression.zstd requires Python 3.14+ | CPython | Active |
+| CPY050 | PurePath.is_reserved() deprecated in 3.13, removed in 3.15 | CPython | Active |
+| CPY051 | Unsynchronized module-level mutable state may be unsafe in free-threaded Python | CPython | Active |
+| CPY053 | typing.get_overloads() requires Python 3.11+ | CPython | Active |
+| CPY054 | int() no longer delegates to __trunc__() in Python 3.14 | CPython | Active |
+| CPY055 | NotImplemented in boolean context raises TypeError in Python 3.14 | CPython | Active |
+| CPY057 | pickle default protocol changed to 5 in Python 3.14 | CPython | Active |
+| CPY062 | string.templatelib requires Python 3.14+ | CPython | Active |
+| CPY063 | annotationlib requires Python 3.14+ | CPython | Active |
 
 ### PyPy rules - runtime differences
 
-| ID | Title | Severity | Affects |
+| Rule ID | Title | Runtime | Status |
 |---|---|---|---|
-| PPY001 | Relying on `__del__` for resource cleanup | Error | PyPy all versions |
-| PPY002 | `ctypes` usage may silently fail | Warning | PyPy all versions |
-| PPY003 | `sys.getrefcount()` is meaningless on PyPy | Error | PyPy all versions |
-| PPY004 | `weakref.proxy()` raises `ReferenceError` unpredictably | Warning | PyPy all versions |
-| PPY005 | File write without explicit flush may lose data | Warning | PyPy all versions |
-| PPY006 | Monkey-patching built-in types behaves differently | Warning | PyPy all versions |
-| PPY007 | `sys.intern()` identity guarantees differ on PyPy | Warning | PyPy all versions |
-| PPY008 | `threading.local()` cleanup timing differs on PyPy | Warning | PyPy all versions |
-| PPY009 | `id()` values not stable across GC cycles on PyPy | Warning | PyPy all versions |
-| PPY010 | `gc.collect()` behaviour differs on PyPy | Warning | PyPy all versions |
-| PPY011 | `array.array('u')` type code removed in Python 3.13 | Error | CPython â‰¥ 3.13 |
-| PPY012 | Overriding built-in methods behaves differently on PyPy | Warning | PyPy all versions |
-| PPY013 | `sys.getsizeof()` raises `TypeError` on PyPy | Error | PyPy all versions |
-| PPY014 | String concatenation in loops is O(nÂ²) on PyPy | Warning | PyPy all versions |
-| PPY015 | Generator cleanup timing differs on PyPy | Warning | PyPy all versions |
-| PPY016 | Instance `__dict__` ordering not guaranteed on PyPy | Warning | PyPy all versions |
-| PPY017 | Adding `__del__` to existing class not called on PyPy | Error | PyPy all versions |
-| PPY018 | `sys.setrecursionlimit()` behaviour differs on PyPy | Warning | PyPy all versions |
-| PPY019 | `float('nan')` identity differs between CPython and PyPy | Warning | PyPy all versions |
-| PPY020 | `dict(**kwargs)` requires string keys on PyPy | Error | PyPy all versions |
-| PPY021 | Socket not closed promptly on PyPy | Warning | PyPy all versions |
-| PPY022 | `PYTHONHASHSEED=0` has no effect on PyPy | Warning | PyPy all versions |
-| PPY023 | `inspect.ismethod()` returns different results on PyPy | Warning | PyPy all versions |
-| PPY024 | `timeit` reports average not minimum on PyPy | Info | PyPy all versions |
-| PPY025 | Set iteration order differs between CPython and PyPy | Warning | PyPy all versions |
-| PPY026 | `__builtins__` is always a module on PyPy | Warning | PyPy all versions |
-| PPY027 | Deleting module/class attributes is slower on PyPy | Warning | PyPy all versions |
-| PPY028 | `readline.parse_and_bind()` silently ignored on PyPy | Warning | PyPy all versions |
-| PPY029 | Assigning to `__builtins__` has no effect on PyPy | Warning | PyPy all versions |
-| PPY030 | `sys.flags` values may differ between CPython and PyPy | Warning | PyPy all versions |
-| PPY031 | Integer `is` identity semantics differ on PyPy | Info | PyPy all versions |
-| PPY032 | Mutating dict keys raises `RuntimeError` on PyPy | Warning | PyPy all versions |
-| PPY033 | Exceptions in `__del__` appear at unpredictable times | Warning | PyPy all versions |
-| PPY034 | `hash()` values may differ between CPython and PyPy | Info | PyPy all versions |
-| PPY035 | C extension packages may not work correctly on PyPy | Warning | PyPy all versions |
-| PPY036 | `open()` line buffering behaves differently on PyPy | Warning | PyPy all versions |
-| PPY037 | `os.urandom()` source may differ on PyPy | Info | PyPy all versions |
-| PPY038 | `decimal` module uses different backend on PyPy | Info | PyPy all versions |
-| PPY039 | `os.fork()` may not work correctly on all PyPy platforms | Warning | PyPy all versions |
-| PPY040 | `subprocess.PIPE` buffering may cause deadlocks on PyPy | Warning | PyPy all versions |
-| PPY041 | dict `\|` operator requires PyPy 7.3.7+ | Info | PyPy < 7.3.7 |
-| PPY042 | `print(flush=True)` may not flush immediately on PyPy | Info | PyPy all versions |
-| PPY043 | `__slots__` memory savings differ on PyPy | Info | PyPy all versions |
-| PPY044 | Exception variable cleanup timing differs on PyPy | Info | PyPy all versions |
-| PPY045 | `sys.settrace()` disables JIT on PyPy | Warning | PyPy all versions |
-| PPY046 | `__debug__` constant always True on PyPy | Warning | PyPy all versions |
-| PPY047 | `ctypes.util.find_library()` unreliable on PyPy | Warning | PyPy all versions |
+| PPY001 | Relying on __del__ for resource cleanup breaks on PyPy | PyPy | Active |
+| PPY002 | ctypes usage may silently fail on PyPy | PyPy | Active |
+| PPY003 | sys.getrefcount() is meaningless on PyPy | PyPy | Active |
+| PPY004 | weakref.proxy() lifetime differs on PyPy due to GC model | PyPy | Active |
+| PPY005 | File write without explicit lifecycle management on PyPy | PyPy | Active |
+| PPY006 | Subclassing built-in types behaves differently on PyPy | PyPy | Active |
+| PPY007 | sys.intern() identity guarantees differ on PyPy | PyPy | Active |
+| PPY008 | threading.local() cleanup timing differs on PyPy | PyPy | Active |
+| PPY009 | id() stability depends on PyPy GC configuration | PyPy | Active |
+| PPY010 | gc.collect() behaviour differs on PyPy | PyPy | Active |
+| PPY012 | Overriding built-in methods may behave differently on PyPy | PyPy | Active |
+| PPY013 | sys.getsizeof() raises TypeError on PyPy | PyPy | Active |
+| PPY014 | String concatenation in loop is O(n²) on PyPy | PyPy | Active |
+| PPY015 | Generator cleanup timing differs on PyPy | PyPy | Active |
+| PPY016 | Instance __dict__ order-sensitive access may differ on PyPy | PyPy | Active |
+| PPY017 | Adding __del__ to existing class not called on PyPy | PyPy | Active |
+| PPY018 | sys.setrecursionlimit() behaviour differs on PyPy | PyPy | Active |
+| PPY019 | float('nan') identity differs between CPython and PyPy | PyPy | Active |
+| PPY021 | Socket not closed promptly on PyPy — GC timing | PyPy | Active |
+| PPY022 | PYTHONHASHSEED=0 has no effect on PyPy hash randomisation | PyPy | Active |
+| PPY023 | inspect.ismethod() returns different results on PyPy | PyPy | Active |
+| PPY024 | timeit reports average not minimum on PyPy | PyPy | Active |
+| PPY025 | Set iteration order differs between CPython and PyPy | PyPy | Active |
+| PPY026 | __builtins__ is always a module on PyPy, never a dict | PyPy | Active |
+| PPY027 | Deleting module/class attributes may be slower on PyPy | PyPy | Active |
+| PPY028 | readline.parse_and_bind() silently ignored on PyPy | PyPy | Active |
+| PPY029 | Assigning to __builtins__ has no effect on PyPy | PyPy | Active |
+| PPY030 | sys.flags values may differ between CPython and PyPy | PyPy | Active |
+| PPY031 | Integer 'is' identity semantics differ on PyPy | PyPy | Active |
+| PPY032 | Mutating dict keys raises RuntimeError on PyPy | PyPy | Active |
+| PPY033 | Exceptions in __del__ appear at unpredictable times on PyPy | PyPy | Active |
+| PPY034 | hash() values may differ between CPython and PyPy | PyPy | Active |
+| PPY035 | C extension packages may not work correctly on PyPy | PyPy | Active |
+| PPY036 | open() line buffering behaves differently on PyPy | PyPy | Active |
+| PPY037 | os.urandom() source may differ on PyPy | PyPy | Active |
+| PPY038 | decimal module uses different backend on PyPy | PyPy | Active |
+| PPY039 | os.fork() may not work correctly on all PyPy platforms | PyPy | Active |
+| PPY040 | subprocess.PIPE buffering may cause deadlocks on PyPy | PyPy | Active |
+| PPY041 | dict | operator requires PyPy 7.3.7+ (Python 3.9 compat) | PyPy | Active |
+| PPY042 | print(flush=True) may not flush immediately on PyPy | PyPy | Active |
+| PPY044 | Exception variable cleanup timing differs on PyPy | PyPy | Active |
+| PPY045 | sys.settrace() disables JIT and is unreliable on PyPy | PyPy | Active |
+| PPY047 | ctypes.util.find_library() unreliable on PyPy | PyPy | Active |
+
+### Cross-runtime rules
+
+| Rule ID | Title | Runtime | Status |
+|---|---|---|---|
+| PPY011 | array.array('u') type code removed in Python 3.13 | Both | Active |
 
 Full rule documentation: [docs/rules.md](docs/rules.md)
 
@@ -189,7 +190,9 @@ repos:
 | `bandit` | Security patterns | Behaviour differences |
 | **`pyrift`** | **Silent runtime behaviour differences** | (that's the whole point) |
 
-pyrift does not replace any of these tools. It catches what they all miss.
+PyRift focuses on compatibility and behavioural differences that conventional
+linters and type checkers generally do not model. It complements — not
+replaces — the tools above.
 
 ---
 
@@ -279,10 +282,46 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 ## Project status
 
 - **Version:** 0.8.0
-- **Rules:** 104 total (58 CPython + 44 PyPy + 2 cross-runtime)
-- **Tests:** 810 passing
+- **Rules:** 101 total (57 CPython + 43 PyPy + 1 cross-runtime)
+- **Tests:** 845 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
+
+---
+
+## Rule Trustworthiness
+
+Every finding carries a confidence level and evidence type. Rules are
+classified into three tiers:
+
+| Tier | Confidence | Evidence | Description |
+|---|---|---|---|
+| **A** | High | `official_docs` | Verified against official CPython/PyPy documentation |
+| **B** | High | `runtime_probe` | Verified via automated runtime probes in `benchmark/runtime_harness.py` |
+| **C** | Medium / Low | `observed`, `inferred` | Observed behaviour or inferred from code patterns; needs independent verification |
+
+Unreviewed rules (no entry in `pyrift/rule_metadata.py`) default to
+**low** confidence and `inferred` evidence type. See the
+[Confidence and evidence](#confidence-and-evidence) feature description
+for details.
+
+---
+
+## Known Limitations
+
+- **Static analysis cannot verify runtime behaviour.** PyRift inspects
+  ASTs, not executed code. Some findings may be false positives if the
+  flagged code is never reached or is guarded at runtime.
+- **Some rules are heuristics, not proofs.** A rule may flag code that
+  happens to be compatible in practice. Always review findings in context.
+- **PyPy rules may become outdated** as PyPy evolves. Report false
+  positives so rules can be updated or deprecated.
+- **Free-threading rules are experimental.** The CPython 3.13+
+  free-threading (no-GIL) build is new and its semantics are still
+  stabilising. Rules for free-threaded code may change.
+- **Version ranges are conservative.** Affected-version bounds are
+  based on documented changes; edge cases or backported fixes may
+  alter the actual impact.
 
 ---
 

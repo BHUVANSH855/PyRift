@@ -134,7 +134,9 @@ def _extract_version_guard(parent_map: dict[int, ast.AST],
                     ]
                     # For > (x, y), the effective minimum is (x, y+1)
                     if isinstance(test.ops[0], ast.Gt) and len(version) >= 2:
-                        version[-1] = version[-1] + 1
+                        last = version[-1]
+                        if isinstance(last, int):
+                            version[-1] = last + 1
                     return cast(
                         "tuple[int, ...]",
                         tuple(version),

@@ -53,7 +53,6 @@
     "CPY049": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "CPY050": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "runtime_probe"},
     "CPY051": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "medium", "evidence": "pep:703"},
-    "CPY052": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "pep:703"},
     "CPY053": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "CPY054": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "CPY055": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
@@ -80,7 +79,6 @@
     "PPY017": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "PPY018": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "PPY019": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
-    "PPY020": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "PPY021": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "PPY022": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "PPY023": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
@@ -105,7 +103,6 @@
     "PPY042": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"},
     "PPY044": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "medium", "evidence": "inferred"},
     "PPY045": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
-    "PPY046": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"},
     "PPY047": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"}
   }
 }

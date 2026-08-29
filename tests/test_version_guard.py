@@ -66,19 +66,19 @@ class TestVersionGuardAwareness:
         assert len(findings) == 0
 
     def test_cpy019_distutils_guarded_312(self):
-        """distutils guarded by sys.version_info < (3, 12) is correctly handled."""
+        """distutils guarded by sys.version_info < (3, 12) still fires.
+
+        The version-guard system only recognizes >= and > operators.
+        A < guard is not recognized as protective, so the rule still reports.
+        """
         from pyrift.rules.cpython.cpy019_distutils import DistutilsRule
         src = """
         import sys
         if sys.version_info < (3, 12):
             from distutils.core import setup
         """
-        # This SHOULD fire because the guard allows running on < 3.12
-        # where distutils exists, but the code also runs on 3.12+ where it doesn't.
-        # The rule should still fire since the guard doesn't protect against the import.
         findings = _run_rule(DistutilsRule, src)
-        # The guard is < 3.12, not >= 3.12, so it doesn't protect
-        assert len(findings) >= 0  # Depends on guard detection logic
+        assert len(findings) == 1
 
     def test_cpy003_union_type_guarded_310(self):
         """X | Y union syntax guarded by sys.version_info >= (3, 10) should not fire."""
@@ -146,4 +146,46 @@ class TestVersionGuardAwareness:
                 return toml.load
         """
         findings = _run_rule(TomllibRule, src)
+        assert len(findings) == 0
+
+    def test_guard_with_tuple_comparison_version_tuple(self):
+        """Guard comparing only major version tuple (3,) is not recognized."""
+        from pyrift.rules.cpython.cpy004_tomllib import TomllibRule
+        src = """
+        import sys
+        if sys.version_info >= (3,):
+            import tomllib
+        """
+        findings = _run_rule(TomllibRule, src)
+        # A 1-element tuple guard is not recognized, so the rule still fires.
+        assert len(findings) == 1
+
+    def test_unguarded_import_with_version_info_in_file(self):
+        """version_info used elsewhere does not suppress unguarded import."""
+        from pyrift.rules.cpython.cpy004_tomllib import TomllibRule
+        src = """
+        import sys
+        print(sys.version_info)
+        import tomllib
+        """
+        findings = _run_rule(TomllibRule, src)
+        assert len(findings) == 1
+
+    def test_guard_with_else_branch_import(self):
+        """Both if and else branch imports are considered guarded.
+
+        The version-guard system walks up the AST and finds the parent If
+        node from both branches, so both imports are suppressed.
+        """
+        from pyrift.rules.cpython.cpy004_tomllib import TomllibRule
+        src = """
+        import sys
+        if sys.version_info >= (3, 11):
+            import tomllib
+        else:
+            import tomllib
+        """
+        findings = _run_rule(TomllibRule, src)
+        # Both branches share the same parent If with the version guard,
+        # so both imports are considered guarded.
         assert len(findings) == 0
