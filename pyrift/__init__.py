@@ -27,6 +27,8 @@ __license__ = "MIT"
 
 __all__ = [
     "ALL_RULES",
+    "Confidence",
+    "EvidenceType",
     "Finding",
     "PythonVersion",
     "Runtime",

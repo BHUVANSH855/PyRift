@@ -122,6 +122,7 @@ class TestValidateMetadata:
         assert "confidence" in REQUIRED_METADATA_FIELDS
         assert "evidence_type" in REQUIRED_METADATA_FIELDS
         assert "evidence_source" in REQUIRED_METADATA_FIELDS
+        assert "intent_basis" in REQUIRED_METADATA_FIELDS
         assert "status" in REQUIRED_METADATA_FIELDS
         assert "last_verified" in REQUIRED_METADATA_FIELDS
 

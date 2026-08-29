@@ -9,13 +9,15 @@ Finding defaults:
 
     confidence = LOW
     evidence_type = INFERRED
+    intent_basis = INFERRED
 
-This prevents unreviewed rules from silently claiming HIGH confidence.
+This prevents unreviewed rules from silently claiming HIGH confidence or
+claiming that a behavior change was intentional without supporting evidence.
 """
 
 from __future__ import annotations
 
-from .finding import Confidence, EvidenceType
+from .finding import Confidence, EvidenceType, IntentBasis
 
 
 def _metadata(
@@ -25,6 +27,7 @@ def _metadata(
     status: str = "active",
     last_verified: str = "",
     affected_versions: str = "",
+    intent_basis: str | None = None,
 ) -> dict[str, object]:
     if evidence.startswith("pep:"):
         evidence_type = EvidenceType.PEP
@@ -47,25 +50,65 @@ def _metadata(
     else:
         raise ValueError(f"Unknown evidence type: {evidence}")
 
+    if intent_basis is None:
+        intent_basis = {
+            EvidenceType.PEP: IntentBasis.DOCUMENTED.value,
+            EvidenceType.OFFICIAL_DOCS: IntentBasis.DOCUMENTED.value,
+            EvidenceType.DEPRECATION_WARN: IntentBasis.DEPRECATION.value,
+            EvidenceType.RUNTIME_PROBE: IntentBasis.OBSERVED.value,
+            EvidenceType.OBSERVED: IntentBasis.OBSERVED.value,
+            EvidenceType.INFERRED: IntentBasis.INFERRED.value,
+        }[evidence_type]
+
     return {
         "confidence": Confidence(confidence),
         "evidence_type": evidence_type,
         "evidence_source": evidence_source,
+        "intent_basis": IntentBasis(intent_basis),
         "status": status,
         "last_verified": last_verified,
         "affected_versions": affected_versions,
     }
 
 
-REQUIRED_METADATA_FIELDS = ("confidence", "evidence_type", "evidence_source", "status", "last_verified")
+REQUIRED_METADATA_FIELDS = (
+    "confidence",
+    "evidence_type",
+    "evidence_source",
+    "intent_basis",
+    "status",
+    "last_verified",
+)
 
 
 def validate_metadata() -> bool:
-    """Return True if every RULE_METADATA entry has all required fields."""
+    """Return True when all reviewed metadata is complete and consistent."""
+    default_intent = {
+        EvidenceType.PEP: IntentBasis.DOCUMENTED,
+        EvidenceType.OFFICIAL_DOCS: IntentBasis.DOCUMENTED,
+        EvidenceType.DEPRECATION_WARN: IntentBasis.DEPRECATION,
+        EvidenceType.RUNTIME_PROBE: IntentBasis.OBSERVED,
+        EvidenceType.OBSERVED: IntentBasis.OBSERVED,
+        EvidenceType.INFERRED: IntentBasis.INFERRED,
+    }
+
     for entry in RULE_METADATA.values():
         for field in REQUIRED_METADATA_FIELDS:
             if field not in entry:
                 return False
+
+        evidence_type = entry["evidence_type"]
+        intent_basis = entry["intent_basis"]
+        if not isinstance(evidence_type, EvidenceType):
+            return False
+        if not isinstance(intent_basis, IntentBasis):
+            return False
+        if (
+            intent_basis != IntentBasis.IMPLEMENTATION_DEFINED
+            and intent_basis != default_intent[evidence_type]
+        ):
+            return False
+
     return True
 
 
@@ -91,23 +134,23 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     "CPY019": _metadata("high", "pep:632", last_verified="2026-08-29"),
     "CPY020": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY021": _metadata("high", "official_docs", last_verified="2026-08-29"),
-    "CPY022": _metadata("high", "runtime_probe", last_verified="2026-08-29"),
-    "CPY023": _metadata("high", "runtime_probe", last_verified="2026-08-29"),
+    "CPY022": _metadata("high", "deprecation_warn", last_verified="2026-08-29"),
+    "CPY023": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY024": _metadata("high", "pep:647", last_verified="2026-08-29"),
     "CPY025": _metadata("high", "pep:612", last_verified="2026-08-29"),
     "CPY026": _metadata("high", "official_docs", last_verified="2026-08-29"),
-    "CPY027": _metadata("high", "runtime_probe", last_verified="2026-08-29"),
+    "CPY027": _metadata("high", "deprecation_warn", last_verified="2026-08-29"),
     "CPY028": _metadata("high", "official_docs", last_verified="2026-08-29"),
-    "CPY029": _metadata("high", "pep:667", last_verified="2026-08-29"),
+    "CPY029": _metadata("high", "pep:667", last_verified="2026-08-29", intent_basis="implementation_defined"),
     "CPY030": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY031": _metadata("high", "pep:673", last_verified="2026-08-29"),
     "CPY032": _metadata("high", "pep:544", last_verified="2026-08-29"),
     "CPY033": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY034": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY035": _metadata("high", "pep:616", last_verified="2026-08-29"),
-    "CPY036": _metadata("high", "runtime_probe", last_verified="2026-08-29"),
-    "CPY037": _metadata("high", "runtime_probe", last_verified="2026-08-29"),
-    "CPY038": _metadata("high", "runtime_probe", last_verified="2026-08-29"),
+    "CPY036": _metadata("high", "deprecation_warn", last_verified="2026-08-29"),
+    "CPY037": _metadata("high", "deprecation_warn", last_verified="2026-08-29"),
+    "CPY038": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY039": _metadata("high", "pep:615", last_verified="2026-08-29"),
     "CPY040": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY041": _metadata("high", "pep:584", last_verified="2026-08-29"),
@@ -119,12 +162,12 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     "CPY047": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY048": _metadata("high", "pep:734", last_verified="2026-08-29"),
     "CPY049": _metadata("high", "official_docs", last_verified="2026-08-29"),
-    "CPY050": _metadata("high", "runtime_probe", last_verified="2026-08-29"),
+    "CPY050": _metadata("high", "deprecation_warn", last_verified="2026-08-29"),
     "CPY051": _metadata("medium", "pep:703", last_verified="2026-08-29"),
     "CPY053": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY054": _metadata("high", "official_docs", last_verified="2026-08-29", affected_versions=">=3.14"),
     "CPY055": _metadata("high", "official_docs", last_verified="2026-08-29", affected_versions=">=3.14"),
-    "CPY057": _metadata("high", "runtime_probe", last_verified="2026-08-29"),
+    "CPY057": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY062": _metadata("high", "pep:750", last_verified="2026-08-29"),
     "CPY063": _metadata("high", "pep:749", last_verified="2026-08-29"),
     "PPY001": _metadata("high", "official_docs", last_verified="2026-08-29"),

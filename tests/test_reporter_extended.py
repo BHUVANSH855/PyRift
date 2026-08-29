@@ -200,6 +200,7 @@ class TestToSarif:
         props = data["runs"][0]["results"][0]["properties"]
         assert props["confidence"] == "high"
         assert props["evidence_type"] == "official_docs"
+        assert props["intent_basis"] == "documented"
         assert props["runtime"] == "cpython"
         assert props["affected_from"] == "3.10"
         assert props["affected_until"] == "3.13"

@@ -536,6 +536,11 @@ def _run_explain(args: argparse.Namespace) -> None:
         f"Evidence:    {evidence_type} ({evidence_source})"
     )
 
+    intent_basis = metadata.get("intent_basis", "inferred")
+    if hasattr(intent_basis, "value"):
+        intent_basis = intent_basis.value
+    lines.append(f"Intent basis: {intent_basis}")
+
     try:
         from .finding import Finding
 

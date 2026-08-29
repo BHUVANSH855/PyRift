@@ -25,12 +25,35 @@ class Confidence(str, Enum):
 
 
 class EvidenceType(str, Enum):
-    """What kind of evidence backs this rule."""
+    """What kind of evidence backs this rule.
+
+    Evidence describes how the behavior was established; it does not by
+    itself prove that a behavior change was intentional. ``IntentBasis``
+    records the stronger compatibility/intent evidence separately.
+    """
 
     OFFICIAL_DOCS = "official_docs"
     RUNTIME_PROBE = "runtime_probe"
     DEPRECATION_WARN = "deprecation_warn"
     PEP = "pep"
+    OBSERVED = "observed"
+    INFERRED = "inferred"
+
+
+class IntentBasis(str, Enum):
+    """What PyRift can establish about the status of a behavior change.
+
+    ``DOCUMENTED`` and ``DEPRECATION`` are the only bases that directly
+    establish an intentional, documented compatibility change. ``OBSERVED``
+    means a runtime difference is known but intent is not established.
+    ``IMPLEMENTATION_DEFINED`` means the documented contract leaves room for
+    implementation-specific behavior. ``INFERRED`` is the most conservative
+    classification and does not claim maintainer intent.
+    """
+
+    DOCUMENTED = "documented"
+    DEPRECATION = "deprecation"
+    IMPLEMENTATION_DEFINED = "implementation_defined"
     OBSERVED = "observed"
     INFERRED = "inferred"
 
@@ -110,6 +133,7 @@ class Finding:
     confidence: Confidence = Confidence.LOW
     evidence_type: EvidenceType = EvidenceType.INFERRED
     evidence_source: str = ""
+    intent_basis: IntentBasis = IntentBasis.INFERRED
 
     # Which runtimes / versions are affected
     runtime: Runtime = Runtime.BOTH
@@ -141,6 +165,7 @@ class Finding:
         self.confidence = metadata["confidence"]  # type: ignore[assignment]
         self.evidence_type = metadata["evidence_type"]  # type: ignore[assignment]
         self.evidence_source = metadata["evidence_source"]  # type: ignore[assignment]
+        self.intent_basis = metadata["intent_basis"]  # type: ignore[assignment]
         self.rule_status = str(metadata.get("status", ""))
         self.rule_last_verified = str(metadata.get("last_verified", ""))
 
@@ -175,6 +200,7 @@ class Finding:
             "confidence": self.confidence.value,
             "evidence_type": self.evidence_type.value,
             "evidence_source": self.evidence_source,
+            "intent_basis": self.intent_basis.value,
             "rule_status": self.rule_status,
             "rule_last_verified": self.rule_last_verified,
             "runtime": self.runtime.value,

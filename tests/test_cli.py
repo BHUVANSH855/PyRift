@@ -213,6 +213,7 @@ class TestExplainCommand:
         assert code == 0
         assert "CPY055" in out
         assert "NotImplemented" in out
+        assert "Intent basis:" in out
 
     def test_explain_invalid_rule(self):
         code, _out, err = run_cli("explain", "INVALID")

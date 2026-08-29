@@ -208,6 +208,7 @@ def test_markdown_includes_confidence_and_evidence():
 
     assert "**Confidence:** `medium`" in output
     assert "**Evidence:** `pep` (`pep:703`)" in output
+    assert "**Intent basis:** `documented`" in output
 
 
 class TestScanResultRepr:
