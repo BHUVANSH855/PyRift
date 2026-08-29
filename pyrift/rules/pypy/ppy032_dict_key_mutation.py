@@ -13,6 +13,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class DictKeyMutationRule(BaseRule):
@@ -20,7 +21,12 @@ class DictKeyMutationRule(BaseRule):
     title   = "Mutating dict keys raises RuntimeError on PyPy"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
             # Detect dict literals with mutable keys (set literals)

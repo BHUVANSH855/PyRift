@@ -10,6 +10,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class MatchCaseRule(BaseRule):
@@ -17,12 +18,17 @@ class MatchCaseRule(BaseRule):
     title   = "match/case requires Python 3.10+"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
 
         for n in ast.walk(node):
             # ast.Match was added in Python 3.10
-            if type(n).__name__ == "Match":
+            if isinstance(n, ast.Match):
                 findings.append(Finding(
                     file=filename,
                     line=n.lineno,

@@ -30,6 +30,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 _MUTATING_METHODS = {
     "append", "clear", "extend", "insert", "pop", "remove",
@@ -117,7 +118,7 @@ def _mutation_name(node: ast.AST) -> str | None:
 # ── Lock-aware traversal ───────────────────────────────────────────────────
 
 def _walk_with(
-    statement: ast.With,
+    statement: ast.With | ast.AsyncWith,
     protected: set[tuple[str, ...]],
     walk_fn,
 ) -> None:
@@ -256,7 +257,12 @@ class FreeThreadedGlobalStateRule(BaseRule):
     )
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         if not isinstance(node, ast.Module):
             return []
 

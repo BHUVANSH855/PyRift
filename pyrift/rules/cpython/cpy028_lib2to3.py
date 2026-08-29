@@ -6,6 +6,7 @@ import ast
 from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class Lib2to3Rule(BaseRule):
@@ -13,7 +14,12 @@ class Lib2to3Rule(BaseRule):
     title = "lib2to3 removed in Python 3.13"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for info in collect_imports(node).imports:
             mod = info.module or ""

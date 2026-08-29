@@ -83,9 +83,9 @@ class Finding:
         if metadata is None:
             return
 
-        self.confidence = metadata["confidence"]
-        self.evidence_type = metadata["evidence_type"]
-        self.evidence_source = metadata["evidence_source"]
+        self.confidence = metadata["confidence"]  # type: ignore[assignment]
+        self.evidence_type = metadata["evidence_type"]  # type: ignore[assignment]
+        self.evidence_source = metadata["evidence_source"]  # type: ignore[assignment]
 
     def __str__(self) -> str:
         loc = f"{self.file}:{self.line}"

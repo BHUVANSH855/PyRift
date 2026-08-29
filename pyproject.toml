@@ -54,3 +54,12 @@ exclude = ["compatibility-benchmark/"]
 
 [tool.ruff.lint]
 ignore = ["DTZ003", "B018", "EXE001", "PLW1510"]
+
+[tool.mypy]
+python_version = "3.10"
+plugins = []
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true

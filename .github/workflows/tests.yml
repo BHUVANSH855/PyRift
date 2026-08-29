@@ -53,6 +53,9 @@ jobs:
       - name: Check lint
         run: python -m ruff check .
 
+      - name: Type check
+        run: python -m mypy pyrift --ignore-missing-imports
+
       - name: Compile project
         run: python -m compileall -q pyrift tests benchmark scripts
 

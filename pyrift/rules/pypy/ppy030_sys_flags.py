@@ -12,6 +12,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 # hash_randomization is explicitly confirmed in PyPy docs:
 # "-R is ignored in PyPy. Both CPython >= 3.4 and PyPy3 implement SipHash"
@@ -25,7 +26,12 @@ class SysFlagsRule(BaseRule):
     title   = "sys.flags values may differ between CPython and PyPy"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
             if not isinstance(n, ast.Attribute):

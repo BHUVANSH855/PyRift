@@ -6,6 +6,7 @@ import ast
 from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class UnpackRule(BaseRule):
@@ -13,7 +14,12 @@ class UnpackRule(BaseRule):
     title = "typing.Unpack requires Python 3.11+"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for info in collect_imports(node).imports:
             if info.module == "typing" and info.name == "Unpack" and not (info.version_guarded and info.version_guarded >= (3, 11)):

@@ -49,9 +49,11 @@ by nature:
 from __future__ import annotations
 
 import ast
+from typing import cast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Confidence, Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 def _is_id_call(node: ast.AST) -> bool:
@@ -279,10 +281,11 @@ class IdStabilityRule(BaseRule):
     runtime = "pypy"
 
     def check(
-        self,
-        node: ast.AST,
-        filename: str,
-    ) -> list[Finding]:
+            self,
+            node: ast.AST,
+            filename: str,
+            target_config: TargetConfig | None = None,
+        ) -> list[Finding]:
         parent_map: dict[int, ast.AST] = {}
 
         for parent in ast.walk(node):
@@ -295,39 +298,41 @@ class IdStabilityRule(BaseRule):
             if not _is_id_call(current):
                 continue
 
-            if _parent_is_subscript_key(current, parent_map):
+            current_call = cast(ast.Call, current)
+
+            if _parent_is_subscript_key(current_call, parent_map):
                 continue
 
-            if _parent_is_set_or_dedup(current, parent_map):
+            if _parent_is_set_or_dedup(current_call, parent_map):
                 continue
 
-            if _is_local_dedup_pattern(current, parent_map):
+            if _is_local_dedup_pattern(current_call, parent_map):
                 continue
 
-            parent = parent_map.get(id(current))
+            node_parent = parent_map.get(id(current_call))
 
-            if isinstance(parent, ast.Compare):
+            if isinstance(node_parent, ast.Compare):
                 context = "comparison"
-            elif isinstance(parent, ast.Return):
+            elif isinstance(node_parent, ast.Return):
                 context = "return value"
-            elif isinstance(parent, ast.Assign):
+            elif isinstance(node_parent, ast.Assign):
                 context = "stored assignment"
-            elif isinstance(parent, ast.AugAssign):
+            elif isinstance(node_parent, ast.AugAssign):
                 context = "augmented assignment"
-            elif isinstance(parent, ast.Yield):
+            elif isinstance(node_parent, ast.Yield):
                 context = "yield value"
-            elif isinstance(parent, ast.YieldFrom):
+            elif isinstance(node_parent, ast.YieldFrom):
                 context = "yield-from value"
             else:
                 context = "persistent expression"
 
-            if not _is_persistence_context(current, parent_map):
+            if not _is_persistence_context(current_call, parent_map):
                 continue
 
             findings.append(
                 _make_finding(
                     filename,
-                    current,
+                    current_call,
                     context,
                 )
             )

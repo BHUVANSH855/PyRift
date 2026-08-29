@@ -16,6 +16,7 @@ import ast
 from pyrift.analysis.imports import collect_dynamic_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 # Modules removed in Python 3.13 per PEP 594
 REMOVED_313 = {
@@ -33,7 +34,12 @@ class RemovedModulesRule(BaseRule):
     title   = "Module removed in Python 3.13"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
 
         # Static imports

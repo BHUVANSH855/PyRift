@@ -12,6 +12,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class ArrayTypeCodeRule(BaseRule):
@@ -19,7 +20,12 @@ class ArrayTypeCodeRule(BaseRule):
     title   = "array.array('u') type code removed in Python 3.13"
     runtime = "both"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
             if not isinstance(n, ast.Call):

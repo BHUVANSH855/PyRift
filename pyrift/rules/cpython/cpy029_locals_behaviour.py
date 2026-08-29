@@ -17,6 +17,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 def _is_locals_call(n: ast.AST) -> bool:
@@ -33,7 +34,12 @@ class LocalsBehaviourRule(BaseRule):
     title   = "locals() semantics changed in Python 3.13 (PEP 667)"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
 
         for n in ast.walk(node):

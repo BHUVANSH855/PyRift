@@ -9,6 +9,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class IoBufferingRule(BaseRule):
@@ -80,10 +81,11 @@ class IoBufferingRule(BaseRule):
         return False
 
     def check(
-        self,
-        node: ast.AST,
-        filename: str,
-    ) -> list[Finding]:
+            self,
+            node: ast.AST,
+            filename: str,
+            target_config: TargetConfig | None = None,
+        ) -> list[Finding]:
         parent_map: dict[int, ast.AST] = {}
 
         for parent in ast.walk(node):

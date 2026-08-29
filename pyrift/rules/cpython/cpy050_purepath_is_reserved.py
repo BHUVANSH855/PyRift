@@ -13,6 +13,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class PurePathIsReservedRule(BaseRule):
@@ -20,7 +21,12 @@ class PurePathIsReservedRule(BaseRule):
     title = "PurePath.is_reserved() deprecated in 3.13, removed in 3.15"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
 
         pathlib_aliases: set[str] = {"pathlib"}
@@ -41,7 +47,7 @@ class PurePathIsReservedRule(BaseRule):
                     if alias.name == "PurePath":
                         purepath_names.add(alias.asname or "PurePath")
 
-        for statement in ast.walk(node):
+        for statement in ast.walk(node):  # type: ignore[assignment]
             if not isinstance(statement, ast.Assign):
                 continue
 
@@ -68,7 +74,7 @@ class PurePathIsReservedRule(BaseRule):
                 if isinstance(target, ast.Name):
                     purepath_instances.add(target.id)
 
-        for statement in ast.walk(node):
+        for statement in ast.walk(node):  # type: ignore[assignment]
             if not isinstance(statement, ast.Call):
                 continue
 

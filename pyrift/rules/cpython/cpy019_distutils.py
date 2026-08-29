@@ -6,6 +6,7 @@ import ast
 from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 DISTUTILS_MODULES = {
     "distutils", "distutils.core", "distutils.cmd",
@@ -22,7 +23,12 @@ class DistutilsRule(BaseRule):
     title = "distutils removed in Python 3.12+"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         imp_map = collect_imports(node)
         for info in imp_map.by_statement():

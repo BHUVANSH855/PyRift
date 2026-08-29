@@ -7,11 +7,12 @@ from __future__ import annotations
 
 import importlib
 import re
+import types
 from dataclasses import dataclass
 from pathlib import Path
 
 try:
-    tomllib = importlib.import_module("tomllib")
+    tomllib: types.ModuleType | None = importlib.import_module("tomllib")
 except ModuleNotFoundError:
     tomllib = None
 

@@ -11,6 +11,7 @@ Answers:
 from __future__ import annotations
 
 import ast
+from typing import cast
 
 
 def is_module_level(node: ast.AST,
@@ -77,10 +78,15 @@ def is_version_guarded(node: ast.AST,
                 and len(test.comparators) == 1
                 and isinstance(test.comparators[0], ast.Tuple)
             ):
-                # Extract the version tuple
+                # Extract the version tuple.
                 elts = test.comparators[0].elts
-                if all(isinstance(e, ast.Constant) for e in elts):
-                    guard_version = tuple(e.value for e in elts)
+                if all(
+                    isinstance(e, ast.Constant) and isinstance(e.value, int)
+                    for e in elts
+                ):
+                    guard_version = tuple(
+                        cast(ast.Constant, e).value for e in elts
+                    )
                     if guard_version >= min_version:
                         return True
         current = parent_map.get(id(current))

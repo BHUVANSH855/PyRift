@@ -123,7 +123,14 @@ def _extract_version_guard(parent_map: dict[int, ast.AST],
             ):
                 elts = test.comparators[0].elts
                 if all(isinstance(e, ast.Constant) for e in elts):
-                    return tuple(e.value for e in elts)
+                    from typing import cast
+
+                    return cast(
+                        "tuple[int, ...]",
+                        tuple(
+                            cast(ast.Constant, e).value for e in elts
+                        ),
+                    )
         current = parent_map.get(id(current))
     return None
 

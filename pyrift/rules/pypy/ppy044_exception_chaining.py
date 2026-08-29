@@ -19,6 +19,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class ExceptionChainingRule(BaseRule):
@@ -112,7 +113,7 @@ class ExceptionChainingRule(BaseRule):
         statement in the containing statement block.
         """
         following = cls._find_following_statements(
-            [node] if isinstance(node, ast.stmt) else list(node.body),
+            [node] if isinstance(node, ast.stmt) else list(getattr(node, "body", [])),
             parent,
         )
 
@@ -156,7 +157,12 @@ class ExceptionChainingRule(BaseRule):
             ),
         )
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
 
         for parent in ast.walk(node):

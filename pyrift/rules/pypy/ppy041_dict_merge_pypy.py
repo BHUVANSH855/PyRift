@@ -16,6 +16,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class DictMergePypyRule(BaseRule):
@@ -74,6 +75,7 @@ class DictMergePypyRule(BaseRule):
 
                 if (
                     isinstance(current.target, ast.Name)
+                    and current.value is not None
                     and cls._is_dict_constructor(current.value)
                 ):
                     dict_names.add(current.target.id)
@@ -95,7 +97,12 @@ class DictMergePypyRule(BaseRule):
             and node.id in dict_names
         )
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         dict_names = self._collect_dict_names(node)
 

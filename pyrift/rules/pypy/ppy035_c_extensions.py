@@ -6,6 +6,7 @@ import ast
 from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Confidence, Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 KNOWN_PROBLEMATIC = {
     "numpy", "pandas", "scipy", "torch", "tensorflow",
@@ -19,7 +20,12 @@ class CExtensionsRule(BaseRule):
     title = "C extension packages may not work correctly on PyPy"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         imp_map = collect_imports(node)
         seen: set[str] = set()

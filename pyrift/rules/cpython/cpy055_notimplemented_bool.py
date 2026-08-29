@@ -11,6 +11,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class NotImplementedBoolRule(BaseRule):
@@ -18,7 +19,12 @@ class NotImplementedBoolRule(BaseRule):
     title   = "NotImplemented in boolean context raises TypeError in Python 3.14"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
 
         for n in ast.walk(node):
@@ -49,8 +55,8 @@ class NotImplementedBoolRule(BaseRule):
     def _make(self, filename: str, n: ast.AST) -> Finding:
         return Finding(
             file=filename,
-            line=n.lineno,
-            col=n.col_offset,
+            line=n.lineno,  # type: ignore[attr-defined]
+            col=n.col_offset,  # type: ignore[attr-defined]
             rule_id=self.rule_id,
             title=self.title,
             description=(

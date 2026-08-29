@@ -12,6 +12,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class SetOrderingRule(BaseRule):
@@ -19,7 +20,12 @@ class SetOrderingRule(BaseRule):
     title   = "Set iteration order differs between CPython and PyPy"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
             # Detect: list(some_set) or sorted used on set

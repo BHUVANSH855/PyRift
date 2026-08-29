@@ -13,6 +13,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class DebugConstantRule(BaseRule):
@@ -20,7 +21,12 @@ class DebugConstantRule(BaseRule):
     title   = "__debug__ is always True on PyPy — -O flag has no effect"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
             # Detect: if __debug__: ... or if not __debug__: ...

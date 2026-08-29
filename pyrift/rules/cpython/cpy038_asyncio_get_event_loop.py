@@ -15,6 +15,7 @@ import ast
 from pyrift.analysis.calls import collect_calls
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class AsyncioGetEventLoopRule(BaseRule):
@@ -22,7 +23,12 @@ class AsyncioGetEventLoopRule(BaseRule):
     title = "asyncio.get_event_loop() raises RuntimeError in Python 3.14+"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
 
         for call in collect_calls(node, "get_event_loop", module="asyncio"):

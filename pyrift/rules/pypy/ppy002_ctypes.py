@@ -12,6 +12,7 @@ import ast
 from pyrift.analysis.imports import collect_imports
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 CTYPES_DANGEROUS = {
     "CDLL", "WinDLL", "OleDLL", "PyDLL",
@@ -27,7 +28,12 @@ class CtypesRule(BaseRule):
     title   = "ctypes usage may silently fail on PyPy"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
 
         imp_map = collect_imports(node)

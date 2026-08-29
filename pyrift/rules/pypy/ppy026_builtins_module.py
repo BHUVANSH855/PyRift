@@ -12,6 +12,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class BuiltinsModuleRule(BaseRule):
@@ -19,7 +20,12 @@ class BuiltinsModuleRule(BaseRule):
     title   = "__builtins__ is always a module on PyPy, never a dict"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
             if isinstance(n, ast.Name) and n.id == "__builtins__":

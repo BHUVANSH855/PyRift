@@ -13,6 +13,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class InspectIsMethodRule(BaseRule):
@@ -20,7 +21,12 @@ class InspectIsMethodRule(BaseRule):
     title   = "inspect.ismethod() returns different results on PyPy"
     runtime = "pypy"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
             if not isinstance(n, ast.Call):

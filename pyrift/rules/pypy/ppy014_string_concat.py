@@ -17,6 +17,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class StringConcatLoopRule(BaseRule):
@@ -149,7 +150,12 @@ class StringConcatLoopRule(BaseRule):
 
         return findings
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         string_names = self._collect_string_names(node)
 
@@ -173,7 +179,11 @@ class StringConcatLoopRule(BaseRule):
 
                 reported_lines.add(location)
 
-                target_name = concat.target.id
+                target_name = (
+                    concat.target.id
+                    if isinstance(concat.target, ast.Name)
+                    else ""
+                )
 
                 findings.append(
                     Finding(

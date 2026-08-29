@@ -17,6 +17,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 def _is_dict_literal(node: ast.AST) -> bool:
@@ -33,7 +34,12 @@ class DictMergeOperatorRule(BaseRule):
     title   = "dict | merge operator requires Python 3.9+"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
             # d1 | d2 — only flag when at least one side is a dict literal
