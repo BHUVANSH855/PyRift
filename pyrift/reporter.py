@@ -230,11 +230,14 @@ def to_sarif(result: ScanResult) -> str:
         if finding.description:
             message_text += f" — {finding.description}"
 
+        start_line = max(1, finding.line or 1)
+        start_column = max(1, finding.col or 1)
+
         physical_location = {
             "artifactLocation": {"uri": finding.file},
             "region": {
-                "startLine": finding.line,
-                "startColumn": finding.col or 0,
+                "startLine": start_line,
+                "startColumn": start_column,
             },
         }
 
