@@ -312,6 +312,23 @@ def _scan_file_detailed(
         except UnicodeDecodeError:
             logger.warning("Skipping %s: unable to decode with UTF-8", filepath)
             return findings, rule_errors
+
+        if "\x00" in source:
+            from .finding import Runtime, Severity
+
+            findings.append(
+                Finding(
+                    file=str(filepath),
+                    line=1,
+                    rule_id="PARSE",
+                    title="Null bytes — file could not be parsed",
+                    description="Source code contains null bytes, which Python cannot parse.",
+                    severity=Severity.ERROR,
+                    runtime=Runtime.BOTH,
+                )
+            )
+            return findings, rule_errors
+
         tree = ast.parse(source, filename=str(filepath))
     except SyntaxError as exc:
         from .finding import Runtime, Severity

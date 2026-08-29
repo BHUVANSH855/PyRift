@@ -8,6 +8,7 @@ Exits 0 if clean, 1 if BOMs found.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -27,7 +28,7 @@ def find_bom_files(root: Path) -> list[Path]:
     """Walk the tree and return files that start with a UTF-8 BOM."""
     bom_files: list[Path] = []
 
-    for dirpath, dirnames, filenames in root.walk():
+    for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [
             d for d in dirnames if d not in SKIP_DIRS
         ]
