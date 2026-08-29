@@ -127,6 +127,24 @@ class TestParseVersionSpecifier:
         assert config is not None
         assert config.maximum == PythonVersion(3, 13)
 
+    def test_greater_than_311_uses_next_minor(self):
+        config = _parse_version_specifier(">3.11")
+
+        assert config.minimum == PythonVersion(3, 12)
+        assert config.maximum is None
+
+    def test_greater_than_314_uses_next_minor(self):
+        config = _parse_version_specifier(">3.14")
+
+        assert config.minimum == PythonVersion(3, 15)
+        assert config.maximum is None
+
+    def test_less_than_310_uses_previous_minor(self):
+        config = _parse_version_specifier("<3.10")
+
+        assert config.minimum is None
+        assert config.maximum == PythonVersion(3, 9)
+
     def test_le_specifier(self):
         config = _parse_version_specifier("<=3.13")
         assert config is not None

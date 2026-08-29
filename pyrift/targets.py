@@ -145,10 +145,13 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
 
         if part.startswith(">"):
             version = PythonVersion.parse(part[1:])
-            if version.minor < 11:
-                candidate = PythonVersion(version.major, version.minor + 1)
-            else:
-                candidate = PythonVersion(version.major + 1, 0)
+
+            # A strict lower bound such as >3.11 means the first
+            # supported Python release is the next minor version.
+            candidate = PythonVersion(
+                version.major,
+                version.minor + 1,
+            )
 
             if minimum is None or candidate > minimum:
                 minimum = candidate
@@ -165,10 +168,18 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
 
         if part.startswith("<"):
             version = PythonVersion.parse(part[1:])
+
             if version.minor > 0:
-                candidate = PythonVersion(version.major, version.minor - 1)
+                candidate = PythonVersion(
+                    version.major,
+                    version.minor - 1,
+                )
             else:
-                candidate = PythonVersion(version.major - 1, 11)
+                candidate = PythonVersion(
+                    version.major - 1,
+                    11,
+                )
+
             if maximum is None or candidate < maximum:
                 maximum = candidate
 
@@ -189,7 +200,11 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
             f"Unsupported Python version specifier: {part!r}"
         )
 
-    if minimum is not None and maximum is not None and minimum > maximum:
+    if (
+        minimum is not None
+        and maximum is not None
+        and minimum > maximum
+    ):
         raise ValueError(
             f"Invalid Python version range: {specifier!r}"
         )
