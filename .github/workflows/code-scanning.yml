@@ -34,7 +34,7 @@ jobs:
         run: python -m pip install -e .
 
       - name: Run pyrift scan (SARIF)
-        run: pyrift scan . --format sarif --output results.sarif
+        run: pyrift scan . --format sarif --output results.sarif --exit-zero
 
       - name: Upload SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v4
