@@ -181,11 +181,60 @@ pyrift does not replace any of these tools. It catches what they all miss.
 ## Git-aware scanning
 
 For maintainer and CI workflows, PyRift can scan only Python files changed
-relative to a Git revision:
+relative to a Git revision (including staged and untracked changes):
 
 ```bash
 pyrift scan . --changed-only
+pyrift scan . --changed-only --base origin/main
 ```
+
+---
+
+## Features
+
+### Dynamic import detection
+
+Some compatibility issues hide behind imports resolved at runtime rather
+than through `import` statements. PyRift detects these too:
+
+- `importlib.import_module("removed_module")`
+- `__import__("removed_module")`
+
+Only statically-resolvable module names are flagged; names computed at
+runtime from a variable are deliberately left alone to avoid false
+positives.
+
+### Version-guard awareness
+
+PyRift understands `sys.version_info` guards. A module import protected by
+a `sys.version_info >= (3, N)` check that already covers the required
+version is **not** reported, because the guarded code never runs on an
+affected interpreter.
+
+### Confidence and evidence
+
+Every finding carries a `confidence` (`high` / `medium` / `low`) and an
+`evidence_type` (`official_docs`, `runtime_probe`, `deprecation_warn`,
+`pep`, `observed`, `inferred`). These are assigned from a central reviewed
+table (`pyrift/rule_metadata.py`); unreviewed rules conservatively default
+to `low` / `inferred` rather than over-claiming certainty.
+
+### Multi-name import deduplication
+
+`from tomllib import load, loads` produces a **single** finding, not one
+per imported name, so reports stay readable and stable.
+
+### Target-aware filtering
+
+When `pyproject.toml` declares `requires-python`, PyRift drops CPython
+findings that cannot affect the project's supported version range. You can
+also override with `--python-min` / `--python-max`.
+
+### Rule-robustness guarantee
+
+Every rule is exercised against a broad suite of exotic-but-valid AST
+constructs via `benchmark/fuzz_harness.py` to guarantee no rule ever
+crashes on valid Python — regardless of finding outcome.
 
 ---
 
@@ -216,7 +265,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 - **Version:** 0.8.0
 - **Rules:** 104 total (58 CPython + 44 PyPy + 2 cross-runtime)
-- **Tests:** 706 passing
+- **Tests:** 800 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -232,4 +281,10 @@ CPython contributor and PyPy toolkit author.
 ## License
 
 MIT - see [LICENSE](LICENSE)
+
+## Security
+
+Found a security issue in PyRift itself? Please follow our
+[Security Policy](SECURITY.md) and report it privately rather than
+opening a public issue.
 
