@@ -332,10 +332,7 @@ GOLDEN = {
         ("from typing import Required", True, "Required"),
         ("from typing import Optional", False, "Optional ok"),
     ],
-    "CPY021": [
-        ("asyncio.iscoroutinefunction(fn)", True, "deprecated iscoroutinefunction"),
-        ("inspect.iscoroutinefunction(fn)", False, "inspect form ok"),
-    ],
+
     "CPY024": [
         ("from typing import TypeGuard", True, "TypeGuard"),
         ("from typing import Optional", False, "Optional ok"),
@@ -735,13 +732,12 @@ GOLDEN = {
         ("ctx = ssl.create_default_context()", False, "create_default_context ok"),
     ],
     "CPY077": [
-        ("from typing import TypedDict\nPoint = TypedDict('Point', {'x': int})", True, "functional dict"),
-        ("from typing import TypedDict\nclass Point(TypedDict):\n    x: int", False, "class syntax ok"),
+        ("TypedDict('Name')", True, "zero-field form removed"),
+        ("TypedDict('Name', None)", True, "None-field form removed"),
+        ("TypedDict('Point', {'x': int})", False, "dict form still valid"),
+        ("class Point(TypedDict):\n    x: int", False, "class form ok"),
     ],
-    "PPY048": [
-        ("import sys\nsys.getsizeof(obj)", True, "getsizeof"),
-        ("import sys\nsys.getrefcount(obj)", False, "getrefcount ok"),
-    ],
+
     "PPY049": [
         ("import gc\ngc.collect()", True, "gc.collect"),
         ("import gc\ngc.get_threshold()", False, "get_threshold ok"),

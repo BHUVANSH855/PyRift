@@ -16,7 +16,7 @@ from pyrift.targets import TargetConfig
 
 class ByteStringRemovedRule(BaseRule):
     rule_id = "CPY047"
-    title   = "collections.abc.ByteString removed in Python 3.15"
+    title   = "collections.abc.ByteString deprecated, scheduled removal in Python 3.17"
     runtime = "cpython"
 
     def check(
@@ -43,9 +43,9 @@ class ByteStringRemovedRule(BaseRule):
                                     "Importing it on Python 3.15+ raises "
                                     "ImportError at runtime."
                                 ),
-                                severity=Severity.ERROR,
+                                severity=Severity.WARNING,
                                 runtime=Runtime.CPYTHON,
-                                affected_from="3.15",
+                                affected_from="3.12",
                                 suggestion=(
                                     "Replace with: Union[bytes, bytearray, memoryview] "
                                     "or use the specific type you actually need. "
@@ -68,9 +68,9 @@ class ByteStringRemovedRule(BaseRule):
                         "Python 3.12 and removed in Python 3.15. "
                         "Accessing it on Python 3.15+ raises AttributeError."
                     ),
-                    severity=Severity.ERROR,
+                    severity=Severity.WARNING,
                     runtime=Runtime.CPYTHON,
-                    affected_from="3.15",
+                    affected_from="3.12",
                     suggestion=(
                         "Replace with: Union[bytes, bytearray, memoryview]"
                     ),

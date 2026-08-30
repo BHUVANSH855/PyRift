@@ -38,7 +38,6 @@ from .rules.cpython.cpy017_unpack import UnpackRule
 from .rules.cpython.cpy018_required import RequiredRule
 from .rules.cpython.cpy019_distutils import DistutilsRule
 from .rules.cpython.cpy020_datetime_utc import DatetimeUTCRule
-from .rules.cpython.cpy021_asyncio_coroutine import AsyncioIsCoroutineRule
 from .rules.cpython.cpy022_bool_inversion import BoolInversionRule
 from .rules.cpython.cpy023_multiprocessing_fork import MultiprocessingForkRule
 from .rules.cpython.cpy024_typeguard import TypeGuardRule
@@ -139,7 +138,6 @@ from .rules.pypy.ppy042_print_flush import PrintFlushRule
 from .rules.pypy.ppy044_exception_chaining import ExceptionChainingRule
 from .rules.pypy.ppy045_sys_settrace import SysSettraceRule
 from .rules.pypy.ppy047_ctypes_find_library import CtypesFindLibraryRule
-from .rules.pypy.ppy048_sys_getsizeof import SysGetsizeofRule
 from .rules.pypy.ppy049_gc_behavior import GcBehaviorRule
 from .rules.pypy.ppy051_co_lnotab import CoLnotabPyPyRule
 from .rules.pypy.ppy052_importlib_abc import ImportlibAbcPyPyRule
@@ -170,7 +168,6 @@ ALL_RULES: list[BaseRule] = [
     RequiredRule(),
     DistutilsRule(),
     DatetimeUTCRule(),
-    AsyncioIsCoroutineRule(),
     BoolInversionRule(),
     MultiprocessingForkRule(),
     TypeGuardRule(),
@@ -266,7 +263,6 @@ ALL_RULES: list[BaseRule] = [
     ExceptionChainingRule(),
     SysSettraceRule(),
     CtypesFindLibraryRule(),
-    SysGetsizeofRule(),
     GcBehaviorRule(),
     CoLnotabPyPyRule(),
     ImportlibAbcPyPyRule(),

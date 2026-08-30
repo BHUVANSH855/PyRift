@@ -40,11 +40,6 @@ class AstDeprecatedNodesRule(BaseRule):
     ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
-            # isinstance(x, ast.Num) — ast.Name(id='Num') inside ast.Attribute
-            if isinstance(n, ast.Name) and n.id in _DEPRECATED_AST_NODES:
-                # Check parent context is ast.X pattern (simple heuristic)
-                findings.append(self._make(filename, n.id, n.lineno, n.col_offset))
-
             # ast.Num — Attribute access pattern: ast.Num, ast.Str, etc.
             if (isinstance(n, ast.Attribute)
                     and isinstance(n.value, ast.Name)

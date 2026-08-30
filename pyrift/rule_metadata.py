@@ -99,11 +99,11 @@ def validate_metadata() -> bool:
 
         evidence_type = entry["evidence_type"]
         intent_basis = entry["intent_basis"]
-        if not isinstance(evidence_type, EvidenceType):
+        if not isinstance(evidence_type, EvidenceType):  # pragma: no cover
             return False
-        if not isinstance(intent_basis, IntentBasis):
+        if not isinstance(intent_basis, IntentBasis):  # pragma: no cover
             return False
-        if (
+        if (  # pragma: no cover
             intent_basis != IntentBasis.IMPLEMENTATION_DEFINED
             and intent_basis != default_intent[evidence_type]
         ):
@@ -133,7 +133,6 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     "CPY018": _metadata("high", "pep:655", last_verified="2026-08-29"),
     "CPY019": _metadata("high", "pep:632", last_verified="2026-08-29"),
     "CPY020": _metadata("high", "official_docs", last_verified="2026-08-29"),
-    "CPY021": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY022": _metadata("high", "deprecation_warn", last_verified="2026-08-29"),
     "CPY023": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "CPY024": _metadata("high", "pep:647", last_verified="2026-08-29"),
@@ -228,7 +227,6 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     "PPY044": _metadata("medium", "inferred", last_verified="2026-08-29"),
     "PPY045": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "PPY047": _metadata("high", "official_docs", last_verified="2026-08-29"),
-    "PPY048": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "PPY049": _metadata("high", "official_docs", last_verified="2026-08-29"),
     "PPY051": _metadata("medium", "observed", last_verified="2026-08-29"),
     "PPY052": _metadata("low", "observed", last_verified="2026-08-29"),

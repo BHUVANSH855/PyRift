@@ -1,15 +1,20 @@
 """
-CPY077 — typing.TypedDict deprecated functional creation in 3.13, removed in 3.15
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Python 3.13 deprecated the functional syntax for typing.TypedDict:
-  Point = TypedDict('Point', {'x': int, 'y': int})
-  Point = TypedDict('Point', x=int, y=int)
+CPY077 -- typing.TypedDict zero-field functional syntax removed in Python 3.15
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The zero-field and None-field functional syntax for TypedDict was removed
+in Python 3.15. The following forms are no longer valid:
 
-This will be removed in Python 3.15. Use class-based syntax instead.
+    TypedDict("Name")           # removed in 3.15
+    TypedDict("Name", None)     # removed in 3.15
 
-Detects:
-  TypedDict('Name', {'key': type})
-  TypedDict('Name', key=type)
+The standard dict-based functional syntax remains valid:
+
+    TypedDict("Name", {"x": int})  # still valid
+
+And the class-based syntax remains valid:
+
+    class Name(TypedDict):
+        x: int
 """
 from __future__ import annotations
 
@@ -17,71 +22,68 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
-from pyrift.targets import TargetConfig
 
 
 class TypingTypedDictFunctionalRule(BaseRule):
     rule_id = "CPY077"
-    title   = "typing.TypedDict functional syntax deprecated in 3.13, removed in 3.15"
+    title = "typing.TypedDict zero-field syntax removed in Python 3.15"
     runtime = "cpython"
 
-    def check(
-        self,
-        node: ast.AST,
-        filename: str,
-        target_config: TargetConfig | None = None,
-    ) -> list[Finding]:
+    def check(self, node: ast.AST, filename: str) -> list[Finding]:
         findings: list[Finding] = []
+
         for n in ast.walk(node):
             if not isinstance(n, ast.Call):
                 continue
+
             func = n.func
-            # TypedDict(...) or typing.TypedDict(...)
-            is_typeddict = False
-            if isinstance(func, ast.Name) and func.id == "TypedDict" or (isinstance(func, ast.Attribute)
-                  and func.attr == "TypedDict"
-                  and isinstance(func.value, ast.Name)
-                  and func.value.id == "typing"):
-                is_typeddict = True
+            is_typeddict = isinstance(func, ast.Name) and func.id == "TypedDict" or (
+                isinstance(func, ast.Attribute)
+                and func.attr == "TypedDict"
+                and isinstance(func.value, ast.Name)
+                and func.value.id == "typing"
+            )
 
             if not is_typeddict:
                 continue
 
-            # Must have name as first arg
-            if len(n.args) < 1:
+            # Only flag zero-field: TypedDict("Name") or TypedDict("Name", None)
+            # The dict-based form TypedDict("Name", {"x": int}) is still valid.
+            is_zero_field = len(n.args) < 2
+            is_none_field = (
+                len(n.args) >= 2
+                and isinstance(n.args[1], ast.Constant)
+                and n.args[1].value is None
+            )
+
+            if not (is_zero_field or is_none_field):
                 continue
 
-            # Check for dict literal: TypedDict('Name', {'x': int})
-            has_dict_arg = (
-                len(n.args) >= 2
-                and isinstance(n.args[1], ast.Dict)
-            )
+            findings.append(Finding(
+                file=filename,
+                line=n.lineno,
+                col=n.col_offset,
+                rule_id=self.rule_id,
+                title=self.title,
+                description=(
+                    "The zero-field TypedDict functional syntax "
+                    "TypedDict('Name') and TypedDict('Name', None) "
+                    "were removed in Python 3.15. "
+                    "Use the class-based syntax or the dict form: "
+                    "TypedDict('Name', {'x': int})."
+                ),
+                severity=Severity.ERROR,
+                runtime=Runtime.CPYTHON,
+                affected_from="3.15",
+                suggestion=(
+                    "class Name(TypedDict):\\n"
+                    "    x: int\\n"
+                    "or: TypedDict('Name', {'x': int})"
+                ),
+                docs_url=(
+                    "https://docs.python.org/3/library/typing.html"
+                    "#typing.TypedDict"
+                ),
+            ))
 
-            # Check for keyword args: TypedDict('Name', x=int)
-            has_keyword_fields = any(
-                kw.arg is not None and isinstance(kw.value, ast.Name)
-                for kw in n.keywords
-            )
-
-            if has_dict_arg or has_keyword_fields:
-                findings.append(Finding(
-                    file=filename, line=n.lineno, col=n.col_offset,
-                    rule_id=self.rule_id, title=self.title,
-                    description=(
-                        "typing.TypedDict() with functional syntax is deprecated "
-                        "since Python 3.13 and will be removed in Python 3.15. "
-                        "The functional form was rarely used and hard to read."
-                    ),
-                    severity=Severity.WARNING,
-                    runtime=Runtime.CPYTHON,
-                    affected_from="3.13",
-                    affected_until="3.14",
-                    suggestion=(
-                        "Convert to class-based syntax:\n"
-                        "  class Point(TypedDict):\n"
-                        "      x: int\n"
-                        "      y: int"
-                    ),
-                    docs_url="https://docs.python.org/3/whatsnew/3.13.html",
-                ))
         return findings

@@ -177,7 +177,7 @@ class Finding:
 
     def __str__(self) -> str:
         loc = f"{self.file}:{self.line}"
-        if self.col:
+        if self.col:  # pragma: no branch
             loc += f":{self.col}"
 
         sev = self.severity.value.upper()

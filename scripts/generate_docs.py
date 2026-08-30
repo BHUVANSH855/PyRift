@@ -162,59 +162,24 @@ def update_changelog(
 
 
 def generate_rule_table() -> str:
-    """Generate a markdown rule table from ALL_RULES."""
-    cpy_rules = sorted(
-        (r for r in ALL_RULES if r.runtime == "cpython"),
-        key=lambda r: r.rule_id,
-    )
-    ppy_rules = sorted(
-        (r for r in ALL_RULES if r.runtime == "pypy"),
-        key=lambda r: r.rule_id,
-    )
-    both_rules = sorted(
-        (r for r in ALL_RULES if r.runtime == "both"),
-        key=lambda r: r.rule_id,
-    )
+    """Generate a Markdown rule index table from ALL_RULES.
 
+    Uses marker comments so the README section can be reliably regenerated:
+        <!-- BEGIN GENERATED RULE INDEX -->
+        ...
+        <!-- END GENERATED RULE INDEX -->
+    """
+    all_sorted = sorted(ALL_RULES, key=lambda r: r.rule_id)
     lines = [
-        "### CPython rules - version compatibility",
-        "",
-        "| Rule ID | Title | Runtime | Status |",
-        "|---|---|---|---|",
+        "<!-- BEGIN GENERATED RULE INDEX -->",
+        "| Rule | Title | Runtime |",
+        "|------|-------|---------|",
     ]
-    for rule in cpy_rules:
-        lines.append(
-            f"| {rule.rule_id} | {rule.title} | CPython | Active |"
-        )
-
-    lines.extend([
-        "",
-        "### PyPy rules - runtime differences",
-        "",
-        "| Rule ID | Title | Runtime | Status |",
-        "|---|---|---|---|",
-    ])
-    for rule in ppy_rules:
-        lines.append(
-            f"| {rule.rule_id} | {rule.title} | PyPy | Active |"
-        )
-
-    if both_rules:
-        lines.extend([
-            "",
-            "### Cross-runtime rules",
-            "",
-            "| Rule ID | Title | Runtime | Status |",
-            "|---|---|---|---|",
-        ])
-        for rule in both_rules:
-            lines.append(
-                f"| {rule.rule_id} | {rule.title} | Both | Active |"
-            )
-
-    lines.append("")
-    lines.append("Full rule documentation: [docs/rules.md](docs/rules.md)")
-
+    for rule in all_sorted:
+        # Escape pipe characters to avoid breaking the Markdown table
+        title = rule.title.replace("|", r"\|")
+        lines.append(f"| {rule.rule_id} | {title} | {rule.runtime} |")
+    lines.append("<!-- END GENERATED RULE INDEX -->")
     return "\n".join(lines)
 
 
@@ -266,14 +231,21 @@ def main() -> None:
         test_count,
     )
 
-    # Auto-generate rule table
+    # Auto-generate rule table using markers
     rule_table = generate_rule_table()
-    readme_content = re.sub(
-        r"### CPython rules - version compatibility.*?Full rule documentation: \[docs/rules\.md\]\(docs/rules\.md\)",
-        rule_table,
-        readme_content,
-        flags=re.DOTALL,
-    )
+    start_marker = "<!-- BEGIN GENERATED RULE INDEX -->"
+    end_marker = "<!-- END GENERATED RULE INDEX -->"
+    if start_marker in readme_content and end_marker in readme_content:
+        start_idx = readme_content.find(start_marker)
+        end_idx = readme_content.find(end_marker) + len(end_marker)
+        readme_content = readme_content[:start_idx] + rule_table + readme_content[end_idx:]
+    else:
+        raise RuntimeError(
+            "README.md is missing GENERATED RULE INDEX markers.\n"
+            "Expected:\n"
+            "  <!-- BEGIN GENERATED RULE INDEX -->\n"
+            "  <!-- END GENERATED RULE INDEX -->\n"
+        )
 
     README.write_text(
         readme_content,
