@@ -1,6 +1,6 @@
 # pyrift — Rule Reference
 
-Complete documentation for all 101 pyrift rules.
+Complete documentation for all 120 pyrift rules.
 
 ## Confidence levels
 
@@ -511,6 +511,143 @@ import typing; typing.get_type_hints(obj)
 
 ---
 
+### CPY064 — Deprecated AST node types removed in Python 3.14
+
+**Severity:** Error | **Confidence:** High | **Affects:** CPython ≥ 3.14
+
+`ast.Num`, `ast.Str`, `ast.Bytes`, `ast.NameConstant`, `ast.Ellipsis` were deprecated in 3.13 and removed in 3.14.
+
+```python
+# Bad
+isinstance(x, ast.Num)
+# Good
+isinstance(x, ast.Constant)
+```
+
+---
+
+### CPY065 — pkgutil.find_loader()/get_loader() removed in Python 3.14
+
+**Severity:** Error | **Confidence:** High | **Affects:** CPython ≥ 3.14
+
+Deprecated in 3.12 (PEP 451), removed in 3.14.
+
+```python
+# Good
+importlib.util.find_spec('mod')
+```
+
+---
+
+### CPY066 — asyncio child watcher classes removed in Python 3.14
+
+**Severity:** Error | **Confidence:** High | **Affects:** CPython ≥ 3.14
+
+`ThreadedChildWatcher`, `FastChildWatcher`, etc. removed in 3.14. Use PIDFD-based watching.
+
+---
+
+### CPY067 — typing.NamedTuple keyword syntax deprecated in 3.13, removed in 3.15
+
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython ≥ 3.13
+
+```python
+# Bad
+Point = NamedTuple('Point', x=int, y=int)
+# Good
+class Point(NamedTuple):
+    x: int
+    y: int
+```
+
+---
+
+### CPY068 — typing.no_type_check_decorator deprecated in 3.13, removed in 3.15
+
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython ≥ 3.13
+
+Use `typing.no_type_check()` instead.
+
+---
+
+### CPY069 — asyncio.iscoroutinefunction() deprecated in Python 3.14
+
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython ≥ 3.14
+
+Use `inspect.iscoroutinefunction()` instead.
+
+---
+
+### CPY070 — asyncio event loop policy deprecated in Python 3.14
+
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython ≥ 3.14
+
+`get_event_loop_policy()`, `set_event_loop_policy()`, `DefaultEventLoopPolicy` deprecated. Use `asyncio.run()`.
+
+---
+
+### CPY071 — pty.master_open()/slave_open() removed in Python 3.14
+
+**Severity:** Error | **Confidence:** High | **Affects:** CPython ≥ 3.14
+
+Use `pty.openpty()` instead.
+
+---
+
+### CPY072 — importlib.abc resource classes removed in Python 3.14
+
+**Severity:** Error | **Confidence:** High | **Affects:** CPython ≥ 3.14
+
+Use `importlib.resources.abc` instead.
+
+---
+
+### CPY073 — sqlite3.version/version_info removed in Python 3.14
+
+**Severity:** Error | **Confidence:** High | **Affects:** CPython ≥ 3.14
+
+Use `sqlite3.sqlite_version` instead.
+
+---
+
+### CPY074 — code.__lnotab__ deprecated in Python 3.10 (PEP 626)
+
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython ≥ 3.10
+
+Use `code.co_lines()` or `code.co_linetable()` instead.
+
+---
+
+### CPY075 — http.server.CGIHTTPRequestHandler deprecated in 3.13, removed in 3.15
+
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython ≥ 3.13
+
+Use `SimpleHTTPRequestHandler` instead.
+
+---
+
+### CPY076 — ssl.wrap_socket() removed in Python 3.12
+
+**Severity:** Error | **Confidence:** High | **Affects:** CPython ≥ 3.12
+
+Use `SSLContext.wrap_socket()` instead.
+
+---
+
+### CPY077 — typing.TypedDict functional syntax deprecated in 3.13, removed in 3.15
+
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython ≥ 3.13
+
+```python
+# Bad
+Point = TypedDict('Point', {'x': int})
+# Good
+class Point(TypedDict):
+    x: int
+```
+
+---
+
 ## PyPy rules — runtime differences
 
 ---
@@ -828,8 +965,48 @@ May return `None` even when library exists. Use cffi instead.
 
 ---
 
+### PPY048 — sys.getsizeof() returns different values on PyPy
+
+**Severity:** Warning | **Confidence:** High | **Affects:** PyPy all versions
+
+PyPy has different object memory layouts. Do not rely on exact size values.
+
+---
+
+### PPY049 — GC behavior differs between PyPy and CPython
+
+**Severity:** Warning | **Confidence:** High | **Affects:** PyPy all versions
+
+`gc.collect()`, `gc.get_objects()`, `gc.disable()` behave differently. Use context managers instead.
+
+---
+
+### PPY051 — code.__lnotab__ deprecated on PyPy
+
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy all versions
+
+PyPy follows CPython's PEP 626 deprecation. Use `co_lines()` or `co_linetable()`.
+
+---
+
+### PPY052 — importlib.abc resource classes may differ on PyPy
+
+**Severity:** Info | **Confidence:** Low | **Affects:** PyPy all versions
+
+Resource reader interface may have different method signatures. Test on both runtimes.
+
+---
+
+### PPY053 — functools.lru_cache thread safety differs on PyPy
+
+**Severity:** Info | **Confidence:** Low | **Affects:** PyPy all versions
+
+Different locking strategy and cache implementation. Consider explicit thread safety.
+
+---
+
 ## Adding your own rules
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for the complete guide.
 
-Rule IDs `CPY064+` and `PPY048+` are open for community contributions.
+Rule IDs `CPY078+` and `PPY054+` are open for community contributions.

@@ -75,6 +75,20 @@ from .rules.cpython.cpy055_notimplemented_bool import NotImplementedBoolRule
 from .rules.cpython.cpy057_pickle_protocol import PickleProtocolRule
 from .rules.cpython.cpy062_template_string import TemplateStringRule
 from .rules.cpython.cpy063_annotationlib import AnnotationLibRule
+from .rules.cpython.cpy064_ast_deprecated_nodes import AstDeprecatedNodesRule
+from .rules.cpython.cpy065_pkgutil_find_loader import PkgutilFindLoaderRule
+from .rules.cpython.cpy066_asyncio_child_watcher import AsyncioChildWatcherRule
+from .rules.cpython.cpy067_typing_namedtuple_keyword import TypingNamedTupleKeywordRule
+from .rules.cpython.cpy068_typing_no_type_check_decorator import TypingNoTypeCheckDecoratorRule
+from .rules.cpython.cpy069_asyncio_iscoroutinefunction import AsyncioIscoroutinefunctionRule
+from .rules.cpython.cpy070_asyncio_event_loop_policy import AsyncioEventLoopPolicyRule
+from .rules.cpython.cpy071_pty_master_slave_open import PtyMasterSlaveOpenRule
+from .rules.cpython.cpy072_importlib_abc_resource import ImportlibAbcResourceRule
+from .rules.cpython.cpy073_sqlite3_version import Sqlite3VersionRemovedRule
+from .rules.cpython.cpy074_co_lnotab_deprecated import CoLnotabDeprecatedRule
+from .rules.cpython.cpy075_http_server_cgi import HttpServerCGIHandlerRule
+from .rules.cpython.cpy076_ssl_wrap_socket import SslWrapSocketRule
+from .rules.cpython.cpy077_typing_typeddict_functional import TypingTypedDictFunctionalRule
 from .rules.pypy.ppy001_gc_finalizer import GcFinalizerRule
 from .rules.pypy.ppy002_ctypes import CtypesRule
 from .rules.pypy.ppy003_getrefcount import GetRefcountRule
@@ -119,6 +133,11 @@ from .rules.pypy.ppy042_print_flush import PrintFlushRule
 from .rules.pypy.ppy044_exception_chaining import ExceptionChainingRule
 from .rules.pypy.ppy045_sys_settrace import SysSettraceRule
 from .rules.pypy.ppy047_ctypes_find_library import CtypesFindLibraryRule
+from .rules.pypy.ppy048_sys_getsizeof import SysGetsizeofRule
+from .rules.pypy.ppy049_gc_behavior import GcBehaviorRule
+from .rules.pypy.ppy051_co_lnotab import CoLnotabPyPyRule
+from .rules.pypy.ppy052_importlib_abc import ImportlibAbcPyPyRule
+from .rules.pypy.ppy053_lru_cache_thread_safety import LruCacheThreadSafetyRule
 from .targets import TargetConfig, load_project_targets
 
 logger = logging.getLogger(__name__)
@@ -182,6 +201,20 @@ ALL_RULES: list[BaseRule] = [
     PickleProtocolRule(),
     TemplateStringRule(),
     AnnotationLibRule(),
+    AstDeprecatedNodesRule(),
+    PkgutilFindLoaderRule(),
+    AsyncioChildWatcherRule(),
+    TypingNamedTupleKeywordRule(),
+    TypingNoTypeCheckDecoratorRule(),
+    AsyncioIscoroutinefunctionRule(),
+    AsyncioEventLoopPolicyRule(),
+    PtyMasterSlaveOpenRule(),
+    ImportlibAbcResourceRule(),
+    Sqlite3VersionRemovedRule(),
+    CoLnotabDeprecatedRule(),
+    HttpServerCGIHandlerRule(),
+    SslWrapSocketRule(),
+    TypingTypedDictFunctionalRule(),
     # PyPy rules (sorted by rule ID)
     GcFinalizerRule(),
     CtypesRule(),
@@ -227,6 +260,11 @@ ALL_RULES: list[BaseRule] = [
     ExceptionChainingRule(),
     SysSettraceRule(),
     CtypesFindLibraryRule(),
+    SysGetsizeofRule(),
+    GcBehaviorRule(),
+    CoLnotabPyPyRule(),
+    ImportlibAbcPyPyRule(),
+    LruCacheThreadSafetyRule(),
 ]
 
 # Pre-compute which rules accept target_config (cached at import time)

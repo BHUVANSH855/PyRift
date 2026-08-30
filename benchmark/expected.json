@@ -59,6 +59,20 @@
     "CPY057": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "CPY062": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "pep:750"},
     "CPY063": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "pep:749"},
+    "CPY064": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY065": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY066": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY067": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "deprecation_warn"},
+    "CPY068": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "deprecation_warn"},
+    "CPY069": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "deprecation_warn"},
+    "CPY070": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "deprecation_warn"},
+    "CPY071": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY072": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY073": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY074": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "pep:626"},
+    "CPY075": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "deprecation_warn"},
+    "CPY076": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "CPY077": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "deprecation_warn"},
     "PPY001": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "PPY002": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
     "PPY003": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
@@ -102,6 +116,11 @@
     "PPY042": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"},
     "PPY044": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "medium", "evidence": "inferred"},
     "PPY045": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
-    "PPY047": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"}
+    "PPY047": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "PPY048": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "PPY049": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "high", "evidence": "official_docs"},
+    "PPY051": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "medium", "evidence": "observed"},
+    "PPY052": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"},
+    "PPY053": {"min_true_positives": 1, "max_false_positives": 0, "confidence": "low", "evidence": "observed"}
   }
 }

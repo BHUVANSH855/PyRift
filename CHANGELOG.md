@@ -14,8 +14,27 @@
 - `CPY057` - pickle default protocol changed to 5 in Python 3.14
 - `CPY062` - string.templatelib requires Python 3.14+
 - `CPY063` - annotationlib requires Python 3.14+
+- `CPY064` - Deprecated AST node types removed in Python 3.14
+- `CPY065` - pkgutil.find_loader()/get_loader() removed in Python 3.14
+- `CPY066` - asyncio child watcher classes removed in Python 3.14
+- `CPY067` - typing.NamedTuple keyword syntax deprecated in 3.13, removed in 3.15
+- `CPY068` - typing.no_type_check_decorator deprecated in 3.13, removed in 3.15
+- `CPY069` - asyncio.iscoroutinefunction() deprecated in Python 3.14
+- `CPY070` - asyncio event loop policy deprecated in Python 3.14
+- `CPY071` - pty.master_open()/slave_open() removed in Python 3.14
+- `CPY072` - importlib.abc resource classes removed in Python 3.14
+- `CPY073` - sqlite3.version/version_info removed in Python 3.14
+- `CPY074` - code.__lnotab__ deprecated in Python 3.10 (PEP 626)
+- `CPY075` - http.server.CGIHTTPRequestHandler deprecated in 3.13, removed in 3.15
+- `CPY076` - ssl.wrap_socket() removed in Python 3.12
+- `CPY077` - typing.TypedDict functional syntax deprecated in 3.13, removed in 3.15
 
 - `PPY047` - ctypes.util.find_library() unreliable on PyPy
+- `PPY048` - sys.getsizeof() returns different values on PyPy
+- `PPY049` - GC behavior differs between PyPy and CPython
+- `PPY051` - code.__lnotab__ deprecated on PyPy
+- `PPY052` - importlib.abc resource classes may differ on PyPy
+- `PPY053` - functools.lru_cache thread safety differs on PyPy
 - `pyrift.analysis` - shared AST utilities (imports, calls, scope)
 - Version-guard awareness - imports inside `if sys.version_info >=` not flagged
 - Dynamic import detection - `importlib.import_module()` and `__import__()`
