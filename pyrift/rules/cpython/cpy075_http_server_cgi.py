@@ -42,11 +42,8 @@ class HttpServerCGIHandlerRule(BaseRule):
             if isinstance(n, ast.Name) and n.id == "CGIHTTPRequestHandler":
                 findings.append(self._make(filename, n.lineno, n.col_offset))
 
-            if (isinstance(n, ast.Attribute)
-                    and n.attr == "CGIHTTPRequestHandler"
-                    and isinstance(n.value, ast.Name)
-                    and n.value.id == "http.server"):
-                findings.append(self._make(filename, n.lineno, n.col_offset))
+            # Note: http.server.CGIHTTPRequestHandler via attribute not detectable
+            # (http.server is an ast.Attribute, not ast.Name)
 
         # Deduplicate
         seen: set[tuple[int, int]] = set()

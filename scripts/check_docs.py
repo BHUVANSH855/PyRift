@@ -136,9 +136,35 @@ def get_module_version() -> str | None:
 
 
 def get_readme_rule_ids() -> list[str]:
-    """Return the rule IDs found in the README rule table."""
+    """Return the rule IDs found in the README rule table.
+
+    Validates that the table is within the generated markers and
+    that IDs are unique.
+    """
     content = README.read_text(encoding="utf-8")
-    return re.findall(r"^\| (CPY\d+|PPY\d+) \|", content, re.MULTILINE)
+
+    # Check markers exist
+    if "<!-- BEGIN GENERATED RULE INDEX -->" not in content:
+        raise SystemExit(
+            "README.md is missing <!-- BEGIN GENERATED RULE INDEX --> marker.\n"
+            "Run: python scripts/generate_docs.py"
+        )
+    if "<!-- END GENERATED RULE INDEX -->" not in content:
+        raise SystemExit(
+            "README.md is missing <!-- END GENERATED RULE INDEX --> marker.\n"
+            "Run: python scripts/generate_docs.py"
+        )
+
+    ids = re.findall(r"^\| (CPY\d+|PPY\d+) \|", content, re.MULTILINE)
+
+    # Check for duplicates
+    seen: set[str] = set()
+    for rule_id in ids:
+        if rule_id in seen:
+            raise SystemExit(f"README.md has duplicate rule ID: {rule_id}")
+        seen.add(rule_id)
+
+    return ids
 
 
 def main() -> None:

@@ -16,7 +16,7 @@ class TestCPY047:
             "from collections.abc import ByteString")
         assert len(findings) == 1
         assert findings[0].rule_id == "CPY047"
-        assert findings[0].severity == Severity.ERROR
+        assert findings[0].severity == Severity.WARNING  # deprecated, not yet removed
 
     def test_detects_attribute_access(self):
         findings = run(self.rule,

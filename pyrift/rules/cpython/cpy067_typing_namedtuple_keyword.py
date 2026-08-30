@@ -1,18 +1,20 @@
 """
-CPY067 — typing.NamedTuple keyword-only syntax deprecated in 3.13, removed in 3.15
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Python 3.13 deprecated the keyword argument syntax for typing.NamedTuple
-in favor of the class-based syntax. Python 3.15 removes it entirely.
+CPY067 -- typing.NamedTuple keyword syntax removed in Python 3.15
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The undocumented keyword-argument form of NamedTuple was removed in 3.15:
 
-  # OLD (deprecated 3.13, removed 3.15):
-  Point = typing.NamedTuple('Point', x=int, y=int)
+    NamedTuple("Point", x=int, y=int)   # removed in 3.15
 
-  # NEW (preferred):
-  class Point(typing.NamedTuple):
-      x: int
-      y: int
+The standard functional forms remain valid:
 
-Detects the keyword argument form of typing.NamedTuple().
+    NamedTuple("Point", [("x", int), ("y", int)])  # valid
+    NamedTuple("Point", {"x": int, "y": int})      # valid (2-arg dict form)
+
+The class-based syntax remains valid:
+
+    class Point(NamedTuple):
+        x: int
+        y: int
 """
 from __future__ import annotations
 
@@ -20,32 +22,27 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
-from pyrift.targets import TargetConfig
 
 
 class TypingNamedTupleKeywordRule(BaseRule):
     rule_id = "CPY067"
-    title   = "typing.NamedTuple keyword syntax deprecated in 3.13, removed in 3.15"
+    title = "typing.NamedTuple keyword syntax removed in Python 3.15"
     runtime = "cpython"
 
-    def check(
-        self,
-        node: ast.AST,
-        filename: str,
-        target_config: TargetConfig | None = None,
-    ) -> list[Finding]:
+    def check(self, node: ast.AST, filename: str, target_config=None) -> list[Finding]:
         findings: list[Finding] = []
+
         for n in ast.walk(node):
             if not isinstance(n, ast.Call):
                 continue
+
             func = n.func
-            # typing.NamedTuple(...) or NamedTuple(...)
-            is_namedtuple = False
-            if isinstance(func, ast.Name) and func.id == "NamedTuple" or (isinstance(func, ast.Attribute)
-                  and func.attr == "NamedTuple"
-                  and isinstance(func.value, ast.Name)
-                  and func.value.id == "typing"):
-                is_namedtuple = True
+            is_namedtuple = isinstance(func, ast.Name) and func.id == "NamedTuple" or (
+                isinstance(func, ast.Attribute)
+                and func.attr == "NamedTuple"
+                and isinstance(func.value, ast.Name)
+                and func.value.id == "typing"
+            )
 
             if not is_namedtuple:
                 continue
@@ -54,67 +51,39 @@ class TypingNamedTupleKeywordRule(BaseRule):
             if len(n.args) < 1:
                 continue
 
-            # Check for keyword form: NamedTuple('Name', x=int, y=str)
-            has_keyword_fields = any(
-                kw.arg is not None and isinstance(kw.value, ast.Name)
-                for kw in n.keywords
+            # Only flag keyword-argument form: NamedTuple("Point", x=int, y=int)
+            # The list and dict forms remain valid.
+            has_keyword_fields = bool(n.keywords) and not any(
+                kw.arg is None for kw in n.keywords  # exclude **kwargs
             )
-            if has_keyword_fields:
-                findings.append(Finding(
-                    file=filename,
-                    line=n.lineno,
-                    col=n.col_offset,
-                    rule_id=self.rule_id,
-                    title=self.title,
-                    description=(
-                        "typing.NamedTuple() with keyword arguments is deprecated "
-                        "since Python 3.13 and will be removed in Python 3.15. "
-                        "The functional form NamedTuple('Name', x=int) must be "
-                        "replaced with the class-based syntax."
-                    ),
-                    severity=Severity.WARNING,
-                    runtime=Runtime.CPYTHON,
-                    affected_from="3.13",
-                    affected_until="3.14",
-                    suggestion=(
-                        "Convert to class-based syntax:\n"
-                        "  class Point(typing.NamedTuple):\n"
-                        "      x: int\n"
-                        "      y: int"
-                    ),
-                    docs_url="https://docs.python.org/3/whatsnew/3.13.html",
-                ))
 
-            # Check for dict form: NamedTuple('Name', {'x': int, 'y': str})
-            if (len(n.args) >= 2
-                    and isinstance(n.args[1], ast.Dict)
-                    and not n.keywords):
-                has_dict_type_values = any(
-                    isinstance(v, ast.Name) for v in n.args[1].values
-                )
-                if has_dict_type_values:
-                    findings.append(Finding(
-                        file=filename,
-                        line=n.lineno,
-                        col=n.col_offset,
-                        rule_id=self.rule_id,
-                        title=self.title,
-                        description=(
-                            "typing.NamedTuple() with dict argument is deprecated "
-                            "since Python 3.13 and will be removed in Python 3.15. "
-                            "The functional form NamedTuple('Name', {'x': int}) "
-                            "must be replaced with the class-based syntax."
-                        ),
-                        severity=Severity.WARNING,
-                        runtime=Runtime.CPYTHON,
-                        affected_from="3.13",
-                        affected_until="3.14",
-                        suggestion=(
-                            "Convert to class-based syntax:\n"
-                            "  class Point(typing.NamedTuple):\n"
-                            "      x: int\n"
-                            "      y: int"
-                        ),
-                        docs_url="https://docs.python.org/3/whatsnew/3.13.html",
-                    ))
+            if not has_keyword_fields:
+                continue
+
+            findings.append(Finding(
+                file=filename,
+                line=n.lineno,
+                col=n.col_offset,
+                rule_id=self.rule_id,
+                title=self.title,
+                description=(
+                    "The keyword-argument form of NamedTuple "
+                    "NamedTuple('Point', x=int, y=int) was removed in "
+                    "Python 3.15. Use the class syntax or list form."
+                ),
+                severity=Severity.ERROR,
+                runtime=Runtime.CPYTHON,
+                affected_from="3.15",
+                suggestion=(
+                    "class Point(NamedTuple):\\n"
+                    "    x: int\\n"
+                    "    y: int\\n"
+                    "or: NamedTuple('Point', [('x', int), ('y', int)])"
+                ),
+                docs_url=(
+                    "https://docs.python.org/3/library/typing.html"
+                    "#typing.NamedTuple"
+                ),
+            ))
+
         return findings
