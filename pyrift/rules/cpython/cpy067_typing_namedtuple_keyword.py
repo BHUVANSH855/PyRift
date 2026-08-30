@@ -29,7 +29,7 @@ class TypingNamedTupleKeywordRule(BaseRule):
     title = "typing.NamedTuple keyword syntax removed in Python 3.15"
     runtime = "cpython"
 
-    def check(self, node: ast.AST, filename: str) -> list[Finding]:
+    def check(self, node: ast.AST, filename: str, target_config=None) -> list[Finding]:
         findings: list[Finding] = []
 
         for n in ast.walk(node):
