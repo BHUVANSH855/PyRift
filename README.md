@@ -562,7 +562,7 @@ Lists the compatibility rules and their documented behavior.
 
 - **Version:** 0.8.0
 - **Rules:** 118 total (70 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1227 passing
+- **Tests:** 1234 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 

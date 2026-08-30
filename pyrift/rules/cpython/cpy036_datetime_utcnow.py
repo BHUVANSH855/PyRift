@@ -16,9 +16,49 @@ from pyrift.targets import TargetConfig
 
 class DatetimeUtcnowRule(BaseRule):
     rule_id = "CPY036"
-    title   = "datetime.utcnow() deprecated since Python 3.12"
+    title = "datetime.utcnow() deprecated since Python 3.12"
     runtime = "cpython"
     severity = Severity.WARNING
+
+    @staticmethod
+    def _datetime_module_names(node: ast.Module) -> set[str]:
+        """Return names bound to the datetime module."""
+        names: set[str] = set()
+
+        for statement in node.body:
+            if not isinstance(statement, ast.Import):
+                continue
+
+            for alias in statement.names:
+                if alias.name == "datetime":
+                    names.add(alias.asname or "datetime")
+
+        return names
+
+    @staticmethod
+    def _is_datetime_utcnow_call(
+        call: ast.Call,
+        datetime_names: set[str],
+    ) -> bool:
+        func = call.func
+
+        if not isinstance(func, ast.Attribute):
+            return False
+
+        if func.attr != "utcnow":
+            return False
+
+        receiver = func.value
+
+        return (
+            isinstance(receiver, ast.Attribute)
+            and receiver.attr == "datetime"
+            and isinstance(receiver.value, ast.Name)
+            and (
+                receiver.value.id in datetime_names
+                or receiver.value.id == "datetime"
+            )
+        )
 
     def check(
         self,
@@ -26,17 +66,27 @@ class DatetimeUtcnowRule(BaseRule):
         filename: str,
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
+        if not isinstance(node, ast.Module):
+            return []
+
+        datetime_names = self._datetime_module_names(node)
         findings: list[Finding] = []
-        for n in ast.walk(node):
-            if not isinstance(n, ast.Call):
+
+        for current in ast.walk(node):
+            if not isinstance(current, ast.Call):
                 continue
-            func = n.func
-            if (isinstance(func, ast.Attribute) and
-                    func.attr == "utcnow"):
-                findings.append(Finding(
+
+            if not self._is_datetime_utcnow_call(
+                current,
+                datetime_names,
+            ):
+                continue
+
+            findings.append(
+                Finding(
                     file=filename,
-                    line=n.lineno,
-                    col=n.col_offset,
+                    line=current.lineno,
+                    col=current.col_offset,
                     rule_id=self.rule_id,
                     title=self.title,
                     description=(
@@ -46,7 +96,7 @@ class DatetimeUtcnowRule(BaseRule):
                         "easy to confuse with local time. It will be removed "
                         "in a future Python version."
                     ),
-                    severity=Severity.WARNING,
+                    severity=self.severity,
                     runtime=Runtime.CPYTHON,
                     affected_from="3.12",
                     suggestion=(
@@ -58,5 +108,7 @@ class DatetimeUtcnowRule(BaseRule):
                         "https://docs.python.org/3/library/datetime.html"
                         "#datetime.datetime.utcnow"
                     ),
-                ))
+                )
+            )
+
         return findings
