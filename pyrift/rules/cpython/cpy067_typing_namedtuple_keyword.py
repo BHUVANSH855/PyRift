@@ -41,9 +41,7 @@ class TypingNamedTupleKeywordRule(BaseRule):
             func = n.func
             # typing.NamedTuple(...) or NamedTuple(...)
             is_namedtuple = False
-            if isinstance(func, ast.Name) and func.id == "NamedTuple":
-                is_namedtuple = True
-            elif (isinstance(func, ast.Attribute)
+            if isinstance(func, ast.Name) and func.id == "NamedTuple" or (isinstance(func, ast.Attribute)
                   and func.attr == "NamedTuple"
                   and isinstance(func.value, ast.Name)
                   and func.value.id == "typing"):

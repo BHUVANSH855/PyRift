@@ -79,8 +79,12 @@ from .rules.cpython.cpy064_ast_deprecated_nodes import AstDeprecatedNodesRule
 from .rules.cpython.cpy065_pkgutil_find_loader import PkgutilFindLoaderRule
 from .rules.cpython.cpy066_asyncio_child_watcher import AsyncioChildWatcherRule
 from .rules.cpython.cpy067_typing_namedtuple_keyword import TypingNamedTupleKeywordRule
-from .rules.cpython.cpy068_typing_no_type_check_decorator import TypingNoTypeCheckDecoratorRule
-from .rules.cpython.cpy069_asyncio_iscoroutinefunction import AsyncioIscoroutinefunctionRule
+from .rules.cpython.cpy068_typing_no_type_check_decorator import (
+    TypingNoTypeCheckDecoratorRule,
+)
+from .rules.cpython.cpy069_asyncio_iscoroutinefunction import (
+    AsyncioIscoroutinefunctionRule,
+)
 from .rules.cpython.cpy070_asyncio_event_loop_policy import AsyncioEventLoopPolicyRule
 from .rules.cpython.cpy071_pty_master_slave_open import PtyMasterSlaveOpenRule
 from .rules.cpython.cpy072_importlib_abc_resource import ImportlibAbcResourceRule
@@ -88,7 +92,9 @@ from .rules.cpython.cpy073_sqlite3_version import Sqlite3VersionRemovedRule
 from .rules.cpython.cpy074_co_lnotab_deprecated import CoLnotabDeprecatedRule
 from .rules.cpython.cpy075_http_server_cgi import HttpServerCGIHandlerRule
 from .rules.cpython.cpy076_ssl_wrap_socket import SslWrapSocketRule
-from .rules.cpython.cpy077_typing_typeddict_functional import TypingTypedDictFunctionalRule
+from .rules.cpython.cpy077_typing_typeddict_functional import (
+    TypingTypedDictFunctionalRule,
+)
 from .rules.pypy.ppy001_gc_finalizer import GcFinalizerRule
 from .rules.pypy.ppy002_ctypes import CtypesRule
 from .rules.pypy.ppy003_getrefcount import GetRefcountRule

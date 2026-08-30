@@ -46,11 +46,11 @@ class AstDeprecatedNodesRule(BaseRule):
                 findings.append(self._make(filename, n.id, n.lineno, n.col_offset))
 
             # ast.Num — Attribute access pattern: ast.Num, ast.Str, etc.
-            if isinstance(n, ast.Attribute):
-                if (isinstance(n.value, ast.Name)
-                        and n.value.id == "ast"
-                        and n.attr in _DEPRECATED_AST_NODES):
-                    findings.append(self._make(filename, n.attr, n.lineno, n.col_offset))
+            if (isinstance(n, ast.Attribute)
+                    and isinstance(n.value, ast.Name)
+                    and n.value.id == "ast"
+                    and n.attr in _DEPRECATED_AST_NODES):
+                findings.append(self._make(filename, n.attr, n.lineno, n.col_offset))
 
         # Deduplicate by (line, col)
         seen: set[tuple[int, int]] = set()

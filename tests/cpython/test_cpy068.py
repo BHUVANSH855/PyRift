@@ -2,7 +2,9 @@ import ast
 import textwrap
 
 from pyrift.finding import Severity
-from pyrift.rules.cpython.cpy068_typing_no_type_check_decorator import TypingNoTypeCheckDecoratorRule
+from pyrift.rules.cpython.cpy068_typing_no_type_check_decorator import (
+    TypingNoTypeCheckDecoratorRule,
+)
 
 
 def parse(src): return ast.parse(textwrap.dedent(src))

@@ -38,9 +38,7 @@ class TypingTypedDictFunctionalRule(BaseRule):
             func = n.func
             # TypedDict(...) or typing.TypedDict(...)
             is_typeddict = False
-            if isinstance(func, ast.Name) and func.id == "TypedDict":
-                is_typeddict = True
-            elif (isinstance(func, ast.Attribute)
+            if isinstance(func, ast.Name) and func.id == "TypedDict" or (isinstance(func, ast.Attribute)
                   and func.attr == "TypedDict"
                   and isinstance(func.value, ast.Name)
                   and func.value.id == "typing"):

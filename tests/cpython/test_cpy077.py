@@ -2,7 +2,9 @@ import ast
 import textwrap
 
 from pyrift.finding import Severity
-from pyrift.rules.cpython.cpy077_typing_typeddict_functional import TypingTypedDictFunctionalRule
+from pyrift.rules.cpython.cpy077_typing_typeddict_functional import (
+    TypingTypedDictFunctionalRule,
+)
 
 
 def parse(src): return ast.parse(textwrap.dedent(src))

@@ -36,9 +36,8 @@ class ImportlibAbcPyPyRule(BaseRule):
         imp_map = collect_imports(node)
 
         for info in imp_map.by_statement():
-            if info.module == "importlib.abc":
-                if info.name in _RESOURCE_CLASSES:
-                        findings.append(Finding(
+            if info.module == "importlib.abc" and info.name in _RESOURCE_CLASSES:
+                findings.append(Finding(
                             file=filename, line=info.line, col=info.col,
                             rule_id=self.rule_id, title=self.title,
                             description=(

@@ -2,7 +2,9 @@ import ast
 import textwrap
 
 from pyrift.finding import Severity
-from pyrift.rules.cpython.cpy070_asyncio_event_loop_policy import AsyncioEventLoopPolicyRule
+from pyrift.rules.cpython.cpy070_asyncio_event_loop_policy import (
+    AsyncioEventLoopPolicyRule,
+)
 
 
 def parse(src): return ast.parse(textwrap.dedent(src))

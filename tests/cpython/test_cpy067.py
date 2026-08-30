@@ -2,7 +2,9 @@ import ast
 import textwrap
 
 from pyrift.finding import Severity
-from pyrift.rules.cpython.cpy067_typing_namedtuple_keyword import TypingNamedTupleKeywordRule
+from pyrift.rules.cpython.cpy067_typing_namedtuple_keyword import (
+    TypingNamedTupleKeywordRule,
+)
 
 
 def parse(src): return ast.parse(textwrap.dedent(src))

@@ -28,11 +28,11 @@ class LruCacheThreadSafetyRule(BaseRule):
     def _is_lru_cache(self, node: ast.expr) -> bool:
         """Return True if the node represents functools.lru_cache or lru_cache."""
         # @functools.lru_cache (no parens) — Attribute node in decorator_list
-        if isinstance(node, ast.Attribute):
-            if (node.attr == "lru_cache"
-                    and isinstance(node.value, ast.Name)
-                    and node.value.id == "functools"):
-                return True
+        if (isinstance(node, ast.Attribute)
+                and node.attr == "lru_cache"
+                and isinstance(node.value, ast.Name)
+                and node.value.id == "functools"):
+            return True
         # @lru_cache (no parens) — Name node in decorator_list
         if isinstance(node, ast.Name) and node.id == "lru_cache":
             return True

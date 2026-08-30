@@ -2,7 +2,9 @@ import ast
 import textwrap
 
 from pyrift.finding import Severity
-from pyrift.rules.cpython.cpy069_asyncio_iscoroutinefunction import AsyncioIscoroutinefunctionRule
+from pyrift.rules.cpython.cpy069_asyncio_iscoroutinefunction import (
+    AsyncioIscoroutinefunctionRule,
+)
 
 
 def parse(src): return ast.parse(textwrap.dedent(src))

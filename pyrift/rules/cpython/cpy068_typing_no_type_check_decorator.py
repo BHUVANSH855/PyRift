@@ -55,9 +55,11 @@ class TypingNoTypeCheckDecoratorRule(BaseRule):
                         ))
 
             # @typing.no_type_check_decorator usage
-            if isinstance(n, ast.Attribute) and n.attr == "no_type_check_decorator":
-                if isinstance(n.value, ast.Name) and n.value.id == "typing":
-                    findings.append(Finding(
+            if (isinstance(n, ast.Attribute)
+                    and n.attr == "no_type_check_decorator"
+                    and isinstance(n.value, ast.Name)
+                    and n.value.id == "typing"):
+                findings.append(Finding(
                         file=filename, line=n.lineno, col=n.col_offset,
                         rule_id=self.rule_id, title=self.title,
                         description=(
