@@ -40,44 +40,164 @@ class GcBehaviorRule(BaseRule):
     )
 
     @staticmethod
-    def _gc_bindings(node: ast.AST) -> set[str]:
-        """Return names that are definitely bound to the stdlib gc module."""
-        bindings: set[str] = set()
+    def _scope_bindings(
+        body: list[ast.stmt],
+    ) -> tuple[set[str], set[str]]:
+        """
+        Return (gc_imports, local_bindings) for one lexical scope.
 
-        for current in ast.walk(node):
-            if isinstance(current, ast.Import):
-                for alias in current.names:
+        Nested functions, classes, and lambdas are separate scopes and are
+        intentionally excluded from this analysis.
+        """
+        gc_imports: set[str] = set()
+        local_bindings: set[str] = set()
+
+        def visit(node: ast.AST) -> None:
+            if isinstance(
+                node,
+                (
+                    ast.FunctionDef,
+                    ast.AsyncFunctionDef,
+                    ast.ClassDef,
+                    ast.Lambda,
+                ),
+            ):
+                return
+
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    name = alias.asname or alias.name.split(".", 1)[0]
+                    local_bindings.add(name)
+
                     if alias.name == "gc":
-                        bindings.add(alias.asname or "gc")
+                        gc_imports.add(name)
 
-            elif isinstance(current, ast.ImportFrom):
-                # ``from gc import collect`` binds the imported function, not
-                # the gc module, so it must not make the local name a module
-                # binding.
-                continue
+            elif isinstance(node, ast.ImportFrom):
+                for alias in node.names:
+                    if alias.name == "*":
+                        continue
+                    local_bindings.add(alias.asname or alias.name)
 
-        return bindings
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    for child in ast.walk(target):
+                        if isinstance(child, ast.Name):
+                            local_bindings.add(child.id)
 
-    def check(
+            elif isinstance(
+                node,
+                (ast.AnnAssign, ast.AugAssign, ast.For, ast.AsyncFor),
+            ):
+                for child in ast.walk(node.target):
+                    if isinstance(child, ast.Name):
+                        local_bindings.add(child.id)
+
+            elif isinstance(node, (ast.With, ast.AsyncWith)):
+                for item in node.items:
+                    if item.optional_vars is not None:
+                        for child in ast.walk(item.optional_vars):
+                            if isinstance(child, ast.Name):
+                                local_bindings.add(child.id)
+
+            elif isinstance(node, ast.NamedExpr):
+                local_bindings.add(node.target.id)
+
+            elif isinstance(node, ast.ExceptHandler) and node.name:
+                local_bindings.add(node.name)
+
+            for child in ast.iter_child_nodes(node):
+                visit(child)
+
+        for statement in body:
+            visit(statement)
+
+        return gc_imports, local_bindings
+
+    @classmethod
+    def _gc_name_for_scope(
+        cls,
+        body: list[ast.stmt],
+        inherited_gc_name: str | None = None,
+    ) -> str | None:
+        """
+        Return the gc-module binding for one lexical scope.
+
+        A local binding always shadows an inherited binding.  Only an
+        explicit ``import gc`` or ``import gc as alias`` establishes a
+        module binding in the current scope.
+        """
+        gc_imports, local_bindings = cls._scope_bindings(body)
+
+        if inherited_gc_name is not None:
+            if inherited_gc_name in local_bindings:
+                if inherited_gc_name in gc_imports:
+                    return inherited_gc_name
+                return None
+
+            return inherited_gc_name
+
+        for name in gc_imports:
+            if name in local_bindings:
+                return name
+
+        return None
+
+    @staticmethod
+    def _scope_body(
+        body: list[ast.stmt],
+    ) -> list[ast.AST]:
+        """
+        Return nodes belonging to this lexical scope.
+
+        Nested functions, classes, and lambdas are separate scopes and are
+        deliberately not traversed.
+        """
+        result: list[ast.AST] = []
+
+        def visit(node: ast.AST) -> None:
+            if isinstance(
+                node,
+                (
+                    ast.FunctionDef,
+                    ast.AsyncFunctionDef,
+                    ast.ClassDef,
+                    ast.Lambda,
+                ),
+            ):
+                return
+
+            result.append(node)
+
+            for child in ast.iter_child_nodes(node):
+                visit(child)
+
+        for statement in body:
+            visit(statement)
+
+        return result
+
+    def _findings_in_scope(
         self,
-        node: ast.AST,
+        body: list[ast.stmt],
+        gc_name: str | None,
         filename: str,
-        target_config: TargetConfig | None = None,
     ) -> list[Finding]:
-        findings: list[Finding] = []
-        gc_bindings = self._gc_bindings(node)
+        if gc_name is None:
+            return []
 
-        for current in ast.walk(node):
+        findings: list[Finding] = []
+
+        for current in self._scope_body(body):
             if not isinstance(current, ast.Call):
                 continue
 
             func = current.func
 
-            if (
-                not isinstance(func, ast.Attribute)
-                or not isinstance(func.value, ast.Name)
-                or func.value.id not in gc_bindings
-                or func.attr not in self._GC_FUNCTIONS
+            if not (
+                isinstance(func, ast.Attribute)
+                and isinstance(func.value, ast.Name)
+                and func.value.id == gc_name
+                and func.attr in self._GC_FUNCTIONS
             ):
                 continue
 
@@ -116,7 +236,7 @@ class GcBehaviorRule(BaseRule):
                     rule_id=self.rule_id,
                     title=self.title,
                     description=description,
-                    severity=Severity.WARNING,
+                    severity=self.severity,
                     runtime=Runtime.PYPY,
                     suggestion=suggestion,
                     docs_url=(
@@ -125,5 +245,69 @@ class GcBehaviorRule(BaseRule):
                     ),
                 )
             )
+
+        return findings
+
+    def _scan_function(
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        module_gc_name: str | None,
+        filename: str,
+    ) -> list[Finding]:
+        local_gc_name = self._gc_name_for_scope(
+            node.body,
+            inherited_gc_name=module_gc_name,
+        )
+
+        findings = self._findings_in_scope(
+            node.body,
+            local_gc_name,
+            filename,
+        )
+
+        for statement in node.body:
+            if isinstance(
+                statement,
+                (ast.FunctionDef, ast.AsyncFunctionDef),
+            ):
+                findings.extend(
+                    self._scan_function(
+                        statement,
+                        local_gc_name,
+                        filename,
+                    )
+                )
+
+        return findings
+
+    def check(
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
+        if not isinstance(node, ast.Module):
+            return []
+
+        module_gc_name = self._gc_name_for_scope(node.body)
+
+        findings = self._findings_in_scope(
+            node.body,
+            module_gc_name,
+            filename,
+        )
+
+        for statement in node.body:
+            if isinstance(
+                statement,
+                (ast.FunctionDef, ast.AsyncFunctionDef),
+            ):
+                findings.extend(
+                    self._scan_function(
+                        statement,
+                        module_gc_name,
+                        filename,
+                    )
+                )
 
         return findings
