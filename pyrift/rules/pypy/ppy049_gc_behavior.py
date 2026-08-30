@@ -25,6 +25,38 @@ class GcBehaviorRule(BaseRule):
     title = "GC behavior differs between PyPy and CPython"
     runtime = "pypy"
 
+    _GC_FUNCTIONS = frozenset(
+        {
+            "collect",
+            "get_objects",
+            "get_count",
+            "set_threshold",
+            "get_referrers",
+            "get_referents",
+            "disable",
+            "enable",
+        }
+    )
+
+    @staticmethod
+    def _gc_bindings(node: ast.AST) -> set[str]:
+        """Return names that are definitely bound to the stdlib gc module."""
+        bindings: set[str] = set()
+
+        for current in ast.walk(node):
+            if isinstance(current, ast.Import):
+                for alias in current.names:
+                    if alias.name == "gc":
+                        bindings.add(alias.asname or "gc")
+
+            elif isinstance(current, ast.ImportFrom):
+                # ``from gc import collect`` binds the imported function, not
+                # the gc module, so it must not make the local name a module
+                # binding.
+                continue
+
+        return bindings
+
     def check(
         self,
         node: ast.AST,
@@ -32,15 +64,7 @@ class GcBehaviorRule(BaseRule):
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
         findings: list[Finding] = []
-
-        gc_functions = {
-            "collect",
-            "get_objects",
-            "get_count",
-            "set_threshold",
-            "get_referrers",
-            "get_referents",
-        }
+        gc_bindings = self._gc_bindings(node)
 
         for current in ast.walk(node):
             if not isinstance(current, ast.Call):
@@ -49,72 +73,56 @@ class GcBehaviorRule(BaseRule):
             func = current.func
 
             if (
-                isinstance(func, ast.Attribute)
-                and isinstance(func.value, ast.Name)
-                and func.value.id == "gc"
-                and func.attr in gc_functions
+                not isinstance(func, ast.Attribute)
+                or not isinstance(func.value, ast.Name)
+                or func.value.id not in gc_bindings
+                or func.attr not in self._GC_FUNCTIONS
             ):
-                findings.append(
-                    Finding(
-                        file=filename,
-                        line=current.lineno,
-                        col=current.col_offset,
-                        rule_id=self.rule_id,
-                        title=self.title,
-                        description=(
-                            f"gc.{func.attr}() behaves differently on PyPy. "
-                            "PyPy uses a generational GC with different "
-                            "thresholds and collection strategies. "
-                            "gc.collect() may trigger different objects to "
-                            "be collected, and gc.get_objects() returns "
-                            "different counts."
-                        ),
-                        severity=Severity.WARNING,
-                        runtime=Runtime.PYPY,
-                        suggestion=(
-                            "Do not rely on deterministic GC timing or exact "
-                            "gc.get_objects() counts. For memory management, "
-                            "use context managers and explicit cleanup instead."
-                        ),
-                        docs_url=(
-                            "https://doc.pypy.org/en/latest/"
-                            "cpython_differences.html"
-                        ),
-                    )
-                )
                 continue
 
-            if (
-                isinstance(func, ast.Attribute)
-                and isinstance(func.value, ast.Name)
-                and func.value.id == "gc"
-                and func.attr in {"disable", "enable"}
-            ):
-                findings.append(
-                    Finding(
-                        file=filename,
-                        line=current.lineno,
-                        col=current.col_offset,
-                        rule_id=self.rule_id,
-                        title=self.title,
-                        description=(
-                            f"gc.{func.attr}() has different effects on PyPy. "
-                            "PyPy's GC is less dependent on reference counting, "
-                            "so disabling GC may not prevent collection as "
-                            "expected."
-                        ),
-                        severity=Severity.WARNING,
-                        runtime=Runtime.PYPY,
-                        suggestion=(
-                            "Avoid relying on gc.disable()/enable() for "
-                            "controlling object lifetime. Use weak references "
-                            "or explicit cleanup patterns instead."
-                        ),
-                        docs_url=(
-                            "https://doc.pypy.org/en/latest/"
-                            "cpython_differences.html"
-                        ),
-                    )
+            if func.attr in {"disable", "enable"}:
+                description = (
+                    f"gc.{func.attr}() has different effects on PyPy. "
+                    "PyPy's GC is less dependent on reference counting, "
+                    "so disabling GC may not prevent collection as "
+                    "expected."
                 )
+                suggestion = (
+                    "Avoid relying on gc.disable()/enable() for "
+                    "controlling object lifetime. Use weak references "
+                    "or explicit cleanup patterns instead."
+                )
+            else:
+                description = (
+                    f"gc.{func.attr}() behaves differently on PyPy. "
+                    "PyPy uses a generational GC with different "
+                    "thresholds and collection strategies. "
+                    "gc.collect() may trigger different objects to "
+                    "be collected, and gc.get_objects() returns "
+                    "different counts."
+                )
+                suggestion = (
+                    "Do not rely on deterministic GC timing or exact "
+                    "gc.get_objects() counts. For memory management, "
+                    "use context managers and explicit cleanup instead."
+                )
+
+            findings.append(
+                Finding(
+                    file=filename,
+                    line=current.lineno,
+                    col=current.col_offset,
+                    rule_id=self.rule_id,
+                    title=self.title,
+                    description=description,
+                    severity=Severity.WARNING,
+                    runtime=Runtime.PYPY,
+                    suggestion=suggestion,
+                    docs_url=(
+                        "https://doc.pypy.org/en/latest/"
+                        "cpython_differences.html"
+                    ),
+                )
+            )
 
         return findings

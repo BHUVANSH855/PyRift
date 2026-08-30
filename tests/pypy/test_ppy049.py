@@ -56,6 +56,31 @@ class TestPPY049:
 
         assert len(findings) == 0
 
+    def test_detects_gc_import_alias(self):
+        findings = run(
+            self.rule,
+            "import gc as garbage\ngarbage.collect()",
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "PPY049"
+
+    def test_does_not_detect_shadowed_gc_name(self):
+        findings = run(
+            self.rule,
+            "gc = object()\ngc.collect()",
+        )
+
+        assert len(findings) == 0
+
+    def test_does_not_detect_non_gc_import_aliased_as_gc(self):
+        findings = run(
+            self.rule,
+            "import other as gc\ngc.collect()",
+        )
+
+        assert len(findings) == 0
+
     def test_suggestion_mentions_cleanup(self):
         findings = run(self.rule, "import gc\ngc.collect()")
 

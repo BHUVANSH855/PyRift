@@ -10,7 +10,7 @@ import ast
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from .finding import Finding
+from .finding import Finding, Severity
 
 if TYPE_CHECKING:  # pragma: no cover
     from .targets import TargetConfig
@@ -23,6 +23,7 @@ class BaseRule(ABC):
     title: str = ""
     runtime: str = "both"
     category: str = "compatibility"
+    severity: Severity = Severity.WARNING
 
     @abstractmethod
     def check(
