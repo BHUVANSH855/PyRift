@@ -27,6 +27,7 @@ class CtypesRule(BaseRule):
     rule_id = "PPY002"
     title   = "ctypes usage may silently fail on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

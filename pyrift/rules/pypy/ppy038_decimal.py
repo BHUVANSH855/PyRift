@@ -27,6 +27,7 @@ class DecimalBackendRule(BaseRule):
     rule_id = "PPY038"
     title   = "decimal module uses different backend on PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     def check(
         self,

@@ -13,6 +13,7 @@ class LiteralStringRule(BaseRule):
     rule_id = "CPY012"
     title = "typing.LiteralString requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

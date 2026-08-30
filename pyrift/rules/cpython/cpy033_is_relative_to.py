@@ -17,6 +17,7 @@ class IsRelativeToRule(BaseRule):
     rule_id = "CPY033"
     title   = "pathlib.Path.is_relative_to() requires Python 3.9+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def _is_version_guarded(self, node: ast.AST, tree: ast.AST) -> bool:
         """Return True if *node* is inside a sys.version_info >= (3, 9) guard."""

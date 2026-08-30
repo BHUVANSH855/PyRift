@@ -19,6 +19,7 @@ class NanIdentityRule(BaseRule):
     rule_id = "PPY019"
     title   = "float('nan') identity differs between CPython and PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

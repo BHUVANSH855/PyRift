@@ -17,6 +17,7 @@ class ModuleAttrDeleteRule(BaseRule):
     rule_id = "PPY027"
     title = "Deleting module/class attributes may be slower on PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     def check(
             self,

@@ -19,6 +19,7 @@ class ArrayTypeCodeRule(BaseRule):
     rule_id = "PPY011"
     title   = "array.array('u') type code removed in Python 3.13"
     runtime = "both"
+    severity = Severity.ERROR
 
     def check(
         self,

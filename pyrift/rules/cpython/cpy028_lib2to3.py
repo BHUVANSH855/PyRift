@@ -13,6 +13,7 @@ class Lib2to3Rule(BaseRule):
     rule_id = "CPY028"
     title = "lib2to3 removed in Python 3.13"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

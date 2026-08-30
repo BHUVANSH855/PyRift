@@ -23,6 +23,7 @@ class CoLnotabDeprecatedRule(BaseRule):
     rule_id = "CPY074"
     title   = "code.__lnotab__ deprecated since Python 3.10 (PEP 626)"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

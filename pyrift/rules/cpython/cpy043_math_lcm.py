@@ -17,6 +17,7 @@ class MathLcmRule(BaseRule):
     rule_id = "CPY043"
     title   = "math.lcm() requires Python 3.9+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -85,6 +85,7 @@ class PickleProtocolRule(BaseRule):
     rule_id = "CPY057"
     title = "pickle default protocol changed to 5 in Python 3.14"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

@@ -19,6 +19,7 @@ class SlotsDictRule(BaseRule):
     rule_id = "CPY008"
     title   = "__slots__ may not prevent __dict__ on Python < 3.10"
     runtime = "cpython"
+    severity = Severity.INFO
 
     def check(
         self,

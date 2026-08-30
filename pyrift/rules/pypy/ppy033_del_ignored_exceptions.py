@@ -20,6 +20,7 @@ class DelIgnoredExceptionsRule(BaseRule):
     rule_id = "PPY033"
     title   = "Exceptions in __del__ appear at unpredictable times on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

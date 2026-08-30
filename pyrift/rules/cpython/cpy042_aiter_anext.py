@@ -20,6 +20,7 @@ class AiterAnextRule(BaseRule):
     rule_id = "CPY042"
     title   = "aiter() and anext() builtins require Python 3.10+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

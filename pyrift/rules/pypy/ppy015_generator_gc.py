@@ -19,6 +19,7 @@ class GeneratorGCRule(BaseRule):
     rule_id = "PPY015"
     title   = "Generator cleanup timing differs on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

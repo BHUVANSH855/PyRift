@@ -22,6 +22,7 @@ class SslWrapSocketRule(BaseRule):
     rule_id = "CPY076"
     title   = "ssl.wrap_socket() removed in Python 3.12"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

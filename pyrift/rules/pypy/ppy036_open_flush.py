@@ -19,6 +19,7 @@ class OpenFlushRule(BaseRule):
     rule_id = "PPY036"
     title   = "open() line buffering behaves differently on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

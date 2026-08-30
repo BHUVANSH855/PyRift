@@ -20,6 +20,7 @@ class OsForkRule(BaseRule):
     rule_id = "PPY039"
     title   = "os.fork() may not work correctly on all PyPy platforms"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

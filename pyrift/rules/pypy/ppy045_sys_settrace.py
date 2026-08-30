@@ -20,6 +20,7 @@ class SysSettraceRule(BaseRule):
     rule_id = "PPY045"
     title   = "sys.settrace() disables JIT and is unreliable on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

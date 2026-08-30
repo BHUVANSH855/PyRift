@@ -256,6 +256,7 @@ class FreeThreadedGlobalStateRule(BaseRule):
         "in free-threaded Python"
     )
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

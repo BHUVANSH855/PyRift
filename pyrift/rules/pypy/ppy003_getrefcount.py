@@ -19,6 +19,7 @@ class GetRefcountRule(BaseRule):
     rule_id = "PPY003"
     title   = "sys.getrefcount() is meaningless on PyPy"
     runtime = "pypy"
+    severity = Severity.ERROR
 
     def check(
         self,

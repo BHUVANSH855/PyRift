@@ -17,6 +17,7 @@ class LocaleResetlocaleRule(BaseRule):
     rule_id = "CPY027"
     title   = "locale.resetlocale() removed in Python 3.13"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

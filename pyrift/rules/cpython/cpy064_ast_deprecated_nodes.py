@@ -31,6 +31,7 @@ class AstDeprecatedNodesRule(BaseRule):
     rule_id = "CPY064"
     title   = "Deprecated AST node types removed in Python 3.14"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

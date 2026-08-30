@@ -24,6 +24,7 @@ class BuiltinMonkeyPatchRule(BaseRule):
     rule_id = "PPY006"
     title   = "Monkey-patching built-in types behaves differently on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

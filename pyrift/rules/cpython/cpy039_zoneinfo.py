@@ -18,6 +18,7 @@ class ZoneInfoRule(BaseRule):
     rule_id = "CPY039"
     title = "zoneinfo module requires Python 3.9+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

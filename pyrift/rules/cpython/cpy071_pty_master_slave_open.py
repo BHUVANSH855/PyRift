@@ -26,6 +26,7 @@ class PtyMasterSlaveOpenRule(BaseRule):
     rule_id = "CPY071"
     title   = "pty.master_open()/slave_open() removed in Python 3.14"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

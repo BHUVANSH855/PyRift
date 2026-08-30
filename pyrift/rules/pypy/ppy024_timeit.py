@@ -21,6 +21,7 @@ class TimeitRule(BaseRule):
     rule_id = "PPY024"
     title   = "timeit reports average not minimum on PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     def check(
         self,

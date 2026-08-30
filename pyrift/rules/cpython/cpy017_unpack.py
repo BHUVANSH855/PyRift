@@ -13,6 +13,7 @@ class UnpackRule(BaseRule):
     rule_id = "CPY017"
     title = "typing.Unpack requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

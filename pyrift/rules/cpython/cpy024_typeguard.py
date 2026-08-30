@@ -13,6 +13,7 @@ class TypeGuardRule(BaseRule):
     rule_id = "CPY024"
     title = "typing.TypeGuard requires Python 3.10+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -18,6 +18,7 @@ class DelExistingClassRule(BaseRule):
     rule_id = "PPY017"
     title   = "Adding __del__ to existing class not called on PyPy"
     runtime = "pypy"
+    severity = Severity.ERROR
 
     def check(
         self,

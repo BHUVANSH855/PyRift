@@ -23,6 +23,7 @@ class HttpServerCGIHandlerRule(BaseRule):
     rule_id = "CPY075"
     title   = "http.server.CGIHTTPRequestHandler deprecated in 3.13, removed in 3.15"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

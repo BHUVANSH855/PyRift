@@ -56,6 +56,7 @@ class CtypesFindLibraryRule(BaseRule):
     rule_id = "PPY047"
     title   = "ctypes.util.find_library() unreliable on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

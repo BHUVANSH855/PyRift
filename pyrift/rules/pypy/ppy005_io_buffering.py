@@ -16,6 +16,7 @@ class IoBufferingRule(BaseRule):
     rule_id = "PPY005"
     title = "File write without explicit lifecycle management on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     @staticmethod
     def _is_write_mode(mode: str) -> bool:

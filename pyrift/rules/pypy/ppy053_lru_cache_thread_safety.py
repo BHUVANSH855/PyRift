@@ -24,6 +24,7 @@ class LruCacheThreadSafetyRule(BaseRule):
     rule_id = "PPY053"
     title   = "functools.lru_cache thread safety differs on PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     def _is_lru_cache(self, node: ast.expr) -> bool:
         """Return True if the node represents functools.lru_cache or lru_cache."""

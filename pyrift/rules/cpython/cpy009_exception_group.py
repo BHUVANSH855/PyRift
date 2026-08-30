@@ -19,6 +19,7 @@ class ExceptionGroupRule(BaseRule):
     rule_id = "CPY009"
     title   = "ExceptionGroup requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

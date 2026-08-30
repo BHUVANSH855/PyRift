@@ -18,6 +18,7 @@ class NotImplementedBoolRule(BaseRule):
     rule_id = "CPY055"
     title   = "NotImplemented in boolean context raises TypeError in Python 3.14"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

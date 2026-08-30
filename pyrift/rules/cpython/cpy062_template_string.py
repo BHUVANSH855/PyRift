@@ -13,6 +13,7 @@ class TemplateStringRule(BaseRule):
     rule_id = "CPY062"
     title = "string.templatelib requires Python 3.14+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

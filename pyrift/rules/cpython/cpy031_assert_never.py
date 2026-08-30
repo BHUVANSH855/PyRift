@@ -13,6 +13,7 @@ class AssertNeverRule(BaseRule):
     rule_id = "CPY031"
     title = "typing.assert_never requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

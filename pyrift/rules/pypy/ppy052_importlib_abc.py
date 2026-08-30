@@ -25,6 +25,7 @@ class ImportlibAbcPyPyRule(BaseRule):
     rule_id = "PPY052"
     title   = "importlib.abc resource classes may differ on PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     def check(
         self,

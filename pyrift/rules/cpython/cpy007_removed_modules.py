@@ -33,6 +33,7 @@ class RemovedModulesRule(BaseRule):
     rule_id = "CPY007"
     title   = "Module removed in Python 3.13"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -19,6 +19,7 @@ class GcFinalizerRule(BaseRule):
     rule_id = "PPY001"
     title   = "Relying on __del__ for resource cleanup breaks on PyPy"
     runtime = "pypy"
+    severity = Severity.ERROR
 
     RESOURCE_PATTERNS: ClassVar[set[str]] = {
         "close",

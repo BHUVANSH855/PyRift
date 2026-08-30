@@ -18,6 +18,7 @@ class BoolInversionRule(BaseRule):
     rule_id = "CPY022"
     title   = "Bitwise inversion on bool (~True/~False) deprecated in 3.12"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

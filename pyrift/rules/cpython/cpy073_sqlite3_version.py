@@ -24,6 +24,7 @@ class Sqlite3VersionRemovedRule(BaseRule):
     rule_id = "CPY073"
     title   = "sqlite3.version/version_info removed in Python 3.14"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

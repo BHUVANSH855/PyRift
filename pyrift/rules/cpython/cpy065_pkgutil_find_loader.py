@@ -26,6 +26,7 @@ class PkgutilFindLoaderRule(BaseRule):
     rule_id = "CPY065"
     title   = "pkgutil.find_loader()/get_loader() removed in Python 3.14"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

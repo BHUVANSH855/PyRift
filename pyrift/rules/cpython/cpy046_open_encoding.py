@@ -25,6 +25,7 @@ class OpenEncodingRule(BaseRule):
     rule_id = "CPY046"
     title   = "open() without encoding= uses platform-dependent encoding before 3.15"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def _is_stdstream(self, node: ast.Call) -> bool:
         """Return True if the first argument is sys.stdin/stdout/stderr."""

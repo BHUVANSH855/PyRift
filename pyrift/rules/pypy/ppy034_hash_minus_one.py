@@ -31,6 +31,7 @@ class HashMinusOneRule(BaseRule):
     rule_id = "PPY034"
     title   = "hash() values may differ between CPython and PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     def check(
         self,

@@ -17,6 +17,7 @@ class DatetimeUTCRule(BaseRule):
     rule_id = "CPY020"
     title   = "datetime.UTC requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

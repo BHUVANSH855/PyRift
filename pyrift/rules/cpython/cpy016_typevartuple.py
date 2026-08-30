@@ -13,6 +13,7 @@ class TypeVarTupleRule(BaseRule):
     rule_id = "CPY016"
     title = "typing.TypeVarTuple requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

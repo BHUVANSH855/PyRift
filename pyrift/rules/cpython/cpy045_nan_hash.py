@@ -19,6 +19,7 @@ class NanHashRule(BaseRule):
     rule_id = "CPY045"
     title   = "NaN hash behaviour changed in Python 3.10"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

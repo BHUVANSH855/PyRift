@@ -22,6 +22,7 @@ class TypingNoTypeCheckDecoratorRule(BaseRule):
     rule_id = "CPY068"
     title   = "typing.no_type_check_decorator deprecated in 3.13, removed in 3.15"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

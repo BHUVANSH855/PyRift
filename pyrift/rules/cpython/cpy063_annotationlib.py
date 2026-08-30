@@ -13,6 +13,7 @@ class AnnotationLibRule(BaseRule):
     rule_id = "CPY063"
     title = "annotationlib requires Python 3.14+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

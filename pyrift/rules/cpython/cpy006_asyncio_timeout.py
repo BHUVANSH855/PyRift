@@ -19,6 +19,7 @@ class AsyncioTimeoutRule(BaseRule):
     rule_id = "CPY006"
     title   = "asyncio.timeout() / TaskGroup requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

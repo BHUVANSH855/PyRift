@@ -13,6 +13,7 @@ class TypeAliasRule(BaseRule):
     rule_id = "CPY014"
     title = "typing.TypeAlias requires Python 3.10+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

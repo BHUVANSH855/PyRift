@@ -13,6 +13,7 @@ class TypingSelfRule(BaseRule):
     rule_id = "CPY011"
     title = "typing.Self requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

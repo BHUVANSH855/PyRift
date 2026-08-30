@@ -18,6 +18,7 @@ class TomllibRule(BaseRule):
     rule_id = "CPY004"
     title = "tomllib requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -21,6 +21,7 @@ class GcCollectRule(BaseRule):
     rule_id = "PPY010"
     title   = "gc.collect() behaviour differs on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,
