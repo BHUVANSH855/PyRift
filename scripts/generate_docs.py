@@ -261,21 +261,10 @@ def generate_rules_md() -> None:
 
 def _format_rule_section(rule, rule_metadata) -> list[str]:
     """Format a single rule as a rules.md section."""
-    from pyrift.finding import Finding
-
     meta = rule_metadata.RULE_METADATA.get(rule.rule_id, {})
 
     confidence = meta.get("confidence", "LOW")
-
-    # Get severity from the rule's _make or class default
-    severity = "WARNING"
-    if hasattr(rule, "_make"):
-        severity = Finding(
-            file="<tmp>",
-            line=0,
-            rule_id=rule.rule_id,
-            title=rule.title,
-        ).severity.title()
+    severity = rule.severity.title()
 
     affected = ""
     if hasattr(rule, "affected_from") and rule.affected_from:
