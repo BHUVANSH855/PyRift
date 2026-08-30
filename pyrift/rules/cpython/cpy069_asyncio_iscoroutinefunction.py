@@ -63,8 +63,7 @@ class AsyncioIscoroutinefunctionRule(BaseRule):
             description=(
                 "asyncio.iscoroutinefunction() is deprecated since Python 3.14. "
                 "Use inspect.iscoroutinefunction() instead, which correctly "
-                "handles both native coroutines and coroutines decorated with "
-                "@asyncio.coroutine."
+                "handles both native coroutines and generator-based coroutines."
             ),
             severity=Severity.WARNING,
             runtime=Runtime.CPYTHON,

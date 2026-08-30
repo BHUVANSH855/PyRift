@@ -50,7 +50,15 @@ class PkgutilFindLoaderRule(BaseRule):
                         and func.value.id == "pkgutil"):
                     findings.append(self._make(filename, func.attr, n.lineno, n.col_offset))
 
-        return findings
+        # Deduplicate
+        seen: set[tuple[int, int]] = set()
+        unique: list[Finding] = []
+        for f in findings:
+            key = (f.line, f.col)
+            if key not in seen:
+                seen.add(key)
+                unique.append(f)
+        return unique
 
     def _make(self, filename: str, func_name: str, line: int, col: int) -> Finding:
         return Finding(

@@ -154,7 +154,7 @@ def test_scan_reports_rule_execution_errors(tmp_path):
     class BrokenRule:
         rule_id = "TEST-BROKEN"
 
-        def check(self, node, filename):
+        def check(self, node, filename, target_config=None):
             raise RuntimeError("boom")
 
     (tmp_path / "sample.py").write_text("x = 1\n")

@@ -41,6 +41,13 @@ class ImportlibAbcResourceRule(BaseRule):
                     if alias.name in _REMOVED_CLASSES:
                         findings.append(self._make(filename, alias.name, n.lineno, n.col_offset))
 
+            # from importlib import abc; abc.ResourceReader
+            if (isinstance(n, ast.ImportFrom) and n.module == "importlib"):
+                for alias in n.names:
+                    if alias.name == "abc":
+                        # Track attribute access on 'abc' variable
+                        pass  # handled below via ast.walk
+
             # importlib.abc.ResourceReader (attribute access)
             if (isinstance(n, ast.Attribute)
                     and n.attr in _REMOVED_CLASSES

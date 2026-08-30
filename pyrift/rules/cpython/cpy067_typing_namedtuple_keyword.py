@@ -74,10 +74,11 @@ class TypingNamedTupleKeywordRule(BaseRule):
                 severity=Severity.ERROR,
                 runtime=Runtime.CPYTHON,
                 affected_from="3.15",
+                affected_until="3.16",
                 suggestion=(
-                    "class Point(NamedTuple):\\n"
-                    "    x: int\\n"
-                    "    y: int\\n"
+                    "class Point(NamedTuple):\n"
+                    "    x: int\n"
+                    "    y: int\n"
                     "or: NamedTuple('Point', [('x', int), ('y', int)])"
                 ),
                 docs_url=(

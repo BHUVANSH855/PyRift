@@ -7,7 +7,7 @@ Run:
     python scripts/generate_docs.py
 
 The script updates the current README statistics, the rule table,
-and the current CHANGELOG test count so documentation does not
+docs/rules.md, and the current CHANGELOG test count so documentation does not
 silently drift from the repository.
 """
 
@@ -26,6 +26,7 @@ from pyrift.scanner import ALL_RULES
 ROOT = Path(__file__).parent.parent
 README = ROOT / "README.md"
 CHANGELOG = ROOT / "CHANGELOG.md"
+RULES_MD = ROOT / "docs" / "rules.md"
 
 
 def get_test_count() -> int:
@@ -183,6 +184,131 @@ def generate_rule_table() -> str:
     return "\n".join(lines)
 
 
+def generate_rules_md() -> None:
+    """Generate docs/rules.md from ALL_RULES and rule_metadata."""
+    from pyrift import rule_metadata
+
+    all_sorted = sorted(ALL_RULES, key=lambda r: r.rule_id)
+
+    cpy_rules = [r for r in all_sorted if r.runtime == "cpython"]
+    ppy_rules = [r for r in all_sorted if r.runtime == "pypy"]
+    both_rules = [r for r in all_sorted if r.runtime == "both"]
+
+    lines = [
+        "# pyrift — Rule Reference",
+        "",
+        f"Complete documentation for all {len(all_sorted)} pyrift rules.",
+        "",
+        "## Confidence levels",
+        "",
+        "Each finding carries two independent fields:",
+        "",
+        "| Severity | Meaning |",
+        "|---|---|",
+        "| `ERROR` | Silent wrong behaviour — crash or data corruption |",
+        "| `WARNING` | Different behaviour — may or may not matter |",
+        "| `INFO` | Worth knowing — low urgency |",
+        "",
+        "| Confidence | Meaning |",
+        "|---|---|",
+        "| `HIGH` | Backed by official Python/PyPy docs or confirmed runtime probe |",
+        "| `MEDIUM` | Strongly implied by docs or related behaviour |",
+        "| `LOW` | Observed in practice — not formally documented |",
+        "",
+        "Rules with `LOW` confidence are still included because the behaviour is real,",
+        "but you should verify independently before acting on them.",
+        "",
+        "---",
+        "",
+        "## CPython rules — version compatibility",
+        "",
+        "These rules detect code that behaves differently across CPython versions.",
+        "",
+    ]
+
+    for rule in cpy_rules:
+        lines.extend(_format_rule_section(rule, rule_metadata))
+
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## PyPy rules — runtime compatibility",
+        "",
+        "These rules detect code that behaves differently on PyPy vs CPython.",
+        "",
+    ])
+
+    for rule in ppy_rules:
+        lines.extend(_format_rule_section(rule, rule_metadata))
+
+    if both_rules:
+        lines.extend([
+            "",
+            "---",
+            "",
+            "## Cross-runtime rules — CPython & PyPy",
+            "",
+            "These rules apply to both CPython and PyPy.",
+            "",
+        ])
+        for rule in both_rules:
+            lines.extend(_format_rule_section(rule, rule_metadata))
+
+    lines.append("")
+    RULES_MD.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _format_rule_section(rule, rule_metadata) -> list[str]:
+    """Format a single rule as a rules.md section."""
+    from pyrift.finding import Finding, Severity
+
+    meta = rule_metadata.RULE_METADATA.get(rule.rule_id, {})
+
+    confidence = meta.get("confidence", "LOW")
+    evidence_type = meta.get("evidence_type", "INFERRED")
+
+    # Get severity from the rule's _make or class default
+    severity = "WARNING"
+    if hasattr(rule, "_make"):
+        try:
+            tmp = Finding(file="<tmp>", line=0, rule_id=rule.rule_id, title=rule.title)
+            severity = tmp.severity.title
+        except Exception:
+            pass
+
+    affected = ""
+    if hasattr(rule, "affected_from") and rule.affected_from:
+        affected = f" ≥ {rule.affected_from}"
+    if hasattr(rule, "affected_until") and rule.affected_until:
+        affected += f", < {rule.affected_until}"
+
+    runtime_label = {"cpython": "CPython", "pypy": "PyPy", "both": "CPython & PyPy"}.get(rule.runtime, rule.runtime.title())
+
+    lines = [
+        f"### {rule.rule_id} — {rule.title}",
+        "",
+        f"**Severity:** {severity} | **Confidence:** {confidence.title()} | **Affects:** {runtime_label}{affected}",
+        "",
+    ]
+
+    # Add description from the rule's docstring
+    doc = rule.__class__.__doc__ or ""
+    doc_lines = [l.strip() for l in doc.split("\n") if l.strip()]
+    if len(doc_lines) > 1:
+        desc_lines = []
+        for dl in doc_lines[1:]:
+            if dl.startswith("---") or dl.startswith("Detects:"):
+                break
+            desc_lines.append(dl)
+        if desc_lines:
+            lines.append(" ".join(desc_lines))
+            lines.append("")
+
+    lines.append("---")
+    return lines
+
+
 def main() -> None:
     rules = pyrift.ALL_RULES
 
@@ -269,6 +395,10 @@ def main() -> None:
 
     print("README.md updated.")
     print("CHANGELOG.md updated.")
+
+    # Generate docs/rules.md
+    generate_rules_md()
+    print("docs/rules.md updated.")
 
 
 if __name__ == "__main__":

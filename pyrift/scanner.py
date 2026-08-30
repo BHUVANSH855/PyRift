@@ -16,8 +16,7 @@ from pathlib import Path
 from .base_rule import BaseRule
 from .finding import Finding, Runtime
 
-# Cache which rules accept target_config to avoid repeated inspect.signature() calls
-_ACCEPTS_TARGET_CONFIG: set[int] = set()
+# All rules accept target_config (default=None). No per-rule introspection needed.
 from .rules.cpython.cpy001_dict_ordering import DictOrderingRule
 from .rules.cpython.cpy002_exception_notes import ExceptionNotesRule
 from .rules.cpython.cpy003_union_type_syntax import UnionTypeSyntaxRule
@@ -269,12 +268,9 @@ ALL_RULES: list[BaseRule] = [
     LruCacheThreadSafetyRule(),
 ]
 
-# Pre-compute which rules accept target_config (cached at import time)
-for _rule in ALL_RULES:
-    _params = inspect.signature(_rule.check).parameters
-    if "target_config" in _params:
-        _ACCEPTS_TARGET_CONFIG.add(id(_rule.check))
-del _rule, _params
+# All rules now accept target_config (default=None). Cache on rule identity
+# rather than bound method id (which changes per call).
+_ACCEPTS_TARGET_CONFIG = True  # kept as flag for backwards compat
 
 SKIP_DIRS = {
     ".git", "__pycache__", ".venv", "venv", "env",
@@ -431,19 +427,11 @@ def _scan_file_detailed(
 
     for rule in rules:
         try:
-            check = rule.check
-
-            if id(check) in _ACCEPTS_TARGET_CONFIG:  # pragma: no branch
-                rule_findings = check(
-                    tree,
-                    str(filepath),
-                    target_config,
-                )
-            else:
-                rule_findings = check(
-                    tree,
-                    str(filepath),
-                )
+            rule_findings = rule.check(
+                tree,
+                str(filepath),
+                target_config,
+            )
 
             for f in rule_findings:
                 f.category = rule.category

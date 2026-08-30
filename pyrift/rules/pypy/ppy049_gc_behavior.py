@@ -32,7 +32,7 @@ class GcBehaviorRule(BaseRule):
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
         findings: list[Finding] = []
-        gc_funcs = {"collect", "get_objects", "get_count",
+        gc_funcs = {"get_objects", "get_count",
                      "set_threshold", "get_referrers", "get_referents"}
 
         for n in ast.walk(node):

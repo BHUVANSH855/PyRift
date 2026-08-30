@@ -75,9 +75,10 @@ class TypingTypedDictFunctionalRule(BaseRule):
                 severity=Severity.ERROR,
                 runtime=Runtime.CPYTHON,
                 affected_from="3.15",
+                affected_until="3.16",
                 suggestion=(
-                    "class Name(TypedDict):\\n"
-                    "    x: int\\n"
+                    "class Name(TypedDict):\n"
+                    "    x: int\n"
                     "or: TypedDict('Name', {'x': int})"
                 ),
                 docs_url=(

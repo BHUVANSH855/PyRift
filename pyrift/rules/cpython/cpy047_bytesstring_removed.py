@@ -1,8 +1,9 @@
 """
-CPY047 — collections.abc.ByteString removed in Python 3.15
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-collections.abc.ByteString was deprecated in Python 3.12 and
-removed in Python 3.15. Using it raises AttributeError on 3.15+.
+CPY047 — collections.abc.ByteString deprecated, scheduled removal in 3.17
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+collections.abc.ByteString was deprecated in Python 3.12 and is
+scheduled for removal in Python 3.17. Using it on 3.15+ raises
+DeprecationWarning; using it after 3.17 will raise AttributeError.
 Use Union[bytes, bytearray, memoryview] instead.
 """
 from __future__ import annotations
@@ -39,20 +40,21 @@ class ByteStringRemovedRule(BaseRule):
                                 title=self.title,
                                 description=(
                                     "collections.abc.ByteString was deprecated "
-                                    "in Python 3.12 and removed in Python 3.15. "
-                                    "Importing it on Python 3.15+ raises "
-                                    "ImportError at runtime."
+                                    "in Python 3.12 and is scheduled for removal "
+                                    "in Python 3.17. It emits DeprecationWarning "
+                                    "on Python 3.15+."
                                 ),
                                 severity=Severity.WARNING,
                                 runtime=Runtime.CPYTHON,
-                                affected_from="3.12",
+                                affected_from="3.15",
+                                affected_until="3.17",
                                 suggestion=(
                                     "Replace with: Union[bytes, bytearray, memoryview] "
                                     "or use the specific type you actually need. "
                                     "from typing import Union"
                                 ),
                                 docs_url=(
-                                    "https://docs.python.org/3/whatsnew/3.15.html"
+                                    "https://docs.python.org/3/whatsnew/3.12.html"
                                 ),
                             ))
             # Detect: collections.abc.ByteString attribute access
@@ -65,17 +67,19 @@ class ByteStringRemovedRule(BaseRule):
                     title=self.title,
                     description=(
                         "collections.abc.ByteString was deprecated in "
-                        "Python 3.12 and removed in Python 3.15. "
-                        "Accessing it on Python 3.15+ raises AttributeError."
+                        "Python 3.12 and is scheduled for removal in "
+                        "Python 3.17. It emits DeprecationWarning on "
+                        "Python 3.15+."
                     ),
                     severity=Severity.WARNING,
                     runtime=Runtime.CPYTHON,
-                    affected_from="3.12",
+                    affected_from="3.15",
+                    affected_until="3.17",
                     suggestion=(
                         "Replace with: Union[bytes, bytearray, memoryview]"
                     ),
                     docs_url=(
-                        "https://docs.python.org/3/whatsnew/3.15.html"
+                        "https://docs.python.org/3/whatsnew/3.12.html"
                     ),
                 ))
         return findings

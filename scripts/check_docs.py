@@ -17,6 +17,7 @@ from pyrift.scanner import ALL_RULES
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 CHANGELOG = ROOT / "CHANGELOG.md"
+RULES_MD = ROOT / "docs" / "rules.md"
 
 
 def get_test_count() -> int:
@@ -167,6 +168,22 @@ def get_readme_rule_ids() -> list[str]:
     return ids
 
 
+def get_rules_md_rule_ids() -> list[str]:
+    """Return the rule IDs found in docs/rules.md headings."""
+    content = RULES_MD.read_text(encoding="utf-8")
+
+    ids = re.findall(r"^### (CPY\d+|PPY\d+) ", content, re.MULTILINE)
+
+    # Check for duplicates
+    seen: set[str] = set()
+    for rule_id in ids:
+        if rule_id in seen:
+            raise SystemExit(f"docs/rules.md has duplicate rule ID: {rule_id}")
+        seen.add(rule_id)
+
+    return ids
+
+
 def main() -> None:
     version = get_current_version()
     actual = get_test_count()
@@ -175,6 +192,7 @@ def main() -> None:
     readme_version = get_readme_version()
     module_version = get_module_version()
     readme_rule_ids = get_readme_rule_ids()
+    rules_md_rule_ids = get_rules_md_rule_ids()
     actual_rule_ids = sorted(r.rule_id for r in ALL_RULES)
 
     failures: list[str] = []
@@ -211,6 +229,16 @@ def main() -> None:
         missing = set(actual_rule_ids) - set(readme_rule_ids)
         extra = set(readme_rule_ids) - set(actual_rule_ids)
         msg = "README.md rule table does not match ALL_RULES"
+        if missing:
+            msg += f" (missing: {', '.join(sorted(missing))})"
+        if extra:
+            msg += f" (extra: {', '.join(sorted(extra))})"
+        failures.append(msg)
+
+    if sorted(rules_md_rule_ids) != actual_rule_ids:
+        missing = set(actual_rule_ids) - set(rules_md_rule_ids)
+        extra = set(rules_md_rule_ids) - set(actual_rule_ids)
+        msg = "docs/rules.md rule headings do not match ALL_RULES"
         if missing:
             msg += f" (missing: {', '.join(sorted(missing))})"
         if extra:

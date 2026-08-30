@@ -562,7 +562,7 @@ Lists the compatibility rules and their documented behavior.
 
 - **Version:** 0.8.0
 - **Rules:** 118 total (70 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1225 passing
+- **Tests:** 1222 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -757,7 +757,7 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | CPY048 | concurrent.interpreters requires Python 3.14+ | cpython |
 | CPY049 | compression.zstd requires Python 3.14+ | cpython |
 | CPY050 | PurePath.is_reserved() deprecated in 3.13, removed in 3.15 | cpython |
-| CPY051 | Unsynchronized module-level mutable state may be unsafe in free-threaded Python | cpython |
+| CPY051 | Module-level mutable state may require synchronization in free-threaded Python | cpython |
 | CPY053 | typing.get_overloads() requires Python 3.11+ | cpython |
 | CPY054 | int() no longer delegates to __trunc__() in Python 3.14 | cpython |
 | CPY055 | NotImplemented in boolean context raises TypeError in Python 3.14 | cpython |

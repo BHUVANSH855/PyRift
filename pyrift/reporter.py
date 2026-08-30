@@ -324,5 +324,3 @@ def to_sarif(result: ScanResult) -> str:
     }
 
     return json.dumps(sarif, indent=2)
-
-    return json.dumps(sarif, indent=2)

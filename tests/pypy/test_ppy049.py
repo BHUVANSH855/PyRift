@@ -11,14 +11,14 @@ def run(rule, src): return rule.check(parse(src), "<test>")
 class TestPPY049:
     rule = GcBehaviorRule()
 
-    def test_detects_gc_collect(self):
-        findings = run(self.rule, "import gc\ngc.collect()")
+    def test_detects_gc_get_objects(self):
+        findings = run(self.rule, "import gc\ngc.get_objects()")
         assert len(findings) == 1
         assert findings[0].rule_id == "PPY049"
         assert findings[0].severity == Severity.WARNING
 
-    def test_detects_gc_get_objects(self):
-        findings = run(self.rule, "import gc\ngc.get_objects()")
+    def test_detects_gc_get_count(self):
+        findings = run(self.rule, "import gc\ngc.get_count()")
         assert len(findings) == 1
 
     def test_detects_gc_disable(self):
@@ -34,5 +34,5 @@ class TestPPY049:
         assert len(findings) == 0
 
     def test_suggestion_mentions_context_managers(self):
-        findings = run(self.rule, "import gc\ngc.collect()")
+        findings = run(self.rule, "import gc\ngc.get_objects()")
         assert "context" in findings[0].suggestion.lower() or "explicit" in findings[0].suggestion.lower()

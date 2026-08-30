@@ -33,6 +33,30 @@ class Sqlite3VersionRemovedRule(BaseRule):
     ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
+            # from sqlite3 import version / version_info
+            if isinstance(n, ast.ImportFrom) and n.module == "sqlite3":
+                for alias in n.names:
+                    if alias.name in _REMOVED_ATTRS:
+                        findings.append(Finding(
+                            file=filename, line=n.lineno, col=n.col_offset,
+                            rule_id=self.rule_id, title=self.title,
+                            description=(
+                                f"sqlite3.{alias.name} was deprecated in Python 3.12 and "
+                                "removed in Python 3.14. It exposed the SQLite C library "
+                                "version, which was misleading and unnecessary."
+                            ),
+                            severity=Severity.ERROR,
+                            runtime=Runtime.CPYTHON,
+                            affected_from="3.14",
+                            suggestion=(
+                                "Use sqlite3.sqlite_version to get the SQLite C library "
+                                "version, or check the Python sqlite3 module version via "
+                                "importlib.metadata.version('sqlite3')."
+                            ),
+                            docs_url="https://docs.python.org/3/whatsnew/3.14.html",
+                        ))
+
+            # sqlite3.version / sqlite3.version_info (attribute access)
             if (isinstance(n, ast.Attribute)
                     and n.attr in _REMOVED_ATTRS
                     and isinstance(n.value, ast.Name)
@@ -55,4 +79,13 @@ class Sqlite3VersionRemovedRule(BaseRule):
                     ),
                     docs_url="https://docs.python.org/3/whatsnew/3.14.html",
                 ))
-        return findings
+
+        # Deduplicate
+        seen: set[tuple[int, int]] = set()
+        unique: list[Finding] = []
+        for f in findings:
+            key = (f.line, f.col)
+            if key not in seen:
+                seen.add(key)
+                unique.append(f)
+        return unique

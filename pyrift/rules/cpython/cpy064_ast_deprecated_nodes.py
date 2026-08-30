@@ -2,7 +2,7 @@
 CPY064 — Deprecated AST node types removed in Python 3.14
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Python 3.13 deprecated ast.Num, ast.Str, ast.Bytes, ast.NameConstant,
-ast.Ellipsis, ast.Index, and ast.ExtSlice (PEP 3120 / GH-90953).
+ast.Ellipsis, ast.Index, and ast.ExtSlice (GH-90953).
 Python 3.14 removes them entirely. Code that references these classes
 (e.g. isinstance(x, ast.Num)) will raise AttributeError on 3.14+.
 
@@ -12,7 +12,7 @@ Detects:
   isinstance(x, ast.Bytes)
   isinstance(x, ast.NameConstant)
   isinstance(x, ast.Ellipsis)
-  ast.Num in some_list
+  from ast import Num
 """
 from __future__ import annotations
 
@@ -46,6 +46,12 @@ class AstDeprecatedNodesRule(BaseRule):
                     and n.value.id == "ast"
                     and n.attr in _DEPRECATED_AST_NODES):
                 findings.append(self._make(filename, n.attr, n.lineno, n.col_offset))
+
+            # from ast import Num, Str, etc.
+            if isinstance(n, ast.ImportFrom) and n.module == "ast":
+                for alias in n.names:
+                    if alias.name in _DEPRECATED_AST_NODES:
+                        findings.append(self._make(filename, alias.name, n.lineno, n.col_offset))
 
         # Deduplicate by (line, col)
         seen: set[tuple[int, int]] = set()

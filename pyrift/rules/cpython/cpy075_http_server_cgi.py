@@ -42,8 +42,14 @@ class HttpServerCGIHandlerRule(BaseRule):
             if isinstance(n, ast.Name) and n.id == "CGIHTTPRequestHandler":
                 findings.append(self._make(filename, n.lineno, n.col_offset))
 
-            # Note: http.server.CGIHTTPRequestHandler via attribute not detectable
-            # (http.server is an ast.Attribute, not ast.Name)
+            # http.server.CGIHTTPRequestHandler via attribute access
+            if (isinstance(n, ast.Attribute)
+                    and n.attr == "CGIHTTPRequestHandler"
+                    and isinstance(n.value, ast.Attribute)
+                    and n.value.attr == "server"
+                    and isinstance(n.value.value, ast.Name)
+                    and n.value.value.id == "http"):
+                findings.append(self._make(filename, n.lineno, n.col_offset))
 
         # Deduplicate
         seen: set[tuple[int, int]] = set()
@@ -67,7 +73,7 @@ class HttpServerCGIHandlerRule(BaseRule):
             severity=Severity.WARNING,
             runtime=Runtime.CPYTHON,
             affected_from="3.13",
-            affected_until="3.14",
+            affected_until="3.15",
             suggestion=(
                 "Use http.server.SimpleHTTPRequestHandler instead, or use "
                 "a dedicated web server for CGI functionality."
