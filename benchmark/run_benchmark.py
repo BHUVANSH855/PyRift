@@ -682,6 +682,82 @@ GOLDEN = {
             "gettrace fine",
         ),
     ],
+    "CPY064": [
+        ("import ast\nast.Num", True, "ast.Num"),
+        ("import ast\nast.Constant", False, "ast.Constant ok"),
+    ],
+    "CPY065": [
+        ("import pkgutil\npkgutil.find_loader('x')", True, "find_loader"),
+        ("import importlib\nimportlib.util.find_spec('x')", False, "find_spec ok"),
+    ],
+    "CPY066": [
+        ("from asyncio import ThreadedChildWatcher", True, "ThreadedChildWatcher"),
+        ("import asyncio\nasyncio.Runner", False, "Runner ok"),
+    ],
+    "CPY067": [
+        ("from typing import NamedTuple\nPoint = NamedTuple('Point', x=int, y=int)", True, "keyword syntax"),
+        ("from typing import NamedTuple\nclass Point(NamedTuple):\n    x: int\n    y: int", False, "class syntax ok"),
+    ],
+    "CPY068": [
+        ("from typing import no_type_check_decorator", True, "import decorator"),
+        ("from typing import no_type_check", False, "no_type_check ok"),
+    ],
+    "CPY069": [
+        ("import asyncio\nasyncio.iscoroutinefunction(func)", True, "asyncio.iscoroutinefunction"),
+        ("import inspect\ninspect.iscoroutinefunction(func)", False, "inspect.iscoroutinefunction ok"),
+    ],
+    "CPY070": [
+        ("import asyncio\nasyncio.get_event_loop_policy()", True, "get_event_loop_policy"),
+        ("import asyncio\nasyncio.run(main())", False, "asyncio.run ok"),
+    ],
+    "CPY071": [
+        ("import pty\npty.master_open()", True, "master_open"),
+        ("import pty\npty.openpty()", False, "openpty ok"),
+    ],
+    "CPY072": [
+        ("from importlib.abc import ResourceReader", True, "ResourceReader"),
+        ("from importlib.resources.abc import TraversableResources", False, "importlib.resources.abc ok"),
+    ],
+    "CPY073": [
+        ("import sqlite3\nsqlite3.version", True, "sqlite3.version"),
+        ("import sqlite3\nsqlite3.sqlite_version", False, "sqlite_version ok"),
+    ],
+    "CPY074": [
+        ("code_obj.__lnotab__", True, "__lnotab__"),
+        ("code_obj.co_lines()", False, "co_lines ok"),
+    ],
+    "CPY075": [
+        ("from http.server import CGIHTTPRequestHandler", True, "CGIHTTPRequestHandler"),
+        ("from http.server import SimpleHTTPRequestHandler", False, "SimpleHTTPRequestHandler ok"),
+    ],
+    "CPY076": [
+        ("import ssl\nssl.wrap_socket(sock)", True, "wrap_socket"),
+        ("ctx = ssl.create_default_context()", False, "create_default_context ok"),
+    ],
+    "CPY077": [
+        ("from typing import TypedDict\nPoint = TypedDict('Point', {'x': int})", True, "functional dict"),
+        ("from typing import TypedDict\nclass Point(TypedDict):\n    x: int", False, "class syntax ok"),
+    ],
+    "PPY048": [
+        ("import sys\nsys.getsizeof(obj)", True, "getsizeof"),
+        ("import sys\nsys.getrefcount(obj)", False, "getrefcount ok"),
+    ],
+    "PPY049": [
+        ("import gc\ngc.collect()", True, "gc.collect"),
+        ("import gc\ngc.get_threshold()", False, "get_threshold ok"),
+    ],
+    "PPY051": [
+        ("code_obj.__lnotab__", True, "__lnotab__ pypy"),
+        ("code_obj.co_linetable()", False, "co_linetable ok"),
+    ],
+    "PPY052": [
+        ("from importlib.abc import ResourceReader", True, "ResourceReader pypy"),
+        ("from importlib.resources.abc import TraversableResources", False, "resources.abc ok"),
+    ],
+    "PPY053": [
+        ("@functools.lru_cache\ndef f(): pass", True, "lru_cache"),
+        ("@functools.lru_cache(maxsize=128)\ndef f(): pass", True, "lru_cache with maxsize"),
+    ],
 }
 
 
