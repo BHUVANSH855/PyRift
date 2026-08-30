@@ -1,30 +1,15 @@
-import ast
-import textwrap
+"""PPY048 was deleted — it contradicted PPY013.
 
-from pyrift.finding import Severity
-from pyrift.rules.pypy.ppy048_sys_getsizeof import SysGetsizeofRule
+sys.getsizeof() raises TypeError on PyPy, so a rule claiming it
+'returns different values' was incorrect.  This file is kept only for
+history; the test_rule_inventory.py known_removed set references it.
+"""
 
 
-def parse(src): return ast.parse(textwrap.dedent(src))
-def run(rule, src): return rule.check(parse(src), "<test>")
-
-class TestPPY048:
-    rule = SysGetsizeofRule()
-
-    def test_detects_getsizeof(self):
-        findings = run(self.rule, "import sys\nsys.getsizeof(obj)")
-        assert len(findings) == 1
-        assert findings[0].rule_id == "PPY048"
-        assert findings[0].severity == Severity.WARNING
-
-    def test_clean_getrefcount(self):
-        findings = run(self.rule, "import sys\nsys.getrefcount(obj)")
-        assert len(findings) == 0
-
-    def test_clean_other_module(self):
-        findings = run(self.rule, "import os\nos.getsizeof(obj)")
-        assert len(findings) == 0
-
-    def test_suggestion_mentions_relative(self):
-        findings = run(self.rule, "import sys\nsys.getsizeof(obj)")
-        assert "relative" in findings[0].suggestion.lower() or "comparison" in findings[0].suggestion.lower()
+def test_ppy048_is_removed():
+    """PPY048 should not be importable as a live rule."""
+    import importlib
+    mod = importlib.import_module("pyrift.rules.pypy.ppy048_sys_getsizeof")
+    assert not hasattr(mod, "SysGetsizeofRule"), (
+        "PPY048 SysGetsizeofRule should be removed"
+    )

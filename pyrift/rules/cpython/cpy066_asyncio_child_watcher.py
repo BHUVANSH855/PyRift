@@ -48,9 +48,12 @@ class AsyncioChildWatcherRule(BaseRule):
                     if alias.name in _REMOVED_WATCHERS:
                         findings.append(self._make(filename, alias.name, n.lineno, n.col_offset))
 
-            # asyncio.ThreadedChildWatcher() or just ThreadedChildWatcher in usage
-            if isinstance(n, ast.Name) and n.id in _REMOVED_WATCHERS:
-                findings.append(self._make(filename, n.id, n.lineno, n.col_offset))
+            # asyncio.ThreadedChildWatcher() via attribute access
+            if (isinstance(n, ast.Attribute)
+                    and n.attr in _REMOVED_WATCHERS
+                    and isinstance(n.value, ast.Name)
+                    and n.value.id == "asyncio"):
+                findings.append(self._make(filename, n.attr, n.lineno, n.col_offset))
 
         # Deduplicate
         seen: set[tuple[int, int]] = set()

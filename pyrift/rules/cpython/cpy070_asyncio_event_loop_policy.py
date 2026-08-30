@@ -37,6 +37,12 @@ class AsyncioEventLoopPolicyRule(BaseRule):
     ) -> list[Finding]:
         findings: list[Finding] = []
         for n in ast.walk(node):
+            # from asyncio import get_event_loop_policy / set_event_loop_policy
+            if isinstance(n, ast.ImportFrom) and n.module == "asyncio":
+                for alias in n.names:
+                    if alias.name in _POLICY_FUNCTIONS:
+                        findings.append(self._make(filename, alias.name, n.lineno, n.col_offset))
+
             # asyncio.get_event_loop_policy() / asyncio.set_event_loop_policy(...)
             if isinstance(n, ast.Call):
                 func = n.func

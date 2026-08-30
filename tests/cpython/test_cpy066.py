@@ -30,7 +30,7 @@ class TestCPY066:
         assert len(findings) == 1
 
     def test_detects_usage_pattern(self):
-        findings = run(self.rule, "ThreadedChildWatcher()")
+        findings = run(self.rule, "import asyncio\nasyncio.ThreadedChildWatcher()")
         assert len(findings) >= 1
 
     def test_clean_asyncio_runner(self):

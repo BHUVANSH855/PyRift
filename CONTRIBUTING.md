@@ -4,7 +4,7 @@ Thank you for contributing to **PyRift** — a static-analysis scanner that dete
 
 The most valuable contributions fix **real compatibility problems**: verified runtime behaviour, a minimal reproduction, a precise AST pattern, and regression tests. Correctness and evidence matter more than finding count.
 
-> Current baseline: `0.8.0` · 980 tests · 101 rules · ~97% coverage. If a section conflicts with the tree, the code is the source of truth — open an issue.
+> Current baseline: `0.8.0` · all registered tests · all registered rules · ~97% coverage. If a section conflicts with the tree, the code is the source of truth — open an issue.
 
 ---
 
@@ -43,7 +43,7 @@ tests/  test_*.py + cpython/ and pypy/ (one test module per rule)
 benchmark/  run_benchmark.py, expected.json, self_scan.py, corpus.py, runtime_harness.py
 compatibility-benchmark/   (historical runtime probe data)
 scripts/  generate_docs.py, check_docs.py
-docs/rules.md  (auto-generated, 101/101)
+docs/rules.md  (auto-generated, all registered rules)
 ```
 
 Follow the style of the code already present. Update tests + docs alongside any behaviour change.
@@ -115,7 +115,7 @@ differences, and `observed`/`inferred` when intent is not established. See
 6. **Add a benchmark contract** in `benchmark/run_benchmark.py` + `benchmark/expected.json`:
 
    ```bash
-   python benchmark/run_benchmark.py   # must stay 101/101, 100% correct
+   python benchmark/run_benchmark.py   # must stay all rules passing, 100% correct
    ```
 
    Don't weaken existing contracts to make a rule pass.
@@ -271,7 +271,7 @@ python -m ruff check .
 python -m pytest tests/ --tb=no -q
 git diff --check
 python scripts/generate_docs.py && python scripts/check_docs.py
-python benchmark/run_benchmark.py   # golden, 101/101
+python benchmark/run_benchmark.py   # golden, all rules passing
 python benchmark/self_scan.py       # 0 findings on the project itself
 python benchmark/corpus.py          # real-package corpus
 python benchmark/runtime_harness.py # runtime probes

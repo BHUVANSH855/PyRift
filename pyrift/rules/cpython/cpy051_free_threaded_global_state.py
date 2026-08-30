@@ -252,7 +252,7 @@ def _discover_functions(
 class FreeThreadedGlobalStateRule(BaseRule):
     rule_id = "CPY051"
     title = (
-        "Unsynchronized module-level mutable state may be unsafe "
+        "Module-level mutable state may require synchronization "
         "in free-threaded Python"
     )
     runtime = "cpython"
@@ -284,9 +284,8 @@ class FreeThreadedGlobalStateRule(BaseRule):
                     f"Module-level mutable variable '{name}' is mutated "
                     "from runtime function code without recognizable "
                     "synchronization. In a CPython free-threaded build, "
-                    "code that relies on the GIL to coordinate compound "
-                    "or unsynchronized access to shared state can "
-                    "behave differently."
+                    "concurrent access to shared mutable state may require "
+                    "explicit synchronization."
                 ),
                 severity=Severity.WARNING,
                 runtime=Runtime.CPYTHON,

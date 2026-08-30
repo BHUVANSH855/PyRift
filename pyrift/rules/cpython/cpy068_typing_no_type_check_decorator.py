@@ -46,7 +46,7 @@ class TypingNoTypeCheckDecoratorRule(BaseRule):
                             severity=Severity.WARNING,
                             runtime=Runtime.CPYTHON,
                             affected_from="3.13",
-                            affected_until="3.14",
+                            affected_until="3.15",
                             suggestion=(
                                 "Use typing.no_type_check() as a function decorator "
                                 "or use typing.TYPE_CHECKING with if-blocks instead."
@@ -75,4 +75,13 @@ class TypingNoTypeCheckDecoratorRule(BaseRule):
                         ),
                         docs_url="https://docs.python.org/3/whatsnew/3.13.html",
                     ))
-        return findings
+
+        # Deduplicate
+        seen: set[tuple[int, int]] = set()
+        unique: list[Finding] = []
+        for f in findings:
+            key = (f.line, f.col)
+            if key not in seen:
+                seen.add(key)
+                unique.append(f)
+        return unique

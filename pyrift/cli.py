@@ -13,6 +13,7 @@ Command-line interface.
 from __future__ import annotations
 
 import argparse
+import inspect
 import sys
 from pathlib import Path
 
@@ -541,26 +542,19 @@ def _run_explain(args: argparse.Namespace) -> None:
         intent_basis = intent_basis.value
     lines.append(f"Intent basis: {intent_basis}")
 
-    try:
-        from .finding import Finding
-
-        tmp = Finding(
-            file="<explain>",
-            line=1,
-            rule_id=rule_id,
-            title=rule.title,
-        )
-
-        if tmp.description:
-            lines.append(f"\nDescription:\n  {tmp.description}")
-
-        if tmp.suggestion:
-            lines.append(f"\nSuggestion:\n  {tmp.suggestion}")
-
-        if tmp.docs_url:
-            lines.append(f"\nDocs URL:    {tmp.docs_url}")
-    except (AttributeError, KeyError):
-        pass
+    # Extract description and suggestion from the rule's docstring
+    doc = inspect.getdoc(rule.__class__) or ""
+    if doc:
+        # First paragraph after the title line
+        lines_doc = [l.strip() for l in doc.split("\n") if l.strip()]
+        if len(lines_doc) > 1:
+            desc_lines = []
+            for dl in lines_doc[1:]:
+                if dl.startswith(("---", "Detects:")):
+                    break
+                desc_lines.append(dl)
+            if desc_lines:
+                lines.append(f"\nDescription:\n  {' '.join(desc_lines)}")
 
     last_verified = metadata.get("last_verified", "")
     if last_verified:
