@@ -7,7 +7,6 @@ Parses Python files into ASTs and runs all registered rules.
 from __future__ import annotations
 
 import ast
-import inspect
 import logging
 import os
 from collections.abc import Iterator

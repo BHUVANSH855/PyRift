@@ -550,19 +550,11 @@ def _run_explain(args: argparse.Namespace) -> None:
         if len(lines_doc) > 1:
             desc_lines = []
             for dl in lines_doc[1:]:
-                if dl.startswith("---") or dl.startswith("Detects:"):
+                if dl.startswith(("---", "Detects:")):
                     break
                 desc_lines.append(dl)
             if desc_lines:
                 lines.append(f"\nDescription:\n  {' '.join(desc_lines)}")
-
-    if hasattr(rule, "suggest"):
-        try:
-            suggestion = rule.suggest(None)
-            if suggestion:
-                lines.append(f"\nSuggestion:\n  {suggestion}")
-        except Exception:
-            pass
 
     last_verified = metadata.get("last_verified", "")
     if last_verified:

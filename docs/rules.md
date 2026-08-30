@@ -59,7 +59,7 @@ These rules detect code that behaves differently across CPython versions.
 ---
 ### CPY007 — Module removed in Python 3.13
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY008 — __slots__ may not prevent __dict__ on Python < 3.10
@@ -289,7 +289,7 @@ These rules detect code that behaves differently across CPython versions.
 ---
 ### CPY055 — NotImplemented in boolean context raises TypeError in Python 3.14
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY057 — pickle default protocol changed to 5 in Python 3.14
@@ -309,17 +309,17 @@ These rules detect code that behaves differently across CPython versions.
 ---
 ### CPY064 — Deprecated AST node types removed in Python 3.14
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY065 — pkgutil.find_loader()/get_loader() removed in Python 3.14
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY066 — asyncio child watcher classes removed in Python 3.14
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY067 — typing.NamedTuple keyword syntax removed in Python 3.15
@@ -334,22 +334,22 @@ These rules detect code that behaves differently across CPython versions.
 ---
 ### CPY069 — asyncio.iscoroutinefunction() deprecated in Python 3.14
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY070 — asyncio event loop policy deprecated in Python 3.14
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY071 — pty.master_open()/slave_open() removed in Python 3.14
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY072 — importlib.abc resource classes removed in Python 3.14
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY073 — sqlite3.version/version_info removed in Python 3.14
@@ -364,12 +364,12 @@ These rules detect code that behaves differently across CPython versions.
 ---
 ### CPY075 — http.server.CGIHTTPRequestHandler deprecated in 3.13, removed in 3.15
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY076 — ssl.wrap_socket() removed in Python 3.12
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
 
 ---
 ### CPY077 — typing.TypedDict zero-field syntax removed in Python 3.15
@@ -481,7 +481,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY022 — PYTHONHASHSEED=0 has no effect on PyPy hash randomisation
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
 
 ---
 ### PPY023 — inspect.ismethod() returns different results on PyPy
@@ -541,7 +541,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY034 — hash() values may differ between CPython and PyPy
 
-**Severity:** <built-in method title of Severity object at 0x0000019668CFBEF0> | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
 
 ---
 ### PPY035 — C extension packages may not work correctly on PyPy

@@ -261,21 +261,21 @@ def generate_rules_md() -> None:
 
 def _format_rule_section(rule, rule_metadata) -> list[str]:
     """Format a single rule as a rules.md section."""
-    from pyrift.finding import Finding, Severity
+    from pyrift.finding import Finding
 
     meta = rule_metadata.RULE_METADATA.get(rule.rule_id, {})
 
     confidence = meta.get("confidence", "LOW")
-    evidence_type = meta.get("evidence_type", "INFERRED")
 
     # Get severity from the rule's _make or class default
     severity = "WARNING"
     if hasattr(rule, "_make"):
-        try:
-            tmp = Finding(file="<tmp>", line=0, rule_id=rule.rule_id, title=rule.title)
-            severity = tmp.severity.title
-        except Exception:
-            pass
+        severity = Finding(
+            file="<tmp>",
+            line=0,
+            rule_id=rule.rule_id,
+            title=rule.title,
+        ).severity.title()
 
     affected = ""
     if hasattr(rule, "affected_from") and rule.affected_from:
@@ -298,7 +298,7 @@ def _format_rule_section(rule, rule_metadata) -> list[str]:
     if len(doc_lines) > 1:
         desc_lines = []
         for dl in doc_lines[1:]:
-            if dl.startswith("---") or dl.startswith("Detects:"):
+            if dl.startswith(("---", "Detects:")):
                 break
             desc_lines.append(dl)
         if desc_lines:
