@@ -19,6 +19,7 @@ class BuiltinsAssignRule(BaseRule):
     rule_id = "PPY029"
     title   = "Assigning to __builtins__ has no effect on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

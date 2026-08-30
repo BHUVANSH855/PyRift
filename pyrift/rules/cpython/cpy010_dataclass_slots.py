@@ -17,6 +17,7 @@ class DataclassSlotsRule(BaseRule):
     rule_id = "CPY010"
     title   = "@dataclass(slots=True) requires Python 3.10+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

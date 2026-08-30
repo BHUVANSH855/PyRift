@@ -19,6 +19,7 @@ class IntTruncRule(BaseRule):
     rule_id = "CPY054"
     title   = "int() no longer delegates to __trunc__() in Python 3.14"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

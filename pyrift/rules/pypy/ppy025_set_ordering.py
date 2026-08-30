@@ -18,6 +18,7 @@ class SetOrderingRule(BaseRule):
     rule_id = "PPY025"
     title   = "Set iteration order differs between CPython and PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

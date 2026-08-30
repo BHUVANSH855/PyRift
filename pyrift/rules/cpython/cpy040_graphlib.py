@@ -18,6 +18,7 @@ class GraphlibRule(BaseRule):
     rule_id = "CPY040"
     title = "graphlib module requires Python 3.9+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -19,6 +19,7 @@ class ByteStringRemovedRule(BaseRule):
     rule_id = "CPY047"
     title   = "collections.abc.ByteString deprecated, scheduled removal in Python 3.17"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

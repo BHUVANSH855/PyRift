@@ -19,6 +19,7 @@ class GetSizeofRule(BaseRule):
     rule_id = "PPY013"
     title   = "sys.getsizeof() raises TypeError on PyPy"
     runtime = "pypy"
+    severity = Severity.ERROR
 
     def check(
         self,

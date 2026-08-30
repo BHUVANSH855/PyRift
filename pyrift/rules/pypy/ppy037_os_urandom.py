@@ -20,6 +20,7 @@ class OsUrandomRule(BaseRule):
     rule_id = "PPY037"
     title   = "os.urandom() source may differ on PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     def check(
         self,

@@ -20,6 +20,7 @@ class SubprocessPipeRule(BaseRule):
     rule_id = "PPY040"
     title   = "subprocess.PIPE buffering may cause deadlocks on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

@@ -13,6 +13,7 @@ class NeverRule(BaseRule):
     rule_id = "CPY015"
     title = "typing.Never requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

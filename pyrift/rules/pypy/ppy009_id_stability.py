@@ -289,6 +289,7 @@ class IdStabilityRule(BaseRule):
     rule_id = "PPY009"
     title = "id() stability depends on PyPy GC configuration"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
             self,

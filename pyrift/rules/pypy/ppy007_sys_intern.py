@@ -20,6 +20,7 @@ class SysInternRule(BaseRule):
     rule_id = "PPY007"
     title   = "sys.intern() identity guarantees differ on PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     def check(
         self,

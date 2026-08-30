@@ -19,6 +19,7 @@ class PrintFlushRule(BaseRule):
     rule_id = "PPY042"
     title   = "print(flush=True) may not flush immediately on PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     def check(
         self,

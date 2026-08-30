@@ -17,6 +17,7 @@ class BitCountRule(BaseRule):
     rule_id = "CPY034"
     title   = "int.bit_count() requires Python 3.10+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def _is_version_guarded(self, node: ast.AST, tree: ast.AST) -> bool:
         """Return True if *node* is inside a sys.version_info >= (3, 10) guard."""

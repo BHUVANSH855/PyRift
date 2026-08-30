@@ -22,6 +22,7 @@ class DistutilsRule(BaseRule):
     rule_id = "CPY019"
     title = "distutils removed in Python 3.12+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

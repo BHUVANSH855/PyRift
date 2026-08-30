@@ -26,6 +26,7 @@ class ExceptionChainingRule(BaseRule):
     rule_id = "PPY044"
     title = "Exception variable cleanup timing differs on PyPy"
     runtime = "pypy"
+    severity = Severity.INFO
 
     @staticmethod
     def _name_used_in_node(

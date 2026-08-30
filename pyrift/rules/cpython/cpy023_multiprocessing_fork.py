@@ -39,6 +39,7 @@ class MultiprocessingForkRule(BaseRule):
     rule_id = "CPY023"
     title = "multiprocessing default start method changing in Python 3.14"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

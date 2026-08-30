@@ -28,6 +28,7 @@ class AsyncioEventLoopPolicyRule(BaseRule):
     rule_id = "CPY070"
     title   = "asyncio event loop policy deprecated in Python 3.14"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

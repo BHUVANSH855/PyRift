@@ -24,6 +24,7 @@ class GcBehaviorRule(BaseRule):
     rule_id = "PPY049"
     title = "GC behavior differs between PyPy and CPython"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     _GC_FUNCTIONS = frozenset(
         {

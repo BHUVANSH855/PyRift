@@ -28,6 +28,7 @@ class TypingNamedTupleKeywordRule(BaseRule):
     rule_id = "CPY067"
     title = "typing.NamedTuple keyword syntax removed in Python 3.15"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(self, node: ast.AST, filename: str, target_config=None) -> list[Finding]:
         findings: list[Finding] = []

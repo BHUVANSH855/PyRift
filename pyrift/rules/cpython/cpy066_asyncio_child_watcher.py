@@ -33,6 +33,7 @@ class AsyncioChildWatcherRule(BaseRule):
     rule_id = "CPY066"
     title   = "asyncio child watcher classes removed in Python 3.14"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

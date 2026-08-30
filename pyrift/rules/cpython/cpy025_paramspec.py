@@ -13,6 +13,7 @@ class ParamSpecRule(BaseRule):
     rule_id = "CPY025"
     title = "typing.ParamSpec requires Python 3.10+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -18,6 +18,7 @@ class DatetimeUtcfromtimestampRule(BaseRule):
     rule_id = "CPY037"
     title   = "datetime.utcfromtimestamp() deprecated since Python 3.12"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

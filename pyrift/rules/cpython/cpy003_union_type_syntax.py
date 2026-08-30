@@ -17,6 +17,7 @@ class UnionTypeSyntaxRule(BaseRule):
     rule_id = "CPY003"
     title   = "X | Y union type syntax requires Python 3.10+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

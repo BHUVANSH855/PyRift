@@ -19,6 +19,7 @@ class SysPathBytesRule(BaseRule):
     rule_id = "CPY030"
     title   = "sys.path no longer accepts bytes entries in Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

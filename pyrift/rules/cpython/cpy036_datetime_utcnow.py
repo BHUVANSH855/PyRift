@@ -18,6 +18,7 @@ class DatetimeUtcnowRule(BaseRule):
     rule_id = "CPY036"
     title   = "datetime.utcnow() deprecated since Python 3.12"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

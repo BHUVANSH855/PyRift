@@ -26,6 +26,7 @@ class ImportlibAbcResourceRule(BaseRule):
     rule_id = "CPY072"
     title   = "importlib.abc resource classes removed in Python 3.14"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -13,6 +13,7 @@ class ConcurrentInterpretersRule(BaseRule):
     rule_id = "CPY048"
     title = "concurrent.interpreters requires Python 3.14+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

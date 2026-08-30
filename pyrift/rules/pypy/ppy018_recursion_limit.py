@@ -20,6 +20,7 @@ class RecursionLimitRule(BaseRule):
     rule_id = "PPY018"
     title   = "sys.setrecursionlimit() behaviour differs on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

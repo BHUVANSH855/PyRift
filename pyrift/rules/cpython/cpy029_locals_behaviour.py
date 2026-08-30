@@ -33,6 +33,7 @@ class LocalsBehaviourRule(BaseRule):
     rule_id = "CPY029"
     title   = "locals() semantics changed in Python 3.13 (PEP 667)"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

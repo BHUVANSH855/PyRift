@@ -19,6 +19,7 @@ class BuiltinsModuleRule(BaseRule):
     rule_id = "PPY026"
     title   = "__builtins__ is always a module on PyPy, never a dict"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def _is_version_guarded(self, node: ast.AST, tree: ast.AST) -> bool:
         """Return True if *node* is inside a sys.version_info check."""

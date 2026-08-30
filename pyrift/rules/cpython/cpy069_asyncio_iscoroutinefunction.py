@@ -22,6 +22,7 @@ class AsyncioIscoroutinefunctionRule(BaseRule):
     rule_id = "CPY069"
     title   = "asyncio.iscoroutinefunction() deprecated in Python 3.14"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

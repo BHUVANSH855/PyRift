@@ -17,6 +17,7 @@ class MatchCaseRule(BaseRule):
     rule_id = "CPY005"
     title   = "match/case requires Python 3.10+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

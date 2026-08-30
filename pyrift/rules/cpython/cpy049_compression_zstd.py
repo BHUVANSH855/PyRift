@@ -13,6 +13,7 @@ class CompressionZstdRule(BaseRule):
     rule_id = "CPY049"
     title = "compression.zstd requires Python 3.14+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -20,6 +20,7 @@ class PurePathIsReservedRule(BaseRule):
     rule_id = "CPY050"
     title = "PurePath.is_reserved() deprecated in 3.13, removed in 3.15"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

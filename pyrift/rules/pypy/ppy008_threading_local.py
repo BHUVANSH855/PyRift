@@ -19,6 +19,7 @@ class ThreadingLocalRule(BaseRule):
     rule_id = "PPY008"
     title   = "threading.local() cleanup timing differs on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

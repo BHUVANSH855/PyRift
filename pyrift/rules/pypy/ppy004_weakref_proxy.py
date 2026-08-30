@@ -20,6 +20,7 @@ class WeakrefProxyRule(BaseRule):
     rule_id = "PPY004"
     title   = "weakref.proxy() lifetime differs on PyPy due to GC model"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

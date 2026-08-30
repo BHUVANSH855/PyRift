@@ -25,6 +25,7 @@ class CExtensionsRule(BaseRule):
     rule_id = "PPY035"
     title = "C extension packages may not work correctly on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

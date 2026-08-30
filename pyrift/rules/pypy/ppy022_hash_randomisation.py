@@ -20,6 +20,7 @@ class HashRandomisationRule(BaseRule):
     rule_id = "PPY022"
     title   = "PYTHONHASHSEED=0 has no effect on PyPy hash randomisation"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

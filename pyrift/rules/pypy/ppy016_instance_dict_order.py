@@ -63,6 +63,7 @@ class InstanceDictOrderRule(BaseRule):
     rule_id = "PPY016"
     title = "Instance __dict__ order-sensitive access may differ on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
             self,

@@ -19,6 +19,7 @@ class SocketGCRule(BaseRule):
     rule_id = "PPY021"
     title   = "Socket not closed promptly on PyPy — GC timing"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def _is_in_context_manager(self, node: ast.AST, tree: ast.AST) -> bool:
         """Return True if *node* is nested inside a ``with`` statement."""

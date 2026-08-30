@@ -20,6 +20,7 @@ class InspectIsMethodRule(BaseRule):
     rule_id = "PPY023"
     title   = "inspect.ismethod() returns different results on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

@@ -15,6 +15,7 @@ class TypingIoReRule(BaseRule):
     rule_id = "CPY026"
     title = "typing.io and typing.re removed in Python 3.13"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -25,6 +25,7 @@ class SysFlagsRule(BaseRule):
     rule_id = "PPY030"
     title   = "sys.flags values may differ between CPython and PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

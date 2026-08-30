@@ -13,6 +13,7 @@ class OverrideRule(BaseRule):
     rule_id = "CPY013"
     title = "typing.override requires Python 3.12+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

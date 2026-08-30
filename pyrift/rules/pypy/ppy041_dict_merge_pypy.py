@@ -23,6 +23,7 @@ class DictMergePypyRule(BaseRule):
     rule_id = "PPY041"
     title = "dict | operator requires PyPy 7.3.7+ (Python 3.9 compat)"
     runtime = "pypy"
+    severity = Severity.INFO
 
     @staticmethod
     def _is_dict_constructor(node: ast.AST) -> bool:

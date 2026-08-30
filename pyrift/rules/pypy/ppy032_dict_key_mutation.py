@@ -20,6 +20,7 @@ class DictKeyMutationRule(BaseRule):
     rule_id = "PPY032"
     title   = "Mutating dict keys raises RuntimeError on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

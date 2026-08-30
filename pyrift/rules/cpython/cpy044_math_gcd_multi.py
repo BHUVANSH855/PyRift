@@ -18,6 +18,7 @@ class MathGcdMultiRule(BaseRule):
     rule_id = "CPY044"
     title   = "math.gcd() with multiple args requires Python 3.9+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

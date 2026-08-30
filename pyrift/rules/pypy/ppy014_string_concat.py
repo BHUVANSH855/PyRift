@@ -24,6 +24,7 @@ class StringConcatLoopRule(BaseRule):
     rule_id = "PPY014"
     title = "String concatenation in loop is O(n²) on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     @staticmethod
     def _is_string_value(node: ast.AST | None) -> bool:

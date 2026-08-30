@@ -32,6 +32,7 @@ class SubclassingBuiltinsRule(BaseRule):
     rule_id = "PPY012"
     title   = "Overriding built-in methods may behave differently on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

@@ -17,6 +17,7 @@ class ExceptionNotesRule(BaseRule):
     rule_id = "CPY002"
     title   = "Exception.add_note() requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

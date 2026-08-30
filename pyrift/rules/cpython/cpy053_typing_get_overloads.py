@@ -17,6 +17,7 @@ class TypingGetOverloadsRule(BaseRule):
     rule_id = "CPY053"
     title   = "typing.get_overloads() requires Python 3.11+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

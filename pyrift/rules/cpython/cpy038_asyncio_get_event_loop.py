@@ -22,6 +22,7 @@ class AsyncioGetEventLoopRule(BaseRule):
     rule_id = "CPY038"
     title = "asyncio.get_event_loop() raises RuntimeError in Python 3.14+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,

@@ -26,6 +26,7 @@ class DictOrderingRule(BaseRule):
     rule_id = "CPY001"
     title   = "Dict ordering assumption — comparing dict view to ordered sequence"
     runtime = "cpython"
+    severity = Severity.WARNING
 
     def check(
         self,

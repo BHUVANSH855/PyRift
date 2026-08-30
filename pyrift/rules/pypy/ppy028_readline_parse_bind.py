@@ -19,6 +19,7 @@ class ReadlineParseBindRule(BaseRule):
     rule_id = "PPY028"
     title   = "readline.parse_and_bind() silently ignored on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     def check(
         self,

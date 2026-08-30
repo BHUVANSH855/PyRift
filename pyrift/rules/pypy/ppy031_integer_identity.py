@@ -29,6 +29,7 @@ class IntegerIdentityRule(BaseRule):
     rule_id = "PPY031"
     title = "Integer 'is' identity semantics differ on PyPy"
     runtime = "pypy"
+    severity = Severity.WARNING
 
     @staticmethod
     def _looks_like_integer(node: ast.AST) -> bool:

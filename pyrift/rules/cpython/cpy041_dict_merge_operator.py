@@ -43,6 +43,7 @@ class DictMergeOperatorRule(BaseRule):
     rule_id = "CPY041"
     title   = "dict | merge operator requires Python 3.9+"
     runtime = "cpython"
+    severity = Severity.ERROR
 
     def check(
         self,
