@@ -4,8 +4,12 @@ Tests for pyrift CLI error handling paths.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+
+from pyrift.cli import _build_parser, _build_target_config
+from pyrift.finding import Runtime
 
 
 def run_cli(*args: str) -> tuple[int, str, str]:
@@ -115,6 +119,83 @@ class TestCliErrorPaths:
         assert code == 2
         assert "not found" in err.lower()
 
+    def test_runtime_cpython(self, tmp_path):
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "scan",
+                str(tmp_path),
+                "--runtime",
+                "cpython",
+            ]
+        )
+
+        config = _build_target_config(args)
+
+        assert config is not None
+        assert config.runtime is Runtime.CPYTHON
+
+    def test_runtime_pypy(self, tmp_path):
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "scan",
+                str(tmp_path),
+                "--runtime",
+                "pypy",
+            ]
+        )
+
+        config = _build_target_config(args)
+
+        assert config is not None
+        assert config.runtime is Runtime.PYPY
+
+    def test_runtime_both(self, tmp_path):
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "scan",
+                str(tmp_path),
+                "--runtime",
+                "both",
+            ]
+        )
+
+        config = _build_target_config(args)
+
+        assert config is not None
+        assert config.runtime is Runtime.BOTH
+
+    def test_runtime_defaults_to_none(self, tmp_path):
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "scan",
+                str(tmp_path),
+            ]
+        )
+
+        config = _build_target_config(args)
+
+        assert config is None
+
+
+class TestRuntimeCliValidation:
+    def test_invalid_runtime_is_rejected(self, tmp_path):
+        code, _out, err = run_cli(
+            "scan",
+            str(tmp_path),
+            "--runtime",
+            "invalid",
+        )
+
+        assert code != 0
+        assert "invalid choice" in err.lower()
+        assert "cpython" in err.lower()
+        assert "pypy" in err.lower()
+        assert "both" in err.lower()
+
 
 class TestSarifFormat:
     def test_sarif_format(self, tmp_path):
@@ -157,20 +238,19 @@ class TestNewFlag:
         assert "baseline" in err.lower()
 
     def test_new_with_baseline_shows_only_new(self, tmp_path):
-        import os
         py_file = tmp_path / "test.py"
         py_file.write_text("import cgi\n")
 
-        import json as _json
         baseline = {
             "version": 1,
             "findings": ["some_fingerprint"],
         }
+
         old_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
             baseline_path = tmp_path / ".pyrift-baseline.json"
-            baseline_path.write_text(_json.dumps(baseline))
+            baseline_path.write_text(json.dumps(baseline))
 
             _code, out, _err = run_cli(
                 "scan",
@@ -185,17 +265,16 @@ class TestNewFlag:
             os.chdir(old_cwd)
 
     def test_new_with_empty_baseline(self, tmp_path):
-        import os
         py_file = tmp_path / "test.py"
         py_file.write_text("x = 1\n")
 
-        import json as _json
         baseline = {"version": 1, "findings": []}
+
         old_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
             baseline_path = tmp_path / ".pyrift-baseline.json"
-            baseline_path.write_text(_json.dumps(baseline))
+            baseline_path.write_text(json.dumps(baseline))
 
             code, _out, _err = run_cli(
                 "scan",

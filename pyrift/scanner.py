@@ -349,6 +349,27 @@ def _python_files(path: Path) -> Iterator[Path]:
     )
 
 
+def _filter_rules_for_target(
+    rules: list[BaseRule],
+    target_config: TargetConfig | None,
+) -> list[BaseRule]:
+    """Return rules applicable to the requested runtime target."""
+    if target_config is None or target_config.runtime is None:
+        return rules
+
+    selected: list[BaseRule] = []
+
+    for rule in rules:
+        runtime = rule.runtime
+        if isinstance(runtime, str):
+            runtime = Runtime(runtime)
+
+        if target_config.allows_runtime(runtime):
+            selected.append(rule)
+
+    return selected
+
+
 def _scan_file_detailed(
     filepath: str | Path,
     rules: list[BaseRule] | None = None,
@@ -356,7 +377,11 @@ def _scan_file_detailed(
 ) -> tuple[list[Finding], list[str]]:
     """Scan a single file and return findings plus rule execution failures."""
     filepath = Path(filepath)
-    rules = rules or ALL_RULES
+    rules = _filter_rules_for_target(
+        rules or ALL_RULES,
+        target_config,
+    )
+
     findings: list[Finding] = []
     rule_errors: list[str] = []
 
@@ -370,7 +395,7 @@ def _scan_file_detailed(
             )
             return findings, rule_errors
         except OSError as exc:
-            from .finding import Runtime, Severity
+            from .finding import Severity
 
             findings.append(
                 Finding(
@@ -389,7 +414,7 @@ def _scan_file_detailed(
             return findings, rule_errors
 
         if "\x00" in source:
-            from .finding import Runtime, Severity
+            from .finding import Severity
 
             findings.append(
                 Finding(
@@ -409,7 +434,7 @@ def _scan_file_detailed(
 
         tree = ast.parse(source, filename=str(filepath))
     except SyntaxError as exc:
-        from .finding import Runtime, Severity
+        from .finding import Severity
 
         findings.append(
             Finding(

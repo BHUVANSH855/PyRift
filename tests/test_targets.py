@@ -1,3 +1,4 @@
+from pyrift.finding import Finding, Runtime
 from pyrift.targets import (
     PythonVersion,
     TargetConfig,
@@ -128,8 +129,6 @@ def test_finding_intersects_supported_range():
         maximum=PythonVersion(3, 13),
     )
 
-    from pyrift.finding import Finding, Runtime
-
     future = Finding(
         file="x.py",
         line=1,
@@ -179,6 +178,7 @@ def test_load_project_targets_walks_to_parent(tmp_path):
         "[project]\n"
         'requires-python = ">=3.10,<3.14"\n'
     )
+
     nested = tmp_path / "src" / "package"
     nested.mkdir(parents=True)
 
@@ -199,3 +199,39 @@ def test_target_config_platform_defaults_to_none():
     config = TargetConfig()
 
     assert config.platform is None
+
+
+def test_target_config_runtime_defaults_to_none():
+    config = TargetConfig()
+
+    assert config.runtime is None
+
+
+def test_target_config_runtime_roundtrip():
+    config = TargetConfig(runtime=Runtime.CPYTHON)
+
+    assert config.runtime is Runtime.CPYTHON
+
+
+def test_target_config_allows_cpython():
+    config = TargetConfig(runtime=Runtime.CPYTHON)
+
+    assert config.allows_runtime(Runtime.CPYTHON)
+    assert config.allows_runtime(Runtime.BOTH)
+    assert not config.allows_runtime(Runtime.PYPY)
+
+
+def test_target_config_allows_pypy():
+    config = TargetConfig(runtime=Runtime.PYPY)
+
+    assert config.allows_runtime(Runtime.PYPY)
+    assert config.allows_runtime(Runtime.BOTH)
+    assert not config.allows_runtime(Runtime.CPYTHON)
+
+
+def test_target_config_allows_both():
+    config = TargetConfig(runtime=Runtime.BOTH)
+
+    assert config.allows_runtime(Runtime.CPYTHON)
+    assert config.allows_runtime(Runtime.PYPY)
+    assert config.allows_runtime(Runtime.BOTH)

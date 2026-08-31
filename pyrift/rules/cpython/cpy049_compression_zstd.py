@@ -22,21 +22,46 @@ class CompressionZstdRule(BaseRule):
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
         findings: list[Finding] = []
-        for info in collect_imports(node).imports:
-            if info.module and info.module.startswith("compression"):
-                findings.append(Finding(
-                    file=filename, line=info.line, col=info.col,
-                    rule_id=self.rule_id, title=self.title,
+
+        for info in collect_imports(node).by_statement():
+            if not info.module:
+                continue
+
+            # compression.zstd is new in Python 3.14.
+            # Match the module itself and its submodules, but do not
+            # flag unrelated modules merely because they start with
+            # "compression".
+            if (
+                info.module != "compression.zstd"
+                and not info.module.startswith("compression.zstd.")
+            ):
+                continue
+
+            findings.append(
+                Finding(
+                    file=filename,
+                    line=info.line,
+                    col=info.col,
+                    rule_id=self.rule_id,
+                    title=self.title,
                     description=(
                         "The compression.zstd module was added in Python 3.14. "
-                        "Importing it on Python 3.13 or below raises ModuleNotFoundError."
+                        "Importing it on Python 3.13 or below raises "
+                        "ModuleNotFoundError."
                     ),
-                    severity=Severity.ERROR, runtime=Runtime.CPYTHON,
-                    affected_from="3.0", affected_until="3.13",
+                    severity=Severity.ERROR,
+                    runtime=Runtime.CPYTHON,
+                    affected_from="3.0",
+                    affected_until="3.13",
                     suggestion=(
-                        "Guard with: if sys.version_info >= (3, 14): import compression.zstd "
+                        "Guard with: if sys.version_info >= (3, 14): "
+                        "import compression.zstd. "
                         "For 3.13 compatibility use: pip install zstandard"
                     ),
-                    docs_url="https://docs.python.org/3/whatsnew/3.14.html",
-                ))
+                    docs_url=(
+                        "https://docs.python.org/3/whatsnew/3.14.html"
+                    ),
+                )
+            )
+
         return findings
