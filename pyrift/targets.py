@@ -64,14 +64,15 @@ class PythonVersion:
 @dataclass(frozen=True)
 class TargetConfig:
     """
-    Python versions and platform supported by the project.
+    Python versions, runtime, and platform supported by the project.
 
-    ``None`` means the corresponding side of the version range is unbounded
-    or that no target platform was specified.
+    ``None`` means the corresponding side of the version range is unbounded,
+    no target runtime was specified, or no target platform was specified.
     """
 
     minimum: PythonVersion | None = None
     maximum: PythonVersion | None = None
+    runtime: Runtime | None = None
     platform: str | None = None
 
     def affects_cpython(self, finding: Finding) -> bool:
@@ -106,6 +107,19 @@ class TargetConfig:
             and finding_max is not None
             and finding_max < self.minimum
         )
+
+    def allows_runtime(self, runtime: Runtime) -> bool:
+        """
+        Return True when ``runtime`` is allowed by this target.
+
+        A ``None`` runtime target preserves the historical behavior and allows
+        every runtime. A target of ``both`` also allows every runtime. A
+        specific target allows that runtime and cross-runtime rules.
+        """
+        if self.runtime is None or self.runtime is Runtime.BOTH:
+            return True
+
+        return runtime in (self.runtime, Runtime.BOTH)
 
 
 def _parse_version_specifier(specifier: str) -> TargetConfig:
@@ -266,8 +280,8 @@ def load_project_targets(project_path: str | Path) -> TargetConfig | None:
     When tomllib is available, use the standard-library TOML parser.
 
     On Python versions before 3.11, use the intentionally limited
-    fallback parser for the simple ``[project]`` /
-    ``requires-python`` form.
+    fallback parser for the simple [project] /
+    requires-python form.
 
     Returns None when:
     - no pyproject.toml exists;

@@ -3,6 +3,7 @@ Scanner and Reporter integration tests.
 """
 import json
 
+from pyrift.finding import Finding, Runtime
 from pyrift.reporter import to_json, to_markdown, to_text
 from pyrift.scanner import ScanResult, scan, scan_file
 from pyrift.targets import PythonVersion, TargetConfig
@@ -150,9 +151,103 @@ class TestProjectTargeting:
             for finding in result.findings
         )
 
+
+class TestRuntimeTargeting:
+    def _write_mixed_runtime_case(self, tmp_path):
+        py_file = tmp_path / "mixed.py"
+        py_file.write_text(
+            "import gc\n"
+            "gc.collect()\n"
+            "\n"
+            "import datetime\n"
+            "datetime.datetime.utcnow()\n"
+        )
+        return py_file
+
+    def test_cpython_runtime_keeps_cpython_findings(self, tmp_path):
+        self._write_mixed_runtime_case(tmp_path)
+
+        result = scan(
+            tmp_path,
+            target_config=TargetConfig(
+                runtime=Runtime.CPYTHON,
+            ),
+        )
+
+        rule_ids = {finding.rule_id for finding in result.findings}
+
+        assert "CPY036" in rule_ids
+        assert not any(
+            finding.rule_id.startswith("PPY")
+            for finding in result.findings
+        )
+
+    def test_pypy_runtime_keeps_pypy_findings(self, tmp_path):
+        self._write_mixed_runtime_case(tmp_path)
+
+        result = scan(
+            tmp_path,
+            target_config=TargetConfig(
+                runtime=Runtime.PYPY,
+            ),
+        )
+
+        rule_ids = {finding.rule_id for finding in result.findings}
+
+        assert "PPY010" in rule_ids or "PPY049" in rule_ids
+        assert not any(
+            finding.rule_id.startswith("CPY")
+            for finding in result.findings
+        )
+
+    def test_both_runtime_keeps_both_runtime_findings(self, tmp_path):
+        self._write_mixed_runtime_case(tmp_path)
+
+        result = scan(
+            tmp_path,
+            target_config=TargetConfig(
+                runtime=Runtime.BOTH,
+            ),
+        )
+
+        rule_ids = {finding.rule_id for finding in result.findings}
+
+        assert "CPY036" in rule_ids
+        assert "PPY010" in rule_ids or "PPY049" in rule_ids
+
+    def test_runtime_filter_applies_before_rule_execution(self, tmp_path):
+        py_file = tmp_path / "sample.py"
+        py_file.write_text("x = 1\n")
+
+        calls = []
+
+        class FakeRule:
+            rule_id = "FAKE"
+            runtime = Runtime.PYPY
+            category = "compatibility"
+
+            def check(self, node, filename, target_config=None):
+                calls.append(self.rule_id)
+                return []
+
+        result = scan(
+            tmp_path,
+            rules=[FakeRule()],
+            target_config=TargetConfig(
+                runtime=Runtime.CPYTHON,
+            ),
+        )
+
+        assert result.findings == []
+        assert result.rule_errors == []
+        assert calls == []
+
+
 def test_scan_reports_rule_execution_errors(tmp_path):
     class BrokenRule:
         rule_id = "TEST-BROKEN"
+        runtime = Runtime.CPYTHON
+        category = "compatibility"
 
         def check(self, node, filename, target_config=None):
             raise RuntimeError("boom")
@@ -164,11 +259,8 @@ def test_scan_reports_rule_execution_errors(tmp_path):
     assert "TEST-BROKEN" in result.rule_errors[0]
     assert "RuntimeError" in result.rule_errors[0]
 
-def test_json_includes_evidence_metadata():
-    from pyrift.finding import Finding, Runtime
-    from pyrift.reporter import to_json
-    from pyrift.scanner import ScanResult
 
+def test_json_includes_evidence_metadata():
     finding = Finding(
         file="example.py",
         line=10,
@@ -188,10 +280,6 @@ def test_json_includes_evidence_metadata():
 
 
 def test_markdown_includes_confidence_and_evidence():
-    from pyrift.finding import Finding, Runtime
-    from pyrift.reporter import to_markdown
-    from pyrift.scanner import ScanResult
-
     finding = Finding(
         file="example.py",
         line=10,
@@ -213,38 +301,54 @@ def test_markdown_includes_confidence_and_evidence():
 
 class TestScanResultRepr:
     def test_repr_basic(self):
-        from pyrift.scanner import ScanResult
         result = ScanResult(findings=[], files_scanned=5)
         r = repr(result)
         assert "ScanResult" in r
         assert "5" in r
 
     def test_repr_with_baseline_suppressed(self):
-        from pyrift.scanner import ScanResult
-        result = ScanResult(findings=[], files_scanned=3, baseline_suppressed=2)
+        result = ScanResult(
+            findings=[],
+            files_scanned=3,
+            baseline_suppressed=2,
+        )
         r = repr(result)
         assert "baseline suppressed" in r
         assert "2" in r
 
     def test_score_with_findings(self):
-        from pyrift.finding import Finding, Runtime, Severity
-        from pyrift.scanner import ScanResult
+        from pyrift.finding import Severity
+
         errors = [
-            Finding(file="f.py", line=1, col=0, rule_id="CPY001",
-                    title="t", description="d", severity=Severity.ERROR,
-                    runtime=Runtime.CPYTHON)
+            Finding(
+                file="f.py",
+                line=1,
+                col=0,
+                rule_id="CPY001",
+                title="t",
+                description="d",
+                severity=Severity.ERROR,
+                runtime=Runtime.CPYTHON,
+            )
             for _ in range(3)
         ]
         result = ScanResult(findings=errors, files_scanned=10)
         assert result.score == max(0, 100 - 3 * 10 - 0 * 3)
 
     def test_score_zero_floor(self):
-        from pyrift.finding import Finding, Runtime, Severity
-        from pyrift.scanner import ScanResult
+        from pyrift.finding import Severity
+
         errors = [
-            Finding(file="f.py", line=1, col=0, rule_id="CPY001",
-                    title="t", description="d", severity=Severity.ERROR,
-                    runtime=Runtime.CPYTHON)
+            Finding(
+                file="f.py",
+                line=1,
+                col=0,
+                rule_id="CPY001",
+                title="t",
+                description="d",
+                severity=Severity.ERROR,
+                runtime=Runtime.CPYTHON,
+            )
             for _ in range(20)
         ]
         result = ScanResult(findings=errors, files_scanned=10)
@@ -252,7 +356,6 @@ class TestScanResultRepr:
 
     def test_scan_single_py_file(self, tmp_path):
         """Scanner accepts a single .py file, not just directories."""
-        from pyrift.scanner import scan
         py_file = tmp_path / "example.py"
         py_file.write_text("import cgi\n")
         result = scan(py_file)
@@ -260,28 +363,29 @@ class TestScanResultRepr:
 
     def test_scan_single_non_py_file(self, tmp_path):
         """Scanner skips non-.py files when given directly."""
-        from pyrift.scanner import scan
         txt_file = tmp_path / "example.txt"
         txt_file.write_text("import cgi\n")
         result = scan(txt_file)
         assert result.files_scanned == 0
 
+
 class TestScannerEdgeCases:
     def test_unicode_decode_error_skipped(self, tmp_path):
         """Files with invalid UTF-8 are skipped gracefully."""
-        from pyrift.scanner import scan
-        # Write a file with invalid UTF-8 bytes
         bad_file = tmp_path / "bad_encoding.py"
-        bad_file.write_bytes(b"x = 1\n\xff\xfe invalid bytes\n")
+        bad_file.write_bytes(
+            b"x = 1\n\xff\xfe invalid bytes\n"
+        )
         result = scan(tmp_path)
-        # Should not crash — file is skipped
         assert result is not None
 
     def test_parse_error_reported_as_finding(self, tmp_path):
         """Files with syntax errors produce a PARSE finding."""
-        from pyrift.scanner import scan
         bad_file = tmp_path / "syntax_error.py"
-        bad_file.write_text("def broken(\n")  # Invalid syntax
+        bad_file.write_text("def broken(\n")
         result = scan(tmp_path)
-        parse_findings = [f for f in result.findings if f.rule_id == "PARSE"]
+        parse_findings = [
+            f for f in result.findings
+            if f.rule_id == "PARSE"
+        ]
         assert len(parse_findings) == 1

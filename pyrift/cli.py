@@ -25,6 +25,7 @@ from .baseline import (
     filter_baseline_findings,
     load_baseline,
 )
+from .finding import Runtime
 from .git import GitError, changed_python_files
 from .reporter import to_json, to_markdown, to_sarif, to_text
 from .scanner import ALL_RULES, ScanResult, scan
@@ -99,6 +100,16 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Target platform for compatibility analysis. "
             "Use 'windows', 'linux', 'macos', or 'posix'."
+        ),
+    )
+    scan_cmd.add_argument(
+        "--runtime",
+        choices=["cpython", "pypy", "both"],
+        default=None,
+        help=(
+            "Target runtime for compatibility analysis. "
+            "Use 'cpython', 'pypy', or 'both'. "
+            "Default: both."
         ),
     )
     scan_cmd.add_argument(
@@ -214,6 +225,7 @@ def _build_target_config(
     if (
         args.python_min is None
         and args.python_max is None
+        and getattr(args, "runtime", None) is None
         and getattr(args, "platform", None) is None
     ):
         return None
@@ -228,6 +240,11 @@ def _build_target_config(
             maximum=(
                 PythonVersion.parse(args.python_max)
                 if args.python_max is not None
+                else None
+            ),
+            runtime=(
+                Runtime(args.runtime)
+                if getattr(args, "runtime", None) is not None
                 else None
             ),
             platform=getattr(args, "platform", None),
