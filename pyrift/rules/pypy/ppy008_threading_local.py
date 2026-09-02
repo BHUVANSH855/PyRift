@@ -50,11 +50,7 @@ class ThreadingLocalRule(BaseRule):
                         names.add(target.id)
 
             elif (
-                isinstance(current, ast.AnnAssign)
-                and current.value is local_call
-                and isinstance(current.target, ast.Name)
-            ) or (
-                isinstance(current, ast.NamedExpr)
+                isinstance(current, (ast.AnnAssign, ast.NamedExpr))
                 and current.value is local_call
                 and isinstance(current.target, ast.Name)
             ):

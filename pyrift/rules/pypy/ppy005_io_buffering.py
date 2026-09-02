@@ -116,18 +116,13 @@ class IoBufferingRule(BaseRule):
                         names.add(target.id)
 
             elif (
-                isinstance(node, ast.AnnAssign)
-                and node.value is open_call
-                and isinstance(node.target, ast.Name)
-            ) or (
-                isinstance(node, ast.NamedExpr)
+                isinstance(node, (ast.AnnAssign, ast.NamedExpr))
                 and node.value is open_call
                 and isinstance(node.target, ast.Name)
             ):
                 names.add(node.target.id)
 
         return names
-
     @staticmethod
     def _same_scope(
         node: ast.AST,
