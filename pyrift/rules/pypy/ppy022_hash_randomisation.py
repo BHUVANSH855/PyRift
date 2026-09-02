@@ -2,9 +2,10 @@
 PPY022 — PYTHONHASHSEED does not provide deterministic hashes on PyPy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 PyPy's hash randomisation behaviour differs from CPython. Code that
-reads PYTHONHASHSEED expecting to control deterministic hash ordering
-can therefore behave differently on PyPy.
+reads PYTHONHASHSEED expecting deterministic hash behaviour can
+therefore behave differently on PyPy.
 """
+
 from __future__ import annotations
 
 import ast
@@ -61,16 +62,22 @@ class HashRandomisationRule(BaseRule):
 
         for current in ast.walk(node):
             if isinstance(current, ast.Subscript):
+                # Only flag reads:
+                #
+                #     os.environ["PYTHONHASHSEED"]
+                #
+                # Do not flag writes:
+                #
+                #     os.environ["PYTHONHASHSEED"] = "0"
                 if (
-                    self._is_os_environ(current)
+                    isinstance(current.ctx, ast.Load)
+                    and self._is_os_environ(current)
                     and self._is_pythonhashseed_key(current)
-                    and isinstance(current.ctx, ast.Load)
                 ):
                     findings.append(self._make(filename, current))
 
-            elif (
-                isinstance(current, ast.Call)
-                and self._is_pythonhashseed_getenv(current)
+            elif isinstance(current, ast.Call) and self._is_pythonhashseed_getenv(
+                current
             ):
                 findings.append(self._make(filename, current))
 
