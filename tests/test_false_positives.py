@@ -167,23 +167,19 @@ class TestPPY004FalsePositives:
     intentionally broad (matches any `proxy()` call)."""
 
     def test_user_defined_proxy_function(self):
-        """A locally defined proxy() function is a known limitation —
-        the rule flags all proxy() calls since it cannot distinguish
-        weakref.proxy from user code. We document this here."""
+        """A bare proxy() call without a weakref import is not enough
+        evidence that the call refers to weakref.proxy()."""
         from pyrift.rules.pypy.ppy004_weakref_proxy import WeakrefProxyRule
+
         findings = run(WeakrefProxyRule, "proxy(obj)")
-        # PPY004 is intentionally broad — this IS flagged.
-        # This test documents the known false-positive boundary.
-        assert len(findings) == 1
-        assert findings[0].rule_id == "PPY004"
+        assert len(findings) == 0
 
     def test_proxy_method_on_non_weakref_object(self):
-        """Calling .proxy() on a non-weakref object — still flagged
-        because the rule matches any Attribute with attr='proxy'."""
+        """A .proxy() method on an unrelated object is not weakref.proxy()."""
         from pyrift.rules.pypy.ppy004_weakref_proxy import WeakrefProxyRule
+
         findings = run(WeakrefProxyRule, "my_obj.proxy()")
-        # Documented: this is a known FP when proxy is not from weakref.
-        assert len(findings) == 1
+        assert len(findings) == 0
 
     def test_not_flagged_without_proxy_call(self):
         """Code that does not call proxy() must not trigger PPY004."""

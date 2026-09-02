@@ -454,8 +454,21 @@ GOLDEN = {
         ("class MyList(list): pass", False, "no override ok"),
     ],
     "PPY022": [
-        ("import os\nos.environ['PYTHONHASHSEED'] = '0'", True, "hashseed env"),
-        ("os.environ['PATH'] = '/usr'", False, "other env ok"),
+        (
+            "import os\nos.environ['PYTHONHASHSEED'] = '0'",
+            False,
+            "hashseed env write ignored",
+        ),
+        (
+            "import os\nseed = os.getenv('PYTHONHASHSEED')",
+            True,
+            "hashseed getenv",
+        ),
+        (
+            "os.environ['PATH'] = '/usr'",
+            False,
+            "other env ok",
+        ),
     ],
     "PPY023": [
         ("import inspect\ninspect.ismethod(obj.method)", True, "ismethod"),

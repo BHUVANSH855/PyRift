@@ -1,12 +1,11 @@
 """
-PPY022 — Hash randomisation (-R flag) ignored on PyPy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-On CPython, the -R flag and PYTHONHASHSEED environment variable
-control hash randomisation. On PyPy, -R is ignored — PyPy always
-uses the SipHash algorithm with randomisation. Code that sets
-PYTHONHASHSEED=0 expecting deterministic hashes may behave
-differently on PyPy.
+PPY022 — PYTHONHASHSEED does not provide deterministic hashes on PyPy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+PyPy's hash randomisation behaviour differs from CPython. Code that
+reads PYTHONHASHSEED expecting deterministic hash behaviour can
+therefore behave differently on PyPy.
 """
+
 from __future__ import annotations
 
 import ast
@@ -18,9 +17,40 @@ from pyrift.targets import TargetConfig
 
 class HashRandomisationRule(BaseRule):
     rule_id = "PPY022"
-    title   = "PYTHONHASHSEED=0 has no effect on PyPy hash randomisation"
+    title = "PYTHONHASHSEED cannot provide deterministic hashes on PyPy"
     runtime = "pypy"
     severity = Severity.WARNING
+
+    @staticmethod
+    def _is_os_environ(node: ast.Subscript) -> bool:
+        """Return whether *node* represents os.environ[...] access."""
+        return (
+            isinstance(node.value, ast.Attribute)
+            and node.value.attr == "environ"
+            and isinstance(node.value.value, ast.Name)
+            and node.value.value.id == "os"
+        )
+
+    @staticmethod
+    def _is_pythonhashseed_key(node: ast.Subscript) -> bool:
+        """Return whether the subscript uses a literal PYTHONHASHSEED key."""
+        return (
+            isinstance(node.slice, ast.Constant)
+            and node.slice.value == "PYTHONHASHSEED"
+        )
+
+    @staticmethod
+    def _is_pythonhashseed_getenv(node: ast.Call) -> bool:
+        """Return whether *node* is os.getenv('PYTHONHASHSEED', ...)."""
+        return (
+            isinstance(node.func, ast.Attribute)
+            and node.func.attr == "getenv"
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "os"
+            and bool(node.args)
+            and isinstance(node.args[0], ast.Constant)
+            and node.args[0].value == "PYTHONHASHSEED"
+        )
 
     def check(
         self,
@@ -29,46 +59,49 @@ class HashRandomisationRule(BaseRule):
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
         findings: list[Finding] = []
-        for n in ast.walk(node):
-            # Detect os.environ['PYTHONHASHSEED'] or os.getenv('PYTHONHASHSEED')
-            if (
-                isinstance(n, ast.Subscript)
-                and isinstance(n.value, ast.Attribute)
-                and n.value.attr == "environ"
+
+        for current in ast.walk(node):
+            if isinstance(current, ast.Subscript):
+                # Only flag reads:
+                #
+                #     os.environ["PYTHONHASHSEED"]
+                #
+                # Do not flag writes:
+                #
+                #     os.environ["PYTHONHASHSEED"] = "0"
+                if (
+                    isinstance(current.ctx, ast.Load)
+                    and self._is_os_environ(current)
+                    and self._is_pythonhashseed_key(current)
+                ):
+                    findings.append(self._make(filename, current))
+
+            elif isinstance(current, ast.Call) and self._is_pythonhashseed_getenv(
+                current
             ):
-                slice_node = n.slice
-                if isinstance(slice_node, ast.Constant) and slice_node.value == "PYTHONHASHSEED":
-                    findings.append(self._make(filename, n))
-            if isinstance(n, ast.Call):
-                func = n.func
-                if (isinstance(func, ast.Attribute) and
-                        func.attr == "getenv" and
-                        n.args and
-                        isinstance(n.args[0], ast.Constant) and
-                        n.args[0].value == "PYTHONHASHSEED"):
-                    findings.append(self._make(filename, n))
+                findings.append(self._make(filename, current))
+
         return findings
 
-    def _make(self, filename: str, n: ast.AST) -> Finding:
+    def _make(self, filename: str, node: ast.AST) -> Finding:
         return Finding(
             file=filename,
-            line=n.lineno,  # type: ignore[attr-defined]
-            col=n.col_offset,  # type: ignore[attr-defined]
+            line=node.lineno,  # type: ignore[attr-defined]
+            col=node.col_offset,  # type: ignore[attr-defined]
             rule_id=self.rule_id,
             title=self.title,
             description=(
-                "PYTHONHASHSEED is being read. Modern PyPy3 always uses "
-                "SipHash with randomisation. Setting PYTHONHASHSEED=0 for "
-                "deterministic test ordering does not work on PyPy — use "
-                "sorted() instead. Tests relying on deterministic hash "
-                "order may fail silently on PyPy."
+                "PYTHONHASHSEED is being read. PyPy's hash "
+                "randomisation behaviour differs from CPython, so "
+                "relying on PYTHONHASHSEED for deterministic hash "
+                "ordering can produce different behaviour on PyPy."
             ),
             severity=Severity.WARNING,
             runtime=Runtime.PYPY,
             suggestion=(
-                "Do not rely on PYTHONHASHSEED=0 for deterministic "
+                "Do not rely on PYTHONHASHSEED for deterministic "
                 "ordering. Use sorted() explicitly when order matters "
-                "in tests, or use OrderedDict for guaranteed ordering."
+                "in tests or application logic."
             ),
             docs_url=(
                 "https://doc.pypy.org/en/latest/cpython_differences.html"

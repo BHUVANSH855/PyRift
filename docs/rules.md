@@ -389,7 +389,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 **Severity:** Error | **Confidence:** High | **Affects:** PyPy
 
 ---
-### PPY002 — ctypes usage may silently fail on PyPy
+### PPY002 — ctypes usage may differ on PyPy
 
 **Severity:** Warning | **Confidence:** High | **Affects:** PyPy
 
@@ -479,7 +479,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 **Severity:** Warning | **Confidence:** High | **Affects:** PyPy
 
 ---
-### PPY022 — PYTHONHASHSEED=0 has no effect on PyPy hash randomisation
+### PPY022 — PYTHONHASHSEED cannot provide deterministic hashes on PyPy
 
 **Severity:** Warning | **Confidence:** High | **Affects:** PyPy
 

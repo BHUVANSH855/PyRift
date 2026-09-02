@@ -5,6 +5,7 @@ On PyPy, if you add a __del__ method to an existing class after
 it has already been defined, the __del__ will NOT be called.
 PyPy emits a RuntimeWarning. On CPython, this works silently.
 """
+
 from __future__ import annotations
 
 import ast
@@ -16,7 +17,7 @@ from pyrift.targets import TargetConfig
 
 class DelExistingClassRule(BaseRule):
     rule_id = "PPY017"
-    title   = "Adding __del__ to existing class not called on PyPy"
+    title = "Adding __del__ to existing class not called on PyPy"
     runtime = "pypy"
     severity = Severity.ERROR
 
@@ -28,17 +29,32 @@ class DelExistingClassRule(BaseRule):
     ) -> list[Finding]:
         findings: list[Finding] = []
 
-        for n in ast.walk(node):
-            # Detect: ClassName.__del__ = something
-            if not isinstance(n, ast.Assign):
+        # Collect class names defined in the analyzed AST.  We only flag
+        # assignments where the receiver is statically known to be a class.
+        class_names = {
+            class_node.name
+            for class_node in ast.walk(node)
+            if isinstance(class_node, ast.ClassDef)
+        }
+
+        for assignment in ast.walk(node):
+            if not isinstance(assignment, ast.Assign):
                 continue
-            for target in n.targets:
-                if (isinstance(target, ast.Attribute) and
-                        target.attr == "__del__"):
-                    findings.append(Finding(
+
+            for target in assignment.targets:
+                if not (
+                    isinstance(target, ast.Attribute)
+                    and target.attr == "__del__"
+                    and isinstance(target.value, ast.Name)
+                    and target.value.id in class_names
+                ):
+                    continue
+
+                findings.append(
+                    Finding(
                         file=filename,
-                        line=n.lineno,
-                        col=n.col_offset,
+                        line=assignment.lineno,
+                        col=assignment.col_offset,
                         rule_id=self.rule_id,
                         title=self.title,
                         description=(
@@ -57,9 +73,11 @@ class DelExistingClassRule(BaseRule):
                             "only adding it to a class that had none does not."
                         ),
                         docs_url=(
-                            "https://doc.pypy.org/en/latest/cpython_differences.html"
+                            "https://doc.pypy.org/en/latest/"
+                            "cpython_differences.html"
                             "#differences-related-to-garbage-collection-strategies"
                         ),
-                    ))
+                    )
+                )
 
         return findings
