@@ -562,7 +562,7 @@ Lists the compatibility rules and their documented behavior.
 
 - **Version:** 0.8.0
 - **Rules:** 118 total (70 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1253 passing
+- **Tests:** 1321 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -779,7 +779,7 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | CPY076 | ssl.wrap_socket() removed in Python 3.12 | cpython |
 | CPY077 | typing.TypedDict zero-field syntax removed in Python 3.15 | cpython |
 | PPY001 | Relying on __del__ for resource cleanup breaks on PyPy | pypy |
-| PPY002 | ctypes usage may silently fail on PyPy | pypy |
+| PPY002 | ctypes usage may differ on PyPy | pypy |
 | PPY003 | sys.getrefcount() is meaningless on PyPy | pypy |
 | PPY004 | weakref.proxy() lifetime differs on PyPy due to GC model | pypy |
 | PPY005 | File write without explicit lifecycle management on PyPy | pypy |
@@ -798,7 +798,7 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | PPY018 | sys.setrecursionlimit() behaviour differs on PyPy | pypy |
 | PPY019 | float('nan') identity differs between CPython and PyPy | pypy |
 | PPY021 | Socket not closed promptly on PyPy — GC timing | pypy |
-| PPY022 | PYTHONHASHSEED=0 has no effect on PyPy hash randomisation | pypy |
+| PPY022 | PYTHONHASHSEED cannot provide deterministic hashes on PyPy | pypy |
 | PPY023 | inspect.ismethod() returns different results on PyPy | pypy |
 | PPY024 | timeit reports average not minimum on PyPy | pypy |
 | PPY025 | Set iteration order differs between CPython and PyPy | pypy |
