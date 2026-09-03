@@ -1,9 +1,11 @@
 """
 PPY016 — Instance dict ordering not guaranteed on PyPy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Only report instance __dict__ usage when the code structurally depends
 on iteration/order.
 """
+
 from __future__ import annotations
 
 import ast
@@ -12,49 +14,108 @@ from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 from pyrift.targets import TargetConfig
 
+_ORDERED_METHODS = {"keys", "values", "items"}
+_ORDER_SENSITIVE_BUILTINS = {
+    "list",
+    "tuple",
+    "iter",
+    "reversed",
+    "dict",
+}
+
+
+def _is_sorted_call(node: ast.AST) -> bool:
+    """Return whether *node* is a direct sorted(...) call."""
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "sorted"
+    )
+
 
 def _is_order_sensitive(
     node: ast.Attribute,
     parent_map: dict[int, ast.AST],
 ) -> bool:
+    """
+    Determine whether an instance __dict__ is used in an
+    order-sensitive context.
+
+    Important cases:
+
+        list(obj.__dict__)              -> report
+        tuple(obj.__dict__)             -> report
+        iter(obj.__dict__)              -> report
+        reversed(obj.__dict__)          -> report
+        dict(obj.__dict__)              -> report
+
+        sorted(obj.__dict__)            -> don't report
+        sorted(obj.__dict__.items())    -> don't report
+
+        obj.__dict__.keys()             -> report
+        obj.__dict__.values()           -> report
+        obj.__dict__.items()            -> report
+
+        for x in obj.__dict__:          -> report
+        [x for x in obj.__dict__]:      -> report
+    """
     current = parent_map.get(id(node))
 
     if current is None:
         return False
 
+    # Direct iteration:
+    #
+    #     for key in obj.__dict__:
+    #
     if isinstance(current, ast.For):
         return current.iter is node
 
+    # Comprehension iteration:
+    #
+    #     [key for key in obj.__dict__]
+    #
     if isinstance(current, ast.comprehension):
         return current.iter is node
 
+    # Direct calls operating on obj.__dict__.
     if isinstance(current, ast.Call):
-        if isinstance(current.func, ast.Name):
-            return current.func.id in {
-                "list",
-                "tuple",
-                "iter",
-                "sorted",
-                "reversed",
-                "dict",
-            }
+        if not isinstance(current.func, ast.Name):
+            return False
 
-        return False
+        # sorted() establishes a deterministic order, so the original
+        # dictionary iteration order is not part of the resulting order.
+        if current.func.id == "sorted":
+            return False
 
-    # Handles:
+        return current.func.id in _ORDER_SENSITIVE_BUILTINS
+
+    # Handle:
+    #
     #     obj.__dict__.keys()
     #     obj.__dict__.values()
     #     obj.__dict__.items()
+    #
     if isinstance(current, ast.Attribute):
-        if current.attr not in {"keys", "values", "items"}:
+        if current.attr not in _ORDERED_METHODS:
             return False
 
         call = parent_map.get(id(current))
 
-        return (
+        if not (
             isinstance(call, ast.Call)
             and call.func is current
-        )
+        ):
+            return False
+
+        # sorted(obj.__dict__.items()) explicitly establishes the final
+        # ordering, so the original dictionary order is not observable.
+        grandparent = parent_map.get(id(call))
+
+        if grandparent is None:
+            return True
+
+        return not _is_sorted_call(grandparent)
 
     return False
 
@@ -66,11 +127,11 @@ class InstanceDictOrderRule(BaseRule):
     severity = Severity.WARNING
 
     def check(
-            self,
-            node: ast.AST,
-            filename: str,
-            target_config: TargetConfig | None = None,
-        ) -> list[Finding]:
+        self,
+        node: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
         parent_map: dict[int, ast.AST] = {}
 
         for parent in ast.walk(node):
@@ -86,10 +147,7 @@ class InstanceDictOrderRule(BaseRule):
             if current.attr != "__dict__":
                 continue
 
-            if not _is_order_sensitive(
-                current,
-                parent_map,
-            ):
+            if not _is_order_sensitive(current, parent_map):
                 continue
 
             findings.append(

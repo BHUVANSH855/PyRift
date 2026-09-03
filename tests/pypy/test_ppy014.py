@@ -183,3 +183,62 @@ class TestPPY014:
 
         assert len(findings) == 1
         assert findings[0].line == 5
+
+    def test_string_name_does_not_leak_between_functions(self):
+        src = """
+        def first():
+            result = ""
+
+        def second():
+            for item in items:
+                result += item
+        """
+
+        findings = run(self.rule, src)
+
+        assert len(findings) == 0
+
+    def test_same_name_in_different_functions_is_independent(self):
+        src = """
+        def first():
+            result = ""
+            for item in items:
+                result += item
+
+        def second():
+            result = 0
+            for item in items:
+                result += item
+        """
+
+        findings = run(self.rule, src)
+
+        assert len(findings) == 1
+        assert findings[0].line == 5
+
+    def test_nested_function_does_not_inherit_outer_string_name(self):
+        src = """
+        result = ""
+
+        def inner():
+            for item in items:
+                result += item
+        """
+
+        findings = run(self.rule, src)
+
+        assert len(findings) == 0
+
+    def test_nested_function_can_have_its_own_string_name(self):
+        src = """
+        result = ""
+
+        def inner():
+            result = ""
+            for item in items:
+                result += item
+        """
+
+        findings = run(self.rule, src)
+
+        assert len(findings) == 1

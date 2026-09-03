@@ -1,6 +1,6 @@
 """
 PPY014 — Repeated string concatenation in loops is O(n²) on PyPy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Repeated string concatenation in loops can have different performance
 characteristics between CPython and PyPy.
@@ -8,9 +8,14 @@ characteristics between CPython and PyPy.
 This rule intentionally reports only augmented string concatenation
 where the target can be identified as a string through static analysis.
 
+String-type evidence is tracked per lexical scope so an assignment in
+one function cannot incorrectly classify a same-named variable in an
+unrelated function.
+
 It does not report arbitrary ``+=`` operations on unknown variables,
 integers, lists, or other objects.
 """
+
 from __future__ import annotations
 
 import ast
@@ -25,6 +30,13 @@ class StringConcatLoopRule(BaseRule):
     title = "String concatenation in loop is O(n²) on PyPy"
     runtime = "pypy"
     severity = Severity.WARNING
+
+    _SCOPE_TYPES = (
+        ast.Module,
+        ast.FunctionDef,
+        ast.AsyncFunctionDef,
+        ast.ClassDef,
+    )
 
     @staticmethod
     def _is_string_value(node: ast.AST | None) -> bool:
@@ -64,16 +76,48 @@ class StringConcatLoopRule(BaseRule):
         return False
 
     @classmethod
+    def _scope_statements(cls, node: ast.AST) -> list[ast.stmt]:
+        """Return statements belonging directly to one lexical scope."""
+        if isinstance(
+            node,
+            (
+                ast.Module,
+                ast.FunctionDef,
+                ast.AsyncFunctionDef,
+                ast.ClassDef,
+            ),
+        ):
+            return list(node.body)
+
+        return []
+
+    @classmethod
     def _collect_string_names(cls, node: ast.AST) -> set[str]:
         """
-        Collect names that have clear static evidence of being strings.
+        Collect string names belonging to a single lexical scope.
 
-        Unknown variables are intentionally excluded to avoid false
-        positives.
+        Nested function, async-function, class, lambda, and comprehension
+        scopes are intentionally excluded so names do not leak between
+        unrelated scopes.
         """
         string_names: set[str] = set()
 
-        for current in ast.walk(node):
+        def visit(current: ast.AST) -> None:
+            if isinstance(
+                current,
+                (
+                    ast.FunctionDef,
+                    ast.AsyncFunctionDef,
+                    ast.ClassDef,
+                    ast.Lambda,
+                    ast.ListComp,
+                    ast.SetComp,
+                    ast.DictComp,
+                    ast.GeneratorExp,
+                ),
+            ):
+                return
+
             if isinstance(current, ast.Assign):
                 if cls._is_string_value(current.value):
                     for target in current.targets:
@@ -93,7 +137,64 @@ class StringConcatLoopRule(BaseRule):
                 ):
                     string_names.add(current.target.id)
 
+            for child in ast.iter_child_nodes(current):
+                visit(child)
+
+        for statement in cls._scope_statements(node):
+            visit(statement)
+
         return string_names
+
+    @classmethod
+    def _iter_lexical_scopes(cls, node: ast.AST) -> list[ast.AST]:
+        """Return all lexical scopes reachable from *node*."""
+        scopes: list[ast.AST] = []
+
+        for current in ast.walk(node):
+            if isinstance(current, cls._SCOPE_TYPES):
+                scopes.append(current)
+
+        return scopes
+
+    @classmethod
+    def _iter_loops_in_scope(
+        cls,
+        scope: ast.AST,
+    ) -> list[ast.For | ast.While]:
+        """
+        Return loops belonging to one lexical scope.
+
+        Nested function/class/lambda/comprehension scopes are skipped, but
+        nested For/While loops remain part of the same lexical scope.
+        """
+        loops: list[ast.For | ast.While] = []
+
+        def visit(current: ast.AST) -> None:
+            if current is not scope and isinstance(
+                current,
+                (
+                    ast.FunctionDef,
+                    ast.AsyncFunctionDef,
+                    ast.ClassDef,
+                    ast.Lambda,
+                    ast.ListComp,
+                    ast.SetComp,
+                    ast.DictComp,
+                    ast.GeneratorExp,
+                ),
+            ):
+                return
+
+            if isinstance(current, (ast.For, ast.While)):
+                loops.append(current)
+
+            for child in ast.iter_child_nodes(current):
+                visit(child)
+
+        for statement in cls._scope_statements(scope):
+            visit(statement)
+
+        return loops
 
     @classmethod
     def _is_string_target(
@@ -102,10 +203,7 @@ class StringConcatLoopRule(BaseRule):
         string_names: set[str],
     ) -> bool:
         """Return True when an augmented-assignment target is a string."""
-        return (
-            isinstance(target, ast.Name)
-            and target.id in string_names
-        )
+        return isinstance(target, ast.Name) and target.id in string_names
 
     @classmethod
     def _find_string_concats(
@@ -122,32 +220,37 @@ class StringConcatLoopRule(BaseRule):
         """
         findings: list[ast.AugAssign] = []
 
-        def visit(statements: list[ast.stmt]) -> None:
-            for statement in statements:
-                if isinstance(statement, (ast.For, ast.While)):
-                    continue
+        def visit(current: ast.AST) -> None:
+            if isinstance(
+                current,
+                (
+                    ast.For,
+                    ast.While,
+                    ast.FunctionDef,
+                    ast.AsyncFunctionDef,
+                    ast.ClassDef,
+                    ast.Lambda,
+                    ast.ListComp,
+                    ast.SetComp,
+                    ast.DictComp,
+                    ast.GeneratorExp,
+                ),
+            ):
+                return
 
-                if isinstance(statement, ast.AugAssign):
-                    if (
-                        isinstance(statement.op, ast.Add)
-                        and cls._is_string_target(
-                            statement.target,
-                            string_names,
-                        )
-                    ):
-                        findings.append(statement)
+            if isinstance(current, ast.AugAssign):
+                if (
+                    isinstance(current.op, ast.Add)
+                    and cls._is_string_target(current.target, string_names)
+                ):
+                    findings.append(current)
+                return
 
-                    continue
+            for child in ast.iter_child_nodes(current):
+                visit(child)
 
-                for child in ast.iter_child_nodes(statement):
-                    if isinstance(child, ast.stmt):
-                        visit([child])
-                    else:
-                        for descendant in ast.iter_child_nodes(child):
-                            if isinstance(descendant, ast.stmt):
-                                visit([descendant])
-
-        visit(loop.body)
+        for statement in loop.body:
+            visit(statement)
 
         return findings
 
@@ -158,62 +261,60 @@ class StringConcatLoopRule(BaseRule):
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
         findings: list[Finding] = []
-        string_names = self._collect_string_names(node)
-
         reported_lines: set[tuple[int, int]] = set()
 
-        for current in ast.walk(node):
-            if not isinstance(current, (ast.For, ast.While)):
-                continue
+        for scope in self._iter_lexical_scopes(node):
+            string_names = self._collect_string_names(scope)
 
-            for concat in self._find_string_concats(
-                current,
-                string_names,
-            ):
-                location = (
-                    concat.lineno,
-                    concat.col_offset,
-                )
-
-                if location in reported_lines:
-                    continue
-
-                reported_lines.add(location)
-
-                target_name = (
-                    concat.target.id
-                    if isinstance(concat.target, ast.Name)
-                    else ""
-                )
-
-                findings.append(
-                    Finding(
-                        file=filename,
-                        line=concat.lineno,
-                        col=concat.col_offset,
-                        rule_id=self.rule_id,
-                        title=self.title,
-                        description=(
-                            f"String variable '{target_name}' is "
-                            "concatenated with += inside a loop. "
-                            "Repeated string concatenation can have "
-                            "different performance characteristics on "
-                            "PyPy and may become O(n²) for large inputs."
-                        ),
-                        severity=Severity.WARNING,
-                        runtime=Runtime.PYPY,
-                        suggestion=(
-                            "Use a list and join at the end: "
-                            "parts = []; parts.append(s); "
-                            "result = ''.join(parts). "
-                            "This avoids repeated string concatenation."
-                        ),
-                        docs_url=(
-                            "https://doc.pypy.org/en/latest/"
-                            "cpython_differences.html"
-                            "#performance-differences"
-                        ),
+            for loop in self._iter_loops_in_scope(scope):
+                for concat in self._find_string_concats(
+                    loop,
+                    string_names,
+                ):
+                    location = (
+                        concat.lineno,
+                        concat.col_offset,
                     )
-                )
+
+                    if location in reported_lines:
+                        continue
+
+                    reported_lines.add(location)
+
+                    target_name = (
+                        concat.target.id
+                        if isinstance(concat.target, ast.Name)
+                        else ""
+                    )
+
+                    findings.append(
+                        Finding(
+                            file=filename,
+                            line=concat.lineno,
+                            col=concat.col_offset,
+                            rule_id=self.rule_id,
+                            title=self.title,
+                            description=(
+                                f"String variable '{target_name}' is "
+                                "concatenated with += inside a loop. "
+                                "Repeated string concatenation can have "
+                                "different performance characteristics on "
+                                "PyPy and may become O(n²) for large inputs."
+                            ),
+                            severity=Severity.WARNING,
+                            runtime=Runtime.PYPY,
+                            suggestion=(
+                                "Use a list and join at the end: "
+                                "parts = []; parts.append(s); "
+                                "result = ''.join(parts). "
+                                "This avoids repeated string concatenation."
+                            ),
+                            docs_url=(
+                                "https://doc.pypy.org/en/latest/"
+                                "cpython_differences.html"
+                                "#performance-differences"
+                            ),
+                        )
+                    )
 
         return findings
