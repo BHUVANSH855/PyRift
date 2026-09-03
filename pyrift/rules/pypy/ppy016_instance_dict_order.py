@@ -96,7 +96,6 @@ def _is_order_sensitive(
     #     obj.__dict__.values()
     #     obj.__dict__.items()
     #
-    # The Attribute node is the receiver of the method call.
     if isinstance(current, ast.Attribute):
         if current.attr not in _ORDERED_METHODS:
             return False
@@ -109,9 +108,13 @@ def _is_order_sensitive(
         ):
             return False
 
-        # If this method call is itself consumed by sorted(), then the
-        # final result has an explicitly established ordering.
+        # sorted(obj.__dict__.items()) explicitly establishes the final
+        # ordering, so the original dictionary order is not observable.
         grandparent = parent_map.get(id(call))
+
+        if grandparent is None:
+            return True
+
         return not _is_sorted_call(grandparent)
 
     return False
