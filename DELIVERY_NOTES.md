@@ -313,12 +313,47 @@ removed, mirroring the existing `baseline_suppressed` pattern. Covered
 by `tests/test_guards.py` (19 tests) including 4 end-to-end
 scanner-integration tests.
 
-### 79-82. Real-world package corpus / CPython self-scan — **DEFERRED**
-Explicitly a "P1, do this after the foundation is solid" item per the
-review's own section 100-101; not attempted here, and doing it hastily
-(without the shim/guard suppression landing first) would have produced
-a misleadingly noisy result anyway — the guard/shim work in this pass
-is a prerequisite for that experiment to be worth running.
+### 79-82. Real-world package corpus / CPython self-scan — **PARTIAL (2026-09-14 update)**
+`benchmark/corpus.py` had a latent correctness bug independent of this
+review: `scan_package()` called `rule.check()` directly in a hand-rolled
+loop, bypassing `scanner.py` entirely -- which meant the guard/shim
+suppression pass from points 73-78 (above) was never exercised by the
+one benchmark that's supposed to validate precision on real code.
+Fixed: `scan_package()` now calls `pyrift.scan()`, the same entry point
+the CLI uses, and reports `guard_suppressed` and a confidence breakdown
+per package.
+
+Extended the corpus with three more packages from the review's own
+suggested list (`packaging`, `click`, `pydantic`), chosen because they
+actually exercise the guard/shim suppression on real code: scanning
+`packaging` 26.0 and `pydantic` 2.13.5 as installed from PyPI on
+2026-09-14 shows 2 and 6 findings respectively suppressed by version-
+guard/shim detection that a pre-guards version of pyrift would have
+reported as false positives.
+
+Also produced one piece of real-world evidence for the review's own
+point 18 (PPY035 too broad): scanning `pydantic` 2.13.5 with
+`runtime=Runtime.BOTH` (i.e. not filtered to CPython-only) surfaces 44
+separate PPY035 findings -- essentially one per call site touching
+pydantic-core. That's a directly measured number, not an estimate, and
+it's documented inline in `benchmark/corpus.py` as supporting evidence
+for narrowing that detector (still tracked as future work, not fixed
+in this pass -- see point 18 above).
+
+Also corrected: the corpus's per-rule `"rules"` ceiling dicts *are*
+actually enforced (a per-rule count exceeding its recorded maximum
+fails the build) -- an earlier pass at this file briefly mischaracterized
+them as dead/unused code before checking the `main()` loop closely
+enough. They're accurately described as regression ceilings, not exact
+expectations, in the module's own output now.
+
+Still not done: a broader run across the review's full suggested list
+(urllib3, Django, NumPy, SciPy, pandas, pytest, cryptography, FastAPI,
+SQLAlchemy, typing_extensions) and the actual findings/KLOC + false-
+positives/KLOC metrics computation described in point 79 -- this pass
+fixed the measurement *pipeline* and added 3 packages as a proof of
+concept, not the full corpus. CPython self-scan (point 80) is still
+untouched.
 
 ### 83-85. PR/diff mode, GitHub Checks — **NOT ADDRESSED**
 `--changed-only`/baseline diffing already existed pre-review; no new
