@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyrift import ALL_RULES, scan
+from pyrift import scan
 from pyrift.finding import Runtime
 
 STRICT = os.environ.get("PYRIFT_CORPUS_STRICT") == "1"
@@ -267,7 +267,7 @@ def _installed_version(name: str) -> str:
     source changes across releases -- that's not a pyrift regression.
     """
     try:
-        from importlib.metadata import PackageNotFoundError, version
+        from importlib.metadata import version
 
         return version(name)
     except Exception:

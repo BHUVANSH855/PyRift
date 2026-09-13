@@ -172,9 +172,7 @@ def _is_pypy_check(node: ast.AST) -> bool | None:
     def _pypy_literal(n: ast.AST) -> bool:
         return isinstance(n, ast.Constant) and isinstance(n.value, str) and n.value.lower() == "pypy"
 
-    if _is_impl_name(left) and _pypy_literal(right):
-        matches_pypy = True
-    elif _is_python_implementation_call(left) and _pypy_literal(right):
+    if _is_impl_name(left) and _pypy_literal(right) or _is_python_implementation_call(left) and _pypy_literal(right):
         matches_pypy = True
     else:
         return None
@@ -286,9 +284,7 @@ def build_guard_index(tree: ast.AST) -> GuardIndex:
                 elif isinstance(handler_type, ast.Name) and handler_type.id in (
                     "ImportError",
                     "ModuleNotFoundError",
-                ):
-                    has_import_error_handler = True
-                elif isinstance(handler_type, ast.Tuple) and any(
+                ) or isinstance(handler_type, ast.Tuple) and any(
                     isinstance(e, ast.Name)
                     and e.id in ("ImportError", "ModuleNotFoundError")
                     for e in handler_type.elts
