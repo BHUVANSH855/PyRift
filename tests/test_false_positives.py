@@ -479,12 +479,29 @@ ctx = multiprocessing.get_context('spawn')
         findings = run(MultiprocessingForkRule, src)
         assert len(findings) == 0
 
-    def test_import_multiprocessing_alone_triggers(self):
-        """import multiprocessing without safety call SHOULD trigger."""
+    def test_import_multiprocessing_alone_does_not_trigger(self):
+        """A bare `import multiprocessing` is NOT sufficient evidence
+        that a program relies on fork semantics -- narrowed 2026-09-13
+        per the architecture review, point 7. The previous version of
+        this test encoded the false-positive-prone behavior as
+        "expected"; the rule now requires an actual start-method-
+        sensitive construct (Process/Pool/get_context)."""
         from pyrift.rules.cpython.cpy023_multiprocessing_fork import (
             MultiprocessingForkRule,
         )
         findings = run(MultiprocessingForkRule, "import multiprocessing")
+        assert len(findings) == 0
+
+    def test_import_multiprocessing_with_process_triggers(self):
+        """Constructing a Process/Pool without pinning a start method
+        is the actual signal this rule should key on."""
+        from pyrift.rules.cpython.cpy023_multiprocessing_fork import (
+            MultiprocessingForkRule,
+        )
+        findings = run(
+            MultiprocessingForkRule,
+            "import multiprocessing\nmultiprocessing.Process(target=f)",
+        )
         assert len(findings) == 1
 
     def test_from_import_multiprocessing(self):

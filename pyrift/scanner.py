@@ -12,8 +12,9 @@ import os
 from collections.abc import Iterator
 from pathlib import Path
 
+from .analysis.guards import build_guard_index, guard_reduces_risk
 from .base_rule import BaseRule
-from .finding import Finding, Runtime
+from .finding import Confidence, Finding, RuleCategory, Runtime, Severity
 
 # All rules accept target_config (default=None). No per-rule introspection needed.
 from .rules.cpython.cpy001_dict_ordering import DictOrderingRule
@@ -287,10 +288,12 @@ class ScanResult:
         baseline_suppressed: int = 0,
         rule_errors: list[str] | None = None,
         base_path: str | Path | None = None,
+        guard_suppressed: int = 0,
     ):
         self.findings = findings
         self.files_scanned = files_scanned
         self.baseline_suppressed = baseline_suppressed
+        self.guard_suppressed = guard_suppressed
         self.rule_errors = rule_errors or []
         self.base_path = (
             Path(base_path).resolve()
@@ -310,8 +313,38 @@ class ScanResult:
 
     @property
     def score(self) -> int:
+        """Deprecated. ``100 - errors*10 - warnings*3`` is not a
+        scientifically meaningful measure (2026-09 review, point 86): a
+        single high-confidence compatibility bug and twenty informational
+        performance observations should not collapse to a comparable
+        number. Kept only for backward compatibility with existing
+        callers/dashboards. Prefer :meth:`breakdown`.
+        """
         deductions = len(self.errors) * 10 + len(self.warnings) * 3
         return max(0, 100 - deductions)
+
+    def breakdown(self) -> dict[str, int]:
+        """Findings grouped by confidence, the way the review recommends
+        presenting results instead of a single opaque score::
+
+            {"high_confidence": 3, "medium_confidence": 4,
+             "informational": 12, "analyzer_errors": 0}
+        """
+        from .finding import Confidence, Severity
+
+        high = sum(1 for f in self.findings if f.confidence == Confidence.HIGH)
+        medium = sum(1 for f in self.findings if f.confidence == Confidence.MEDIUM)
+        info = sum(
+            1
+            for f in self.findings
+            if f.confidence == Confidence.LOW or f.severity == Severity.INFO
+        )
+        return {
+            "high_confidence": high,
+            "medium_confidence": medium,
+            "informational": info,
+            "analyzer_errors": len(self.rule_errors),
+        }
 
     def __repr__(self) -> str:
         base = (
@@ -321,6 +354,8 @@ class ScanResult:
         )
         if self.baseline_suppressed:
             base += f" [baseline suppressed: {self.baseline_suppressed}]"
+        if self.guard_suppressed:
+            base += f" [guard/shim suppressed: {self.guard_suppressed}]"
         return base
 
 
@@ -370,12 +405,60 @@ def _filter_rules_for_target(
     return selected
 
 
+def _apply_guards(findings: list[Finding], tree: ast.AST) -> tuple[list[Finding], int]:
+    """Suppress or downgrade findings neutralised by a detected version
+    guard, implementation guard, or try/except compatibility shim.
+
+    See :mod:`pyrift.analysis.guards` for the rationale (2026-09 review,
+    points 73-78). This is a project-wide, rule-agnostic filter -- it
+    does not require any individual rule to be guard-aware.
+    """
+    if not findings:
+        return findings, 0
+
+    index = build_guard_index(tree)
+    kept: list[Finding] = []
+    suppressed = 0
+
+    for f in findings:
+        # PARSE/ANALYZER diagnostics are not compatibility findings and
+        # are never subject to guard suppression.
+        if f.rule_id in ("PARSE", "ANALYZER001"):
+            kept.append(f)
+            continue
+
+        category = f.category.value if isinstance(f.category, RuleCategory) else f.category
+        should_suppress, reason = guard_reduces_risk(
+            index,
+            f.line,
+            finding_runtime=f.runtime.value,
+            affected_from=f.affected_from,
+            affected_until=f.affected_until,
+            category=category,
+        )
+
+        if should_suppress:
+            suppressed += 1
+            continue
+
+        if reason:
+            # Downgrade-only case (currently: TYPE_CHECKING blocks).
+            f.confidence = Confidence.LOW
+            f.severity = Severity.INFO
+            f.context_note = reason
+
+        kept.append(f)
+
+    return kept, suppressed
+
+
 def _scan_file_detailed(
     filepath: str | Path,
     rules: list[BaseRule] | None = None,
     target_config: TargetConfig | None = None,
-) -> tuple[list[Finding], list[str]]:
-    """Scan a single file and return findings plus rule execution failures."""
+) -> tuple[list[Finding], list[str], int]:
+    """Scan a single file and return findings, rule execution failures,
+    and a count of findings suppressed by guard/shim detection."""
     filepath = Path(filepath)
     rules = _filter_rules_for_target(
         rules or ALL_RULES,
@@ -393,7 +476,7 @@ def _scan_file_detailed(
                 "Skipping %s: unable to decode with UTF-8",
                 filepath,
             )
-            return findings, rule_errors
+            return findings, rule_errors, 0
         except OSError as exc:
             from .finding import Severity
 
@@ -411,7 +494,7 @@ def _scan_file_detailed(
                     runtime=Runtime.BOTH,
                 )
             )
-            return findings, rule_errors
+            return findings, rule_errors, 0
 
         if "\x00" in source:
             from .finding import Severity
@@ -430,7 +513,7 @@ def _scan_file_detailed(
                     runtime=Runtime.BOTH,
                 )
             )
-            return findings, rule_errors
+            return findings, rule_errors, 0
 
         tree = ast.parse(source, filename=str(filepath))
     except SyntaxError as exc:
@@ -447,7 +530,7 @@ def _scan_file_detailed(
                 runtime=Runtime.BOTH,
             )
         )
-        return findings, rule_errors
+        return findings, rule_errors, 0
 
     for rule in rules:
         try:
@@ -458,7 +541,14 @@ def _scan_file_detailed(
             )
 
             for f in rule_findings:
-                f.category = rule.category
+                # RULE_METADATA (via Finding.__post_init__) is authoritative
+                # for category when the rule has been classified there.
+                # BaseRule.category is only used as a fallback for rules
+                # that predate/lack a metadata entry, so a blanket override
+                # here can no longer silently collapse every finding to
+                # "compatibility" (2026-09 review, point 2 / section 47).
+                if f.category == RuleCategory.COMPATIBILITY and rule.category != "compatibility":
+                    f.category = rule.category
 
             findings.extend(rule_findings)
         except Exception as exc:
@@ -473,7 +563,8 @@ def _scan_file_detailed(
                 filepath,
             )
 
-    return findings, rule_errors
+    findings, guard_suppressed = _apply_guards(findings, tree)
+    return findings, rule_errors, guard_suppressed
 
 
 def scan_file(
@@ -488,7 +579,7 @@ def scan_file(
     ``ScanResult.rule_errors`` so callers can distinguish analyzer failures
     from source-code findings.
     """
-    findings, _ = _scan_file_detailed(filepath, rules, target_config)
+    findings, _, _ = _scan_file_detailed(filepath, rules, target_config)
     return findings
 
 
@@ -526,14 +617,16 @@ def scan(
     all_findings: list[Finding] = []
     rule_errors: list[str] = []
     files_scanned = 0
+    guard_suppressed_total = 0
 
     for py_file in _python_files(path):
-        findings, file_rule_errors = _scan_file_detailed(
+        findings, file_rule_errors, guard_suppressed = _scan_file_detailed(
             py_file,
             rules,
             target_config,
         )
         rule_errors.extend(file_rule_errors)
+        guard_suppressed_total += guard_suppressed
 
         if target_config is not None:
             findings = [
@@ -570,4 +663,5 @@ def scan(
         files_scanned,
         rule_errors=rule_errors,
         base_path=scan_base_path,
+        guard_suppressed=guard_suppressed_total,
     )

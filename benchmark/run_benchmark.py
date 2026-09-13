@@ -86,11 +86,26 @@ GOLDEN = {
         ("x = ~42", False, "int invert"),
     ],
     "CPY023": [
-        ("import multiprocessing", True, "plain import"),
+        (
+            "import multiprocessing\nmultiprocessing.Process(target=worker)",
+            True,
+            "Process construction",
+        ),
+        (
+            "import multiprocessing\nwith multiprocessing.Pool() as p:\n    p.map(f, xs)",
+            True,
+            "Pool construction",
+        ),
+        (
+            "import multiprocessing",
+            False,
+            "plain import -- narrowed 2026-09-13, no longer sufficient evidence",
+        ),
         (
             (
                 "import multiprocessing\n"
-                "multiprocessing.set_start_method('fork')"
+                "multiprocessing.set_start_method('fork')\n"
+                "multiprocessing.Process(target=worker)"
             ),
             False,
             "explicit start",

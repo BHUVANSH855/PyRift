@@ -280,14 +280,21 @@ class TestToSarif:
 
 class TestFindingCategory:
     def test_default_category(self):
+        # CPY001 (dict-ordering assumption) is a silent behavior
+        # difference, not a version-availability check, and was
+        # reclassified from the old blanket "compatibility" default to
+        # "semantic" as part of the rule taxonomy (2026-09 review,
+        # points 1-2). It is still populated automatically from
+        # RULE_METADATA via Finding.__post_init__, just with a more
+        # accurate value.
         f = make_finding()
-        assert f.category == "compatibility"
+        assert f.category == "semantic"
 
     def test_to_dict_includes_category(self):
         f = make_finding()
         d = f.to_dict()
         assert "category" in d
-        assert d["category"] == "compatibility"
+        assert d["category"] == "semantic"
 
     def test_custom_category(self):
         f = make_finding()
@@ -299,3 +306,9 @@ class TestFindingCategory:
         f.category = "platform"
         d = f.to_dict()
         assert d["category"] == "platform"
+
+    def test_bare_finding_without_rule_id_defaults_to_compatibility(self):
+        # A Finding with no rule_id has no RULE_METADATA entry to draw
+        # from, so it keeps the conservative class-level default.
+        f = Finding(file="test.py", line=1, title="x", description="x")
+        assert f.category == "compatibility"
