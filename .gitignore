@@ -63,3 +63,6 @@ uv.lock
 *-scan.json
 benchmark-output/
 compatibility-benchmark/*.json
+pyrift-*.txt
+pyrift-*.json
+pyrift-live-test/
