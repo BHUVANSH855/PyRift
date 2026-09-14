@@ -1,4 +1,12 @@
-"""CPY031 -- typing.assert_never requires Python 3.11+ (PEP 673)."""
+"""CPY031 -- typing.assert_never requires Python 3.11+.
+
+Evidence note (corrected 2026-09-13): earlier releases of this rule cited
+PEP 673 as the authoritative source. PEP 673 specifies ``typing.Self``
+and is unrelated to ``assert_never``. ``typing.assert_never`` is a
+Python 3.11 typing-module addition documented in the official typing
+documentation and the 3.11 "What's New" notes; there is no dedicated PEP
+for it. See ``pyrift.rule_metadata`` for the corresponding metadata fix.
+"""
 from __future__ import annotations
 
 import ast
@@ -31,6 +39,6 @@ class AssertNeverRule(BaseRule):
                     severity=Severity.ERROR, runtime=Runtime.CPYTHON,
                     affected_from="3.0", affected_until="3.10",
                     suggestion="Guard with: if sys.version_info >= (3, 11): from typing import assert_never -- or use typing_extensions.",
-                    docs_url="https://peps.python.org/pep-673/",
+                    docs_url="https://docs.python.org/3/library/typing.html#typing.assert_never",
                 ))
         return findings

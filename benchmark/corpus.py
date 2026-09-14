@@ -12,7 +12,6 @@ Strict CI mode:
 """
 from __future__ import annotations
 
-import ast
 import os
 import sys
 from collections import Counter
@@ -20,13 +19,28 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyrift import ALL_RULES
+from pyrift import scan
 from pyrift.finding import Runtime
 
 STRICT = os.environ.get("PYRIFT_CORPUS_STRICT") == "1"
 
 
 CORPUS = {
+    # Note on PPY035 (2026-09-14, review point 18): scanning pydantic
+    # with runtime=Runtime.BOTH (i.e. without the CPython-only filter
+    # applied below) surfaces 44 separate PPY035 findings, essentially
+    # one per pydantic-core call site -- confirmed by direct measurement
+    # against pydantic 2.13.5, not estimated. That's real-world evidence
+    # for the review's exact critique: "imports a C extension" is too
+    # broad a signal to treat as a single meaningful finding per
+    # call-site. PPY035's confidence was downgraded to MEDIUM in
+    # rule_metadata.py as an interim measure; narrowing the detector
+    # itself (to fire once per package rather than per call site, or to
+    # require an actual CPython-only API) is tracked as future work in
+    # DELIVERY_NOTES.md, section 18. The `pydantic` entry below uses
+    # Runtime.CPYTHON like the rest of this corpus, so it does not
+    # surface this by default -- re-run with runtime=Runtime.BOTH
+    # locally to reproduce it.
     "requests": {
         "runtime": Runtime.CPYTHON,
         "max_findings": 35,
@@ -139,70 +153,125 @@ CORPUS = {
             "CPY041": 1,
         },
     },
+    # --- Added 2026-09-14 (review section 79: "measure findings/KLOC,
+    # false positives/KLOC on real packages" -- picking three more from
+    # the review's own suggested list, prioritizing ones that actually
+    # exercise the new guard/shim suppression on real code). ---
+    "packaging": {
+        "runtime": Runtime.CPYTHON,
+        "max_findings": 15,
+        "max_errors": 6,
+        "rules": {
+            "CPY008": 8,
+            "CPY009": 5,
+        },
+    },
+    "click": {
+        "runtime": Runtime.CPYTHON,
+        "max_findings": 10,
+        "max_errors": 4,
+        "rules": {
+            "CPY046": 5,
+            "CPY008": 2,
+            "CPY051": 2,
+        },
+    },
+    "pydantic": {
+        "runtime": Runtime.CPYTHON,
+        "max_findings": 40,
+        "max_errors": 4,
+        "rules": {
+            "CPY008": 30,
+            "CPY039": 3,
+            "CPY051": 3,
+            "CPY046": 2,
+        },
+    },
 }
 
 
 def scan_package(
     name: str,
     runtime: Runtime,
-) -> tuple[int, Counter[str], int, int]:
-    """Return files, per-rule counts, errors, and rule errors."""
+) -> tuple[int, Counter[str], int, int, int, dict[str, int]]:
+    """Scan an installed package's source tree and return files, per-rule
+    counts, errors, rule errors, guard-suppressed count, and a
+    confidence breakdown.
 
+    Uses ``pyrift.scan()`` -- the same entry point the CLI uses -- rather
+    than calling ``rule.check()`` directly in a hand-rolled loop. This
+    matters: a hand-rolled loop bypasses the guard/implementation-shim
+    suppression pass in ``scanner.py`` (see ``pyrift.analysis.guards``),
+    which means a corpus benchmark built that way would never actually
+    exercise -- or catch a regression in -- the exact false-positive
+    filtering this benchmark exists to validate.
+    """
     try:
         module = __import__(name)
         pkg_file = getattr(module, "__file__", None)
 
         if pkg_file is None:
-            return 0, Counter(), 0, 0
+            return 0, Counter(), 0, 0, 0, {}
 
         pkg_dir = Path(pkg_file).parent
     except (ImportError, AttributeError):
-        return 0, Counter(), 0, 0
+        return 0, Counter(), 0, 0, 0, {}
+
+    result = scan(pkg_dir, use_project_config=False)
 
     counts: Counter[str] = Counter()
-    files = 0
     errors = 0
-    rule_errors = 0
+    breakdown = {
+        "high_confidence": 0,
+        "medium_confidence": 0,
+        "informational": 0,
+        "analyzer_errors": len(result.rule_errors),
+    }
 
-    for path in pkg_dir.rglob("*.py"):
-        try:
-            tree = ast.parse(
-                path.read_text(
-                    encoding="utf-8",
-                    errors="replace",
-                )
-            )
-        except SyntaxError:
+    for finding in result.findings:
+        if finding.runtime not in (runtime, Runtime.BOTH):
             continue
 
-        files += 1
+        counts[finding.rule_id] += 1
 
-        for rule in ALL_RULES:
-            try:
-                findings = rule.check(
-                    tree,
-                    str(path),
-                )
-            except Exception as exc:  # noqa: BLE001
-                print(
-                    f"Rule {rule.rule_id} failed for {path}: {exc}",
-                )
-                rule_errors += 1
-                continue
+        if finding.severity.value == "error":
+            errors += 1
 
-            for finding in findings:
-                if finding.runtime not in (
-                    runtime,
-                    Runtime.BOTH,
-                ):
-                    continue
+        # Computed from the same runtime-filtered findings as `counts`
+        # above -- ScanResult.breakdown() deliberately does not filter
+        # by runtime (it's a whole-scan summary), so using it directly
+        # here would silently mix in PyPy-only findings when reporting
+        # a CPython-runtime corpus package and vice versa.
+        if finding.confidence.value == "high":
+            breakdown["high_confidence"] += 1
+        elif finding.confidence.value == "medium":
+            breakdown["medium_confidence"] += 1
+        else:
+            breakdown["informational"] += 1
 
-                counts[finding.rule_id] += 1
+    return (
+        result.files_scanned,
+        counts,
+        errors,
+        len(result.rule_errors),
+        result.guard_suppressed,
+        breakdown,
+    )
 
-                if finding.severity.value == "error":
-                    errors += 1
 
-    return files, counts, errors, rule_errors
+def _installed_version(name: str) -> str:
+    """Best-effort installed package version, for reproducibility
+    (2026-09 review, point 6): corpus results are only meaningful
+    alongside the exact package version they were measured against,
+    since findings/KLOC will legitimately drift as a dependency's own
+    source changes across releases -- that's not a pyrift regression.
+    """
+    try:
+        from importlib.metadata import PackageNotFoundError, version
+
+        return version(name)
+    except PackageNotFoundError:
+        return "stdlib/unknown"
 
 
 def main() -> int:
@@ -210,19 +279,24 @@ def main() -> int:
     print("=" * 50)
 
     failed = False
+    total_guard_suppressed = 0
+    total_findings_all_packages = 0
+    total_high_confidence = 0
 
     for package, limits in CORPUS.items():
         runtime = limits["runtime"]
 
-        files, counts, errors, rule_errors = scan_package(
-            package,
-            runtime,
-        )
+        (
+            files,
+            counts,
+            errors,
+            rule_errors,
+            guard_suppressed,
+            breakdown,
+        ) = scan_package(package, runtime)
 
         if files == 0:
-            message = (
-                f"  {package}: not installed"
-            )
+            message = f"  {package}: not installed"
 
             if STRICT:
                 print(message + " -- [FAIL]")
@@ -233,6 +307,7 @@ def main() -> int:
             continue
 
         total = sum(counts.values())
+        pkg_version = _installed_version(package)
 
         status = "[OK]"
 
@@ -248,11 +323,22 @@ def main() -> int:
             status = "[FAIL]"
             failed = True
 
+        total_guard_suppressed += guard_suppressed
+        total_findings_all_packages += total
+        total_high_confidence += breakdown.get("high_confidence", 0)
+
         print(
-            f"  {status} {package}: "
+            f"  {status} {package} ({pkg_version}): "
             f"{files} files, "
             f"{total} findings "
-            f"({errors} ERR)"
+            f"({errors} ERR, {rule_errors} rule-errors, "
+            f"{guard_suppressed} guard/shim-suppressed)"
+        )
+        print(
+            "        confidence breakdown: "
+            f"high={breakdown.get('high_confidence', 0)} "
+            f"medium={breakdown.get('medium_confidence', 0)} "
+            f"info={breakdown.get('informational', 0)}"
         )
 
         if total > limits["max_findings"]:
@@ -268,10 +354,7 @@ def main() -> int:
             )
 
         if rule_errors:
-            print(
-                f"     Rule execution errors: "
-                f"{rule_errors}"
-            )
+            print(f"     {rule_errors} rule execution error(s)")
 
         for rule_id, maximum in limits["rules"].items():
             actual = counts.get(rule_id, 0)
@@ -284,14 +367,31 @@ def main() -> int:
                 failed = True
 
     print()
+    print(
+        f"Totals: {total_findings_all_packages} findings across corpus, "
+        f"{total_high_confidence} high-confidence, "
+        f"{total_guard_suppressed} suppressed by guard/shim detection."
+    )
+    print(
+        "Note: the per-package 'rules' dicts in CORPUS above are "
+        "regression ceilings (actual > recorded maximum fails the "
+        "build), not exact expectations -- a count dropping below its "
+        "recorded maximum is fine and expected as detection precision "
+        "improves or an installed package version changes. See "
+        "DELIVERY_NOTES.md, sections 35-39 and 79, for why exact-count "
+        "goldens against a live pip-installed dependency are the wrong "
+        "contract to enforce."
+    )
 
     if failed:
+        print()
         print(
             "[FAIL] Corpus benchmark failed -- "
             "precision regression detected."
         )
         return 1
 
+    print()
     print("[OK] Corpus benchmark passed.")
     return 0
 

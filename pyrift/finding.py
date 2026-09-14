@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
+from typing import cast
 
 
 class Severity(str, Enum):
@@ -62,6 +63,93 @@ class Runtime(str, Enum):
     CPYTHON = "cpython"
     PYPY = "pypy"
     BOTH = "both"
+
+
+class RuleCategory(str, Enum):
+    """What kind of claim a rule is making.
+
+    This is the taxonomy split requested in the 2026-09 architecture
+    review: PyRift's rule catalog mixes three materially different kinds
+    of claims, and treating them identically ("compatibility") hides that
+    difference from the reader.
+
+    SEMANTIC
+        The program keeps running but observable behavior/output differs
+        (dict ordering assumptions, ``locals()`` semantics, NaN hashing,
+        pickle's default protocol, GC/finalizer timing, ...).
+    COMPATIBILITY
+        A name/attribute/module is introduced, deprecated, or removed at
+        a specific version. The primary failure mode is
+        ImportError/AttributeError/SyntaxError, not a silent behavior
+        change.
+    IMPLEMENTATION
+        A documented difference between CPython and another implementation
+        (usually PyPy) that is not primarily about raw speed -- id()
+        stability, ctypes support, monkey-patching, hash() values, etc.
+    PERFORMANCE
+        An implementation detail that affects speed/complexity but not
+        correctness (string concatenation complexity, attribute-deletion
+        speed, timeit semantics, ...).
+    """
+
+    SEMANTIC = "semantic"
+    COMPATIBILITY = "compatibility"
+    IMPLEMENTATION = "implementation"
+    PERFORMANCE = "performance"
+
+
+class ContractStatus(str, Enum):
+    """What kind of guarantee (or lack of one) backs the affected behavior.
+
+    This is distinct from ``IntentBasis``: ``IntentBasis`` describes what
+    PyRift can establish about *why* a rule exists (documented change vs.
+    inference). ``ContractStatus`` describes the strength of the
+    underlying language/library guarantee that the finding concerns.
+    """
+
+    GUARANTEED = "guaranteed"
+    DOCUMENTED = "documented"
+    IMPLEMENTATION_DEFINED = "implementation_defined"
+    DEPRECATED = "deprecated"
+    REMOVED = "removed"
+    OBSERVED = "observed"
+    UNKNOWN = "unknown"
+
+
+class RuntimeVerificationState(str, Enum):
+    """How thoroughly a rule's runtime claim has actually been checked.
+
+    ``VERIFIED`` may only be used for rules with a passing entry in
+    ``benchmark/runtime_harness.py`` for *every* version range the rule
+    claims to affect. Rules with partial probe coverage, or none, must
+    not be reported as verified -- see the 2026-09 review, point 5:
+    treating "probe file missing -> SKIP -> overall OK" as verification
+    is a credibility problem, not a convenience.
+    """
+
+    VERIFIED = "verified"
+    PARTIALLY_VERIFIED = "partially_verified"
+    UNVERIFIED = "unverified"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class RuleTier(str, Enum):
+    """Editorial confidence tier used for the PyPy rule audit (review #47).
+
+    TIER_A rules are backed by specific, citable PyPy documentation of a
+    concrete behavior difference and are safe to present as high
+    confidence. TIER_B rules are legitimate but are primarily performance
+    heuristics and should not be presented with the same certainty as a
+    documented API/behavior difference. TIER_C rules describe a real
+    concern but currently rest on general/broad documentation rather
+    than a precise, checkable claim, and need stronger evidence before
+    they are promoted.
+    """
+
+    TIER_A = "tier_a"
+    TIER_B = "tier_b"
+    TIER_C = "tier_c"
+    NOT_TIERED = "not_tiered"
 
 
 _VERSION_RE = re.compile(
@@ -130,15 +218,38 @@ class Finding:
     #
     # LOW/INFERRED are intentionally conservative defaults. A static
     # analyzer must not claim high confidence without documented evidence.
+    #
+    # ``confidence`` is retained for backward compatibility (existing
+    # consumers, SARIF/JSON output, CLI filters). It is derived as the
+    # *weakest* of the multidimensional scores below unless a caller sets
+    # it explicitly, so it can never silently overstate certainty.
     confidence: Confidence = Confidence.LOW
     evidence_type: EvidenceType = EvidenceType.INFERRED
     evidence_source: str = ""
     intent_basis: IntentBasis = IntentBasis.INFERRED
 
+    # Multidimensional confidence (review #24, #61).
+    # claim_confidence:     how solid is the underlying behavioral claim?
+    # detection_confidence: how precisely does the AST pattern match the
+    #                       claim (vs. a proxy pattern that may not apply)?
+    # runtime_verification: was this actually executed and observed, or
+    #                       only documented/inferred?
+    claim_confidence: Confidence = Confidence.LOW
+    detection_confidence: Confidence = Confidence.LOW
+    runtime_verification: RuntimeVerificationState = (
+        RuntimeVerificationState.NOT_APPLICABLE
+    )
+
+    # What kind of claim/guarantee this finding rests on.
+    category: RuleCategory | str = RuleCategory.COMPATIBILITY
+    contract_status: ContractStatus = ContractStatus.UNKNOWN
+    rule_tier: RuleTier = RuleTier.NOT_TIERED
+
     # Which runtimes / versions are affected
     runtime: Runtime = Runtime.BOTH
     affected_from: str = ""
     affected_until: str = ""
+    platform_scope: str = ""
 
     # Rule lifecycle (populated from rule_metadata)
     rule_status: str = ""
@@ -148,8 +259,13 @@ class Finding:
     suggestion: str = ""
     docs_url: str = ""
 
-    # Rule category (populated from BaseRule.category)
-    category: str = "compatibility"
+    # Context-sensitive confidence note. Set by the scanner's guard/shim
+    # suppression pass (see pyrift.analysis.guards) when project context
+    # (a version guard, an implementation guard, or a try/except
+    # compatibility shim) makes a finding's *contextual* risk lower than
+    # its rule-level confidence would suggest, without fully suppressing
+    # it. Empty when no such context applies.
+    context_note: str = ""
 
     def __post_init__(self) -> None:
         """Attach reviewed rule metadata when available."""
@@ -162,18 +278,68 @@ class Finding:
         if metadata is None:  # pragma: no cover
             return
 
-        self.confidence = metadata["confidence"]  # type: ignore[assignment]
-        self.evidence_type = metadata["evidence_type"]  # type: ignore[assignment]
-        self.evidence_source = metadata["evidence_source"]  # type: ignore[assignment]
-        self.intent_basis = metadata["intent_basis"]  # type: ignore[assignment]
+        self.confidence = cast(Confidence, metadata["confidence"])
+        self.evidence_type = cast(EvidenceType, metadata["evidence_type"])
+        self.evidence_source = str(metadata["evidence_source"])
+        self.intent_basis = cast(IntentBasis, metadata["intent_basis"])
         self.rule_status = str(metadata.get("status", ""))
         self.rule_last_verified = str(metadata.get("last_verified", ""))
+
+        category = metadata.get("category")
+        if category is not None:
+            self.category = cast(RuleCategory, category)
+
+        contract_status = metadata.get("contract_status")
+        if contract_status is not None:
+            self.contract_status = cast(ContractStatus, contract_status)
+
+        self.rule_tier = cast(
+            RuleTier,
+            metadata.get("rule_tier", self.rule_tier),
+        )
+
+        claim_conf = metadata.get("claim_confidence")
+        self.claim_confidence = (
+            cast(Confidence, claim_conf)
+            if claim_conf is not None
+            else self.confidence
+        )
+
+        detect_conf = metadata.get("detection_confidence")
+        self.detection_confidence = (
+            cast(Confidence, detect_conf)
+            if detect_conf is not None
+            else self.confidence
+        )
+
+        runtime_verif = metadata.get("runtime_verification")
+        if runtime_verif is not None:
+            self.runtime_verification = cast(
+                RuntimeVerificationState,
+                runtime_verif,
+            )
+
+        # ``confidence`` must never exceed the weakest contributing
+        # dimension -- this is what makes "HIGH" mean something (review
+        # #24, #58): a rule cannot be high confidence overall if its
+        # detection heuristic is weak, even if the underlying claim is
+        # rock solid.
+        _order = {Confidence.LOW: 0, Confidence.MEDIUM: 1, Confidence.HIGH: 2}
+        weakest = min(
+            (self.confidence, self.claim_confidence, self.detection_confidence),
+            key=lambda c: _order[c],
+        )
+        self.confidence = weakest
 
         affected_versions = str(metadata.get("affected_versions", ""))
         if affected_versions and not self.affected_from and not self.affected_until:
             self.affected_from, self.affected_until = parse_version_range(
                 affected_versions
             )
+
+        platform_scope = metadata.get("platform_scope")
+        if platform_scope and not self.platform_scope:
+            self.platform_scope = str(platform_scope)
 
     def __str__(self) -> str:
         loc = f"{self.file}:{self.line}"
@@ -189,6 +355,7 @@ class Finding:
         )
 
     def to_dict(self) -> dict:
+        category = self.category.value if isinstance(self.category, RuleCategory) else self.category
         return {
             "file": self.file,
             "line": self.line,
@@ -198,15 +365,22 @@ class Finding:
             "description": self.description,
             "severity": self.severity.value,
             "confidence": self.confidence.value,
+            "claim_confidence": self.claim_confidence.value,
+            "detection_confidence": self.detection_confidence.value,
+            "runtime_verification": self.runtime_verification.value,
             "evidence_type": self.evidence_type.value,
             "evidence_source": self.evidence_source,
             "intent_basis": self.intent_basis.value,
+            "contract_status": self.contract_status.value,
+            "rule_tier": self.rule_tier.value,
             "rule_status": self.rule_status,
             "rule_last_verified": self.rule_last_verified,
             "runtime": self.runtime.value,
             "affected_from": self.affected_from,
             "affected_until": self.affected_until,
+            "platform_scope": self.platform_scope,
             "suggestion": self.suggestion,
             "docs_url": self.docs_url,
-            "category": self.category,
+            "category": category,
+            "context_note": self.context_note,
         }

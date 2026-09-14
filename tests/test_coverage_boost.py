@@ -347,7 +347,9 @@ class TestCPY023Extended:
         )
         from pyrift.targets import TargetConfig
         rule = MultiprocessingForkRule()
-        tree = ast.parse("import multiprocessing")
+        # Narrowed 2026-09-13: a bare import is no longer sufficient
+        # evidence (review point 7) -- use an actual Process construction.
+        tree = ast.parse("import multiprocessing\nmultiprocessing.Process(target=f)")
         config = TargetConfig(platform="linux")
         findings = rule.check(tree, "<test>", target_config=config)
         assert len(findings) == 1
