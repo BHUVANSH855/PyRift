@@ -55,6 +55,8 @@ Following the architecture review, every rule now also carries:
 
 from __future__ import annotations
 
+from typing import cast
+
 from .finding import (
     Confidence,
     ContractStatus,
@@ -280,9 +282,12 @@ def validate_metadata() -> bool:
         # A rule can never claim overall HIGH confidence while claiming a
         # weaker score on either contributing dimension (review #24/#58).
         order = {Confidence.LOW: 0, Confidence.MEDIUM: 1, Confidence.HIGH: 2}
-        confidence = entry["confidence"]
-        claim = entry.get("claim_confidence", confidence)
-        detection = entry.get("detection_confidence", confidence)
+        confidence = cast(Confidence, entry["confidence"])
+        claim = cast(Confidence, entry.get("claim_confidence", confidence))
+        detection = cast(
+            Confidence,
+            entry.get("detection_confidence", confidence),
+        )
         if order[confidence] > min(order[claim], order[detection]):  # pragma: no cover
             return False
 

@@ -53,8 +53,8 @@ def _has_explicit_start_method(node: ast.AST) -> bool:
     return False
 
 
-def _uses_start_method_sensitive_api(node: ast.AST) -> ast.AST | None:
-    """Return the first AST node that plausibly depends on the default
+def _uses_start_method_sensitive_api(node: ast.AST) -> ast.Call | None:
+    """Return the first AST call that plausibly depends on the default
     start method (Process/Pool construction, or a bare get_context()),
     or None if no such usage is found."""
     for n in ast.walk(node):

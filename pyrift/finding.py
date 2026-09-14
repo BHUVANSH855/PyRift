@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
+from typing import cast
 
 
 class Severity(str, Enum):
@@ -277,31 +278,46 @@ class Finding:
         if metadata is None:  # pragma: no cover
             return
 
-        self.confidence = metadata["confidence"]  # type: ignore[assignment]
-        self.evidence_type = metadata["evidence_type"]  # type: ignore[assignment]
-        self.evidence_source = metadata["evidence_source"]  # type: ignore[assignment]
-        self.intent_basis = metadata["intent_basis"]  # type: ignore[assignment]
+        self.confidence = cast(Confidence, metadata["confidence"])
+        self.evidence_type = cast(EvidenceType, metadata["evidence_type"])
+        self.evidence_source = str(metadata["evidence_source"])
+        self.intent_basis = cast(IntentBasis, metadata["intent_basis"])
         self.rule_status = str(metadata.get("status", ""))
         self.rule_last_verified = str(metadata.get("last_verified", ""))
 
-        self.category = metadata.get("category", self.category)  # type: ignore[assignment]
-        self.contract_status = metadata.get(  # type: ignore[assignment]
-            "contract_status", self.contract_status
+        category = metadata.get("category")
+        if category is not None:
+            self.category = cast(RuleCategory, category)
+
+        contract_status = metadata.get("contract_status")
+        if contract_status is not None:
+            self.contract_status = cast(ContractStatus, contract_status)
+
+        self.rule_tier = cast(
+            RuleTier,
+            metadata.get("rule_tier", self.rule_tier),
         )
-        self.rule_tier = metadata.get("rule_tier", self.rule_tier)  # type: ignore[assignment]
 
         claim_conf = metadata.get("claim_confidence")
-        detect_conf = metadata.get("detection_confidence")
         self.claim_confidence = (
-            claim_conf if claim_conf is not None else self.confidence
-        )  # type: ignore[assignment]
+            cast(Confidence, claim_conf)
+            if claim_conf is not None
+            else self.confidence
+        )
+
+        detect_conf = metadata.get("detection_confidence")
         self.detection_confidence = (
-            detect_conf if detect_conf is not None else self.confidence
-        )  # type: ignore[assignment]
+            cast(Confidence, detect_conf)
+            if detect_conf is not None
+            else self.confidence
+        )
 
         runtime_verif = metadata.get("runtime_verification")
         if runtime_verif is not None:
-            self.runtime_verification = runtime_verif  # type: ignore[assignment]
+            self.runtime_verification = cast(
+                RuntimeVerificationState,
+                runtime_verif,
+            )
 
         # ``confidence`` must never exceed the weakest contributing
         # dimension -- this is what makes "HIGH" mean something (review
