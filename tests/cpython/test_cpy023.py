@@ -49,6 +49,282 @@ class TestCPY023:
         assert findings[0].rule_id == "CPY023"
         assert findings[0].severity == Severity.WARNING
 
+    def test_detects_aliased_multiprocessing_module(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+            p = mp.Process(target=worker)
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_detects_from_import_process(self):
+        findings = run(
+            self.rule,
+            """
+            from multiprocessing import Process
+            p = Process(target=worker)
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_detects_aliased_from_import_process(self):
+        findings = run(
+            self.rule,
+            """
+            from multiprocessing import Process as P
+            p = P(target=worker)
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_unknown_attribute_does_not_trigger(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing
+            foo.Process(target=worker)
+            """,
+        )
+
+        assert findings == []
+
+    def test_shadowed_module_alias_does_not_trigger(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker(mp):
+                mp.Process(target=target)
+            """,
+        )
+
+        assert findings == []
+
+    def test_assignment_shadowing_before_call_does_not_trigger(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker():
+                mp = something_else
+                mp.Process(target=target)
+            """,
+        )
+
+        assert findings == []
+
+    def test_shadowed_from_import_does_not_trigger(self):
+        findings = run(
+            self.rule,
+            """
+            from multiprocessing import Process
+
+            def worker(Process):
+                Process(target=target)
+            """,
+        )
+
+        assert findings == []
+
+    def test_assignment_shadowing_after_call_does_not_trigger(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker():
+                mp.Process(target=target)
+                mp = something_else
+            """,
+        )
+
+        assert findings == []
+
+    def test_nested_function_without_shadowing_uses_module_alias(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def outer():
+                def worker():
+                    mp.Process(target=target)
+
+                worker()
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_nested_function_shadowing_does_not_trigger(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def outer():
+                def worker(mp):
+                    mp.Process(target=target)
+
+                worker(something_else)
+            """,
+        )
+
+        assert findings == []
+
+    def test_class_binding_does_not_shadow_module_alias_inside_method(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            class Worker:
+                mp = something_else
+
+                def run(self):
+                    mp.Process(target=target)
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_nested_function_binding_does_not_shadow_outer_function(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def outer():
+                def inner():
+                    mp = something_else
+
+                mp.Process(target=target)
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_nested_class_binding_does_not_shadow_outer_function(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def outer():
+                class Inner:
+                    mp = something_else
+
+                mp.Process(target=target)
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_global_declaration_uses_module_alias(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker():
+                global mp
+                mp.Process(target=target)
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_nonlocal_declaration_preserves_outer_binding(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def outer():
+                def worker():
+                    nonlocal mp
+                    mp.Process(target=target)
+
+                worker()
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_for_target_shadows_module_alias(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker():
+                for mp in items:
+                    mp.Process(target=target)
+            """,
+        )
+
+        assert findings == []
+
+    def test_with_target_shadows_module_alias(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker():
+                with something() as mp:
+                    mp.Process(target=target)
+            """,
+        )
+
+        assert findings == []
+
+    def test_except_target_shadows_module_alias(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker():
+                try:
+                    something()
+                except Exception as mp:
+                    mp.Process(target=target)
+            """,
+        )
+
+        assert findings == []
+
+    def test_del_binding_shadows_module_alias(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker():
+                del mp
+                mp.Process(target=target)
+            """,
+        )
+
+        assert findings == []
+
     def test_detects_pool_construction(self):
         findings = run(
             self.rule,
@@ -171,3 +447,113 @@ class TestCPY023:
             "set_start_method" in findings[0].suggestion.lower()
             or "fork" in findings[0].suggestion.lower()
         )
+
+    def test_function_default_expression_uses_enclosing_scope(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker(
+                value=mp.Process(target=target),
+            ):
+                pass
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_function_body_assignment_does_not_change_default_scope(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker(
+                value=mp.Process(target=target),
+            ):
+                mp = something_else
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_function_decorator_expression_uses_enclosing_scope(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            @decorate(mp.Process(target=target))
+            def worker():
+                pass
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_function_return_annotation_call_uses_enclosing_scope(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker() -> make_type(mp.Process(target=target)):
+                pass
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_nested_function_body_uses_nested_scope(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def outer():
+                def worker():
+                    mp = something_else
+                    mp.Process(target=target)
+
+                worker()
+            """,
+        )
+
+        assert findings == []
+
+    def test_nested_class_body_does_not_resolve_as_function_scope(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def outer():
+                class Worker:
+                    mp = something_else
+                    value = mp.Process(target=target)
+            """,
+        )
+
+        assert findings == []
+
+    def test_method_does_not_inherit_class_binding(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            class Worker:
+                mp = something_else
+
+                def run(self):
+                    mp.Process(target=target)
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"

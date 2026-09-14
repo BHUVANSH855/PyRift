@@ -277,26 +277,39 @@ def build_guard_index(tree: ast.AST) -> GuardIndex:
             has_import_error_handler = False
             for handler in node.handlers:
                 handler_type = handler.type
-                if handler_type is None:
-                    has_import_error_handler = True  # bare except
-                elif isinstance(handler_type, ast.Name) and handler_type.id in (
-                    "ImportError",
-                    "ModuleNotFoundError",
-                ) or isinstance(handler_type, ast.Tuple) and any(
-                    isinstance(e, ast.Name)
-                    and e.id in ("ImportError", "ModuleNotFoundError")
-                    for e in handler_type.elts
+                if handler_type is None or (
+                    isinstance(handler_type, ast.Name)
+                    and handler_type.id
+                    in ("ImportError", "ModuleNotFoundError")
+                ) or (
+                    isinstance(handler_type, ast.Tuple)
+                    and any(
+                        isinstance(e, ast.Name)
+                        and e.id in ("ImportError", "ModuleNotFoundError")
+                        for e in handler_type.elts
+                    )
                 ):
                     has_import_error_handler = True
 
             if has_import_error_handler:
-                try_span = _span(node.body)
-                if try_span:
-                    index.import_shim_ranges.append(try_span)
+                # Only import statements are part of the compatibility
+                # shim. An unrelated statement inside the same try/except
+                # must remain visible to compatibility rules.
+                for statement in node.body:
+                    if isinstance(statement, (ast.Import, ast.ImportFrom)):
+                        statement_span = _span([statement])
+                        if statement_span:
+                            index.import_shim_ranges.append(statement_span)
+
                 for handler in node.handlers:
-                    handler_span = _span(handler.body)
-                    if handler_span:
-                        index.import_shim_ranges.append(handler_span)
+                    for statement in handler.body:
+                        if isinstance(
+                            statement,
+                            (ast.Import, ast.ImportFrom),
+                        ):
+                            statement_span = _span([statement])
+                            if statement_span:
+                                index.import_shim_ranges.append(statement_span)
 
     return index
 
