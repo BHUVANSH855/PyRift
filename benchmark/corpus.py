@@ -267,10 +267,10 @@ def _installed_version(name: str) -> str:
     source changes across releases -- that's not a pyrift regression.
     """
     try:
-        from importlib.metadata import version
+        from importlib.metadata import PackageNotFoundError, version
 
         return version(name)
-    except Exception:
+    except PackageNotFoundError:
         return "stdlib/unknown"
 
 

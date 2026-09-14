@@ -117,15 +117,13 @@ def _is_version_info(node: ast.AST) -> bool:
         and node.value.id == "sys"
     ):
         return True
-    if (
+    return (
         isinstance(node, ast.Subscript)
         and isinstance(node.value, ast.Attribute)
         and node.value.attr == "version_info"
         and isinstance(node.value.value, ast.Name)
         and node.value.value.id == "sys"
-    ):
-        return True
-    return False
+    )
 
 
 def _is_pypy_check(node: ast.AST) -> bool | None:
