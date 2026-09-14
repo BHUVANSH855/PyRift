@@ -557,3 +557,218 @@ class TestCPY023:
 
         assert len(findings) == 1
         assert findings[0].rule_id == "CPY023"
+
+    def test_vararg_and_kwarg_bindings_are_collected(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker(*args: int, **kwargs: int):
+                mp = something_else
+                mp.Process(target=target)
+            """,
+        )
+        assert findings == []
+
+    def test_nested_function_metadata_is_traversed(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def outer():
+                @decorate(1)
+                def inner(
+                    value: int = 1,
+                    *args: int,
+                    **kwargs: int,
+                ) -> int:
+                    return 1
+
+                mp.Process(target=target)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_async_function_metadata_and_body_are_traversed(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            async def worker(
+                value: int = 1,
+                *args: int,
+                **kwargs: int,
+            ) -> int:
+                mp.Process(target=target)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_class_binding_collector_handles_exception_and_nested_metadata(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            @decorate(1)
+            class Worker(Base, metaclass=Meta):
+                try:
+                    value = 1
+                except Exception as error:
+                    value = error
+
+                @decorate(1)
+                def method(
+                    self,
+                    value: int = 1,
+                    *args: int,
+                    **kwargs: int,
+                ) -> int:
+                    return 1
+
+                async def async_method(
+                    self,
+                    value: int = 1,
+                    *args: int,
+                    **kwargs: int,
+                ) -> int:
+                    return 1
+
+                class Nested:
+                    pass
+
+                value = mp.Process(target=target)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_class_metadata_in_function_scope_is_traversed(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def outer():
+                @decorate(1)
+                class Worker(Base, metaclass=Meta):
+                    value = 1
+
+                mp.Process(target=target)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_function_argument_annotations_are_traversed(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            def worker(
+                value: int,
+                *args: int,
+                **kwargs: int,
+            ) -> int:
+                mp.Process(target=target)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_async_function_dispatch_is_supported(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            async def worker():
+                mp.Process(target=target)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_class_decorator_base_and_keyword_are_traversed(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            @decorate(1)
+            class Worker(Base, metaclass=Meta):
+                value = mp.Process(target=target)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_risky_class_decorator_short_circuits_class_body(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            @decorate(mp.Process(target=target))
+            class Worker:
+                value = something_else()
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_from_import_get_context_with_explicit_method_is_safe(self):
+        findings = run(
+            self.rule,
+            """
+            from multiprocessing import get_context
+
+            ctx = get_context("spawn")
+            ctx.Process(target=target)
+            """,
+        )
+        assert findings == []
+
+    def test_from_import_set_start_method_is_safe(self):
+        findings = run(
+            self.rule,
+            """
+            from multiprocessing import Process, set_start_method
+
+            set_start_method("spawn")
+            Process(target=target)
+            """,
+        )
+        assert findings == []
+
+    def test_unrelated_set_start_method_does_not_suppress(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            other.set_start_method("spawn")
+            mp.Process(target=target)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_unrelated_get_context_does_not_suppress(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            other.get_context("spawn")
+            mp.Process(target=target)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"

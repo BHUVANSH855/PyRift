@@ -27,14 +27,19 @@ from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 
 if TYPE_CHECKING:
-    from pyrift.targets import TargetConfig
+    from pyrift.targets import TargetConfig  # pragma: no cover
 
 _EXCLUDED_PLATFORMS = {"windows", "win32", "macos", "darwin", "osx"}
 
 # Constructs whose behavior can plausibly depend on the process start
 # method. A bare `import multiprocessing` alone no longer triggers this
 # rule -- see module docstring.
-_START_METHOD_SENSITIVE_ATTRS = {"Process", "Pool", "get_context"}
+_START_METHOD_SENSITIVE_ATTRS = {
+    "Process",
+    "Pool",
+    "get_context",
+    "set_start_method",
+}
 
 
 def _collect_multiprocessing_bindings(
@@ -190,27 +195,35 @@ def _function_local_names(
     return local_names
 
 
-def _scope_for_call(
-    node: ast.Call,
-    function_scopes: list[tuple[ast.AST, set[str]]],
-) -> set[str]:
-    """Return the nearest containing function's local names."""
-    return function_scopes[-1][1] if function_scopes else set()
-
-
-def _has_explicit_start_method(node: ast.AST) -> bool:
-    """Return True if the file already calls set_start_method or get_context
-    with an explicit method argument."""
+def _has_explicit_start_method(
+    node: ast.AST,
+    module_aliases: set[str],
+    symbol_aliases: set[str],
+) -> bool:
+    """Return True for explicit start-method calls on known multiprocessing names."""
     for n in ast.walk(node):
         if not isinstance(n, ast.Call):
             continue
+
         func = n.func
-        if isinstance(func, ast.Attribute) and func.attr == "set_start_method":
+
+        if (
+            isinstance(func, ast.Attribute)
+            and func.attr in {"set_start_method", "get_context"}
+            and isinstance(func.value, ast.Name)
+            and func.value.id in module_aliases
+            and (func.attr == "set_start_method" or n.args)
+        ):
             return True
-        if isinstance(func, ast.Attribute) and func.attr == "get_context" and n.args:
-            # get_context("fork") / get_context("spawn") / etc. is already
-            # explicit and version-safe.
+
+        if (
+            isinstance(func, ast.Name)
+            and func.id in {"set_start_method", "get_context"}
+            and func.id in symbol_aliases
+            and (func.id == "set_start_method" or n.args)
+        ):
             return True
+
     return False
 
 
@@ -518,13 +531,18 @@ class MultiprocessingForkRule(BaseRule):
         ):
             return []
 
-        # If the file already sets the start method explicitly — no finding
-        if _has_explicit_start_method(node):
-            return []
-
         module_aliases, symbol_aliases = _collect_multiprocessing_bindings(node)
 
         if not module_aliases and not symbol_aliases:
+            return []
+
+        # If the file already sets the multiprocessing start method explicitly,
+        # there is no default-start-method compatibility finding to report.
+        if _has_explicit_start_method(
+            node,
+            module_aliases,
+            symbol_aliases,
+        ):
             return []
 
         risky_call = _uses_start_method_sensitive_api(
