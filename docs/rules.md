@@ -134,7 +134,7 @@ These rules detect code that behaves differently across CPython versions.
 ---
 ### CPY023 — multiprocessing default start method changing in Python 3.14
 
-**Severity:** Warning | **Confidence:** High | **Affects:** CPython
+**Severity:** Warning | **Confidence:** Medium | **Affects:** CPython
 
 ---
 ### CPY024 — typing.TypeGuard requires Python 3.10+
@@ -391,7 +391,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY002 — ctypes usage may differ on PyPy
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY003 — sys.getrefcount() is meaningless on PyPy
@@ -406,7 +406,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY005 — File write without explicit lifecycle management on PyPy
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY006 — Monkey-patching built-in types behaves differently on PyPy
@@ -466,7 +466,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY018 — sys.setrecursionlimit() behaviour differs on PyPy
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY019 — float('nan') identity differs between CPython and PyPy
@@ -476,7 +476,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY021 — Socket not closed promptly on PyPy — GC timing
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY022 — PYTHONHASHSEED cannot provide deterministic hashes on PyPy
@@ -506,7 +506,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY027 — Deleting module/class attributes may be slower on PyPy
 
-**Severity:** Info | **Confidence:** High | **Affects:** PyPy
+**Severity:** Info | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY028 — readline.parse_and_bind() silently ignored on PyPy
@@ -521,7 +521,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY030 — sys.flags values may differ between CPython and PyPy
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY031 — Integer 'is' identity semantics differ on PyPy
@@ -546,12 +546,12 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY035 — C extension packages may not work correctly on PyPy
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY036 — open() line buffering behaves differently on PyPy
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY037 — os.urandom() source may differ on PyPy
@@ -561,7 +561,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY038 — decimal module uses different backend on PyPy
 
-**Severity:** Info | **Confidence:** High | **Affects:** PyPy
+**Severity:** Info | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY039 — os.fork() may not work correctly on all PyPy platforms
@@ -596,12 +596,12 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY047 — ctypes.util.find_library() unreliable on PyPy
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY049 — GC behavior differs between PyPy and CPython
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY051 — code.__lnotab__ deprecated on PyPy too

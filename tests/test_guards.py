@@ -154,6 +154,43 @@ class TestImportShims:
         index = build_guard_index(tree)
         assert not index.is_import_shim(3)
 
+    def test_unrelated_statement_inside_import_shim_is_not_marked(self):
+        tree = parse(
+            """
+            try:
+                from optional_package import feature
+                compatibility_sensitive_call()
+            except ImportError:
+                from fallback_package import feature
+            """
+        )
+        index = build_guard_index(tree)
+
+        # The import itself is part of the compatibility shim.
+        assert index.is_import_shim(3)
+
+        # The unrelated call must remain visible to compatibility rules.
+        assert not index.is_import_shim(4)
+
+        # The fallback import is also part of the shim.
+        assert index.is_import_shim(6)
+
+    def test_non_import_try_statement_remains_visible_to_guard_filter(self):
+        tree = parse(
+            """
+            try:
+                import optional_package
+                value = compatibility_sensitive_call()
+            except ImportError:
+                import fallback_package
+            """
+        )
+        index = build_guard_index(tree)
+
+        assert index.is_import_shim(3)
+        assert not index.is_import_shim(4)
+        assert index.is_import_shim(6)
+
 
 class TestTypeChecking:
     def test_type_checking_block_detected(self):
