@@ -1,4 +1,5 @@
 """CPY016 -- typing.TypeVarTuple requires Python 3.11+ (PEP 646)."""
+
 from __future__ import annotations
 
 import ast
@@ -22,15 +23,35 @@ class TypeVarTupleRule(BaseRule):
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
         findings: list[Finding] = []
+
         for info in collect_imports(node).imports:
-            if info.module == "typing" and info.name == "TypeVarTuple" and not (info.version_guarded and info.version_guarded >= (3, 11)):
-                findings.append(Finding(
-                    file=filename, line=info.line, col=info.col,
-                    rule_id=self.rule_id, title=self.title,
-                    description="typing.TypeVarTuple requires Python 3.11+. Raises ImportError on Python 3.10 and below.",
-                    severity=Severity.ERROR, runtime=Runtime.CPYTHON,
-                    affected_from="3.0", affected_until="3.10",
-                    suggestion="Guard with: if sys.version_info >= (3, 11): from typing import TypeVarTuple -- or use typing_extensions.",
-                    docs_url="https://peps.python.org/pep-646/",
-                ))
+            if (
+                info.module == "typing"
+                and info.name == "TypeVarTuple"
+                and not (info.version_guarded and info.version_guarded >= (3, 11))
+            ):
+                findings.append(
+                    Finding(
+                        file=filename,
+                        line=info.line,
+                        col=info.col,
+                        rule_id=self.rule_id,
+                        title=self.title,
+                        description=(
+                            "typing.TypeVarTuple requires Python 3.11+. "
+                            "Raises ImportError on Python 3.10 and below."
+                        ),
+                        severity=Severity.ERROR,
+                        runtime=Runtime.CPYTHON,
+                        affected_from="3.0",
+                        affected_until="3.10",
+                        suggestion=(
+                            "Guard with: if sys.version_info >= (3, 11): "
+                            "from typing import TypeVarTuple -- or use "
+                            "typing_extensions."
+                        ),
+                        docs_url="https://peps.python.org/pep-646/",
+                    )
+                )
+
         return findings

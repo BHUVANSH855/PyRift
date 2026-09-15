@@ -36,6 +36,7 @@ This is intentionally conservative: it only recognises a small set of
 well-established, syntactically explicit patterns. It does not attempt
 general control-flow or data-flow analysis.
 """
+
 from __future__ import annotations
 
 import ast
@@ -168,9 +169,18 @@ def _is_pypy_check(node: ast.AST) -> bool | None:
         )
 
     def _pypy_literal(n: ast.AST) -> bool:
-        return isinstance(n, ast.Constant) and isinstance(n.value, str) and n.value.lower() == "pypy"
+        return (
+            isinstance(n, ast.Constant)
+            and isinstance(n.value, str)
+            and n.value.lower() == "pypy"
+        )
 
-    if _is_impl_name(left) and _pypy_literal(right) or _is_python_implementation_call(left) and _pypy_literal(right):
+    if (
+        _is_impl_name(left)
+        and _pypy_literal(right)
+        or _is_python_implementation_call(left)
+        and _pypy_literal(right)
+    ):
         matches_pypy = True
     else:
         return None
@@ -220,28 +230,52 @@ def build_guard_index(tree: ast.AST) -> GuardIndex:
                     else_span = _span(node.orelse) if node.orelse else None
 
                     if isinstance(op, (ast.GtE, ast.Gt)):
-                        min_v = version if isinstance(op, ast.GtE) else (
-                            version[:-1] + (version[-1] + 1,) if version else version
+                        min_v = (
+                            version
+                            if isinstance(op, ast.GtE)
+                            else (
+                                version[:-1] + (version[-1] + 1,)
+                                if version
+                                else version
+                            )
                         )
                         if body_span:
                             index.version_guards.append(
-                                (*body_span, VersionGuard(min_version=min_v, max_version=None))
+                                (
+                                    *body_span,
+                                    VersionGuard(min_version=min_v, max_version=None),
+                                )
                             )
                         if else_span:
                             index.version_guards.append(
-                                (*else_span, VersionGuard(min_version=None, max_version=min_v))
+                                (
+                                    *else_span,
+                                    VersionGuard(min_version=None, max_version=min_v),
+                                )
                             )
                     elif isinstance(op, (ast.LtE, ast.Lt)):
-                        max_v = version if isinstance(op, ast.Lt) else (
-                            version[:-1] + (version[-1] + 1,) if version else version
+                        max_v = (
+                            version
+                            if isinstance(op, ast.Lt)
+                            else (
+                                version[:-1] + (version[-1] + 1,)
+                                if version
+                                else version
+                            )
                         )
                         if body_span:
                             index.version_guards.append(
-                                (*body_span, VersionGuard(min_version=None, max_version=max_v))
+                                (
+                                    *body_span,
+                                    VersionGuard(min_version=None, max_version=max_v),
+                                )
                             )
                         if else_span:
                             index.version_guards.append(
-                                (*else_span, VersionGuard(min_version=max_v, max_version=None))
+                                (
+                                    *else_span,
+                                    VersionGuard(min_version=max_v, max_version=None),
+                                )
                             )
 
             # --- implementation guards -----------------------------
@@ -261,12 +295,8 @@ def build_guard_index(tree: ast.AST) -> GuardIndex:
                         index.pypy_only_ranges.append(else_span)
 
             # --- TYPE_CHECKING --------------------------------------
-            if (
-                (isinstance(test, ast.Name) and test.id == "TYPE_CHECKING")
-                or (
-                    isinstance(test, ast.Attribute)
-                    and test.attr == "TYPE_CHECKING"
-                )
+            if (isinstance(test, ast.Name) and test.id == "TYPE_CHECKING") or (
+                isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING"
             ):
                 body_span = _span(node.body)
                 if body_span:
@@ -277,16 +307,19 @@ def build_guard_index(tree: ast.AST) -> GuardIndex:
             has_import_error_handler = False
             for handler in node.handlers:
                 handler_type = handler.type
-                if handler_type is None or (
-                    isinstance(handler_type, ast.Name)
-                    and handler_type.id
-                    in ("ImportError", "ModuleNotFoundError")
-                ) or (
-                    isinstance(handler_type, ast.Tuple)
-                    and any(
-                        isinstance(e, ast.Name)
-                        and e.id in ("ImportError", "ModuleNotFoundError")
-                        for e in handler_type.elts
+                if (
+                    handler_type is None
+                    or (
+                        isinstance(handler_type, ast.Name)
+                        and handler_type.id in ("ImportError", "ModuleNotFoundError")
+                    )
+                    or (
+                        isinstance(handler_type, ast.Tuple)
+                        and any(
+                            isinstance(e, ast.Name)
+                            and e.id in ("ImportError", "ModuleNotFoundError")
+                            for e in handler_type.elts
+                        )
                     )
                 ):
                     has_import_error_handler = True
@@ -341,7 +374,10 @@ def guard_reduces_risk(
 
     # Implementation guards.
     if finding_runtime == "cpython" and index.is_pypy_only(line):
-        return True, "inside a PyPy-only branch (sys.implementation.name == 'pypy'); never runs on CPython"
+        return (
+            True,
+            "inside a PyPy-only branch (sys.implementation.name == 'pypy'); never runs on CPython",
+        )
     if finding_runtime == "pypy" and index.is_cpython_only(line):
         return True, "inside a CPython-only branch; never runs on PyPy"
 
@@ -355,18 +391,31 @@ def guard_reduces_risk(
     if category == "compatibility" and (affected_from or affected_until):
         guard = index.version_guard_at(line)
         if guard is not None:
-            if affected_from and guard.min_version is not None:
-                # "requires >= affected_from" and code only runs when the
-                # interpreter is already new enough.
+            if affected_from:
                 try:
                     from_tuple = tuple(int(p) for p in affected_from.split("."))
                 except ValueError:
                     from_tuple = None
-                if from_tuple is not None and guard.min_version >= from_tuple:
-                    return True, (
-                        f"inside `if sys.version_info >= {guard.min_version}:` "
-                        f"which already satisfies the {affected_from}+ requirement"
-                    )
+
+                if from_tuple is not None:
+                    if (
+                        guard.min_version is not None
+                        and guard.min_version >= from_tuple
+                    ):
+                        return True, (
+                            f"inside `if sys.version_info >= {guard.min_version}:` "
+                            f"which already satisfies the {affected_from}+ requirement"
+                        )
+
+                    if (
+                        guard.max_version is not None
+                        and guard.max_version <= from_tuple
+                    ):
+                        return True, (
+                            f"inside `if sys.version_info < {guard.max_version}:` "
+                            f"which only runs before the affected {affected_from} version"
+                        )
+
             if affected_until and guard.max_version is not None:
                 try:
                     until_tuple = tuple(int(p) for p in affected_until.split("."))

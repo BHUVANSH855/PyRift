@@ -34,10 +34,13 @@ _EXCLUDED_PLATFORMS = {"windows", "win32", "macos", "darwin", "osx"}
 # Constructs whose behavior can plausibly depend on the process start
 # method. A bare `import multiprocessing` alone no longer triggers this
 # rule -- see module docstring.
-_START_METHOD_SENSITIVE_ATTRS = {
+_PROCESS_START_METHOD_SENSITIVE_ATTRS = {
     "Process",
     "Pool",
     "get_context",
+}
+
+_EXPLICIT_START_METHOD_ATTRS = {
     "set_start_method",
 }
 
@@ -66,7 +69,7 @@ def _collect_multiprocessing_bindings(
             and n.module == "multiprocessing"
         ):
             for alias in n.names:
-                if alias.name in _START_METHOD_SENSITIVE_ATTRS:
+                if alias.name in _PROCESS_START_METHOD_SENSITIVE_ATTRS:
                     symbol_aliases.add(alias.asname or alias.name)
 
     return module_aliases, symbol_aliases
@@ -151,14 +154,16 @@ def _function_local_names(
                     )
                     if arg.annotation is not None
                 ]
-                + ([node.args.vararg.annotation]
-                   if node.args.vararg
-                   and node.args.vararg.annotation is not None
-                   else [])
-                + ([node.args.kwarg.annotation]
-                   if node.args.kwarg
-                   and node.args.kwarg.annotation is not None
-                   else [])
+                + (
+                    [node.args.vararg.annotation]
+                    if node.args.vararg and node.args.vararg.annotation is not None
+                    else []
+                )
+                + (
+                    [node.args.kwarg.annotation]
+                    if node.args.kwarg and node.args.kwarg.annotation is not None
+                    else []
+                )
             ):
                 self.visit(annotation)
 
@@ -195,34 +200,140 @@ def _function_local_names(
     return local_names
 
 
-def _has_explicit_start_method(
+def _explicit_start_method_calls(
     node: ast.AST,
     module_aliases: set[str],
     symbol_aliases: set[str],
-) -> bool:
-    """Return True for explicit start-method calls on known multiprocessing names."""
+) -> list[ast.Call]:
+    """Return explicit multiprocessing start-method configuration calls.
+
+    Direct imports are resolved independently from ``symbol_aliases`` because
+    that set intentionally contains only start-method-sensitive APIs such as
+    Process, Pool, and get_context.
+    """
+    calls: list[ast.Call] = []
+
+    imported_start_method_names: set[str] = set()
+
+    for n in ast.walk(node):
+        if not isinstance(n, ast.ImportFrom):
+            continue
+
+        if n.level != 0 or n.module != "multiprocessing":
+            continue
+
+        for alias in n.names:
+            if alias.name in _EXPLICIT_START_METHOD_ATTRS:
+                imported_start_method_names.add(alias.asname or alias.name)
+
     for n in ast.walk(node):
         if not isinstance(n, ast.Call):
             continue
 
         func = n.func
 
+        # import multiprocessing [as mp]
+        # mp.set_start_method(...)
         if (
             isinstance(func, ast.Attribute)
-            and func.attr in {"set_start_method", "get_context"}
             and isinstance(func.value, ast.Name)
             and func.value.id in module_aliases
-            and (func.attr == "set_start_method" or n.args)
+            and func.attr in _EXPLICIT_START_METHOD_ATTRS
         ):
-            return True
+            calls.append(n)
+            continue
 
-        if (
-            isinstance(func, ast.Name)
-            and func.id in {"set_start_method", "get_context"}
-            and func.id in symbol_aliases
-            and (func.id == "set_start_method" or n.args)
+        # from multiprocessing import set_start_method [as ...]
+        if isinstance(func, ast.Name) and func.id in imported_start_method_names:
+            calls.append(n)
+
+    return calls
+
+
+def _has_explicit_start_method_before(
+    node: ast.AST,
+    risky_call: ast.Call,
+    module_aliases: set[str],
+    symbol_aliases: set[str],
+) -> bool:
+    """Return True when unconditional configuration precedes the risky call.
+
+    An explicit ``set_start_method()`` suppresses CPY023 only when the
+    scanner can establish that it executes before the Process/Pool or
+    default ``get_context()`` call.
+
+    Ordinary conditional configuration is not sufficient evidence because
+    the configuration may never execute.  The standard
+    ``if __name__ == '__main__':`` guard is accepted because Python's
+    multiprocessing documentation explicitly recommends that pattern for
+    ``set_start_method()``.
+    """
+    parent_map: dict[int, ast.AST] = {}
+
+    for parent in ast.walk(node):
+        for child in ast.iter_child_nodes(parent):
+            parent_map[id(child)] = parent
+
+    def _is_main_guard(if_node: ast.If) -> bool:
+        test = if_node.test
+
+        return (
+            isinstance(test, ast.Compare)
+            and len(test.ops) == 1
+            and isinstance(test.ops[0], ast.Eq)
+            and isinstance(test.left, ast.Name)
+            and test.left.id == "__name__"
+            and len(test.comparators) == 1
+            and isinstance(test.comparators[0], ast.Constant)
+            and test.comparators[0].value == "__main__"
+        )
+
+    def _enclosing_control_flow(node_: ast.AST) -> list[ast.If]:
+        """Return enclosing If nodes for a call."""
+        result: list[ast.If] = []
+        current = parent_map.get(id(node_))
+
+        while current is not None:
+            if isinstance(current, ast.If):
+                result.append(current)
+            current = parent_map.get(id(current))
+
+        return result
+
+    for call in _explicit_start_method_calls(
+        node,
+        module_aliases,
+        symbol_aliases,
+    ):
+        # Configuration after the risky operation cannot help.
+        if call.lineno > risky_call.lineno or (
+            call.lineno == risky_call.lineno
+            and call.col_offset >= risky_call.col_offset
         ):
-            return True
+            continue
+
+        enclosing_ifs = _enclosing_control_flow(call)
+
+        # A normal conditional configuration is not proof that the
+        # configuration executes.
+        if any(not _is_main_guard(if_node) for if_node in enclosing_ifs):
+            continue
+
+        # If both calls are inside the same __main__ guard, the normal
+        # source ordering is sufficient.
+        risky_ifs = _enclosing_control_flow(risky_call)
+
+        if enclosing_ifs:
+            if not all(_is_main_guard(if_node) for if_node in risky_ifs):
+                continue
+
+            # Both operations must share the same main-guard context.
+            if {id(if_node) for if_node in enclosing_ifs}.isdisjoint(
+                {id(if_node) for if_node in risky_ifs}
+            ):
+                continue
+
+        return True
 
     return False
 
@@ -483,7 +594,7 @@ def _uses_start_method_sensitive_api(
 
             if isinstance(func, ast.Attribute):
                 if (
-                    func.attr in _START_METHOD_SENSITIVE_ATTRS
+                    func.attr in _PROCESS_START_METHOD_SENSITIVE_ATTRS
                     and isinstance(func.value, ast.Name)
                     and func.value.id in module_aliases
                     and func.value.id not in local_names
@@ -536,15 +647,6 @@ class MultiprocessingForkRule(BaseRule):
         if not module_aliases and not symbol_aliases:
             return []
 
-        # If the file already sets the multiprocessing start method explicitly,
-        # there is no default-start-method compatibility finding to report.
-        if _has_explicit_start_method(
-            node,
-            module_aliases,
-            symbol_aliases,
-        ):
-            return []
-
         risky_call = _uses_start_method_sensitive_api(
             node,
             module_aliases,
@@ -555,34 +657,48 @@ class MultiprocessingForkRule(BaseRule):
             # plausibly depends on the start method -- nothing to report.
             return []
 
-        return [Finding(
-            file=filename,
-            line=risky_call.lineno,
-            col=risky_call.col_offset,
-            rule_id=self.rule_id,
-            title=self.title,
-            description=(
-                "The default multiprocessing start method on "
-                "Linux/BSD/POSIX (excluding macOS) is 'fork' in Python "
-                "<= 3.13. In Python 3.14 it changes to 'forkserver'. "
-                "This file constructs a Process/Pool or calls "
-                "get_context() without pinning a start method; if it "
-                "relies on fork semantics (shared memory, inherited "
-                "file descriptors, or process creation outside an "
-                "`if __name__ == '__main__':` guard) it may silently "
-                "break."
-            ),
-            severity=Severity.WARNING,
-            runtime=Runtime.CPYTHON,
-            affected_from="3.14",
-            suggestion=(
-                "Explicitly set the start method: "
-                "multiprocessing.set_start_method('fork') "
-                "or use multiprocessing.get_context('fork') "
-                "to make the behaviour explicit and version-safe."
-            ),
-            docs_url=(
-                "https://docs.python.org/3/library/multiprocessing.html"
-                "#contexts-and-start-methods"
-            ),
-        )]
+        # An explicit start-method configuration only suppresses the finding
+        # when it occurs before the potentially affected operation.  A later
+        # configuration cannot retroactively change how an earlier Process or
+        # Pool was created.
+        if _has_explicit_start_method_before(
+            node,
+            risky_call,
+            module_aliases,
+            symbol_aliases,
+        ):
+            return []
+
+        return [
+            Finding(
+                file=filename,
+                line=risky_call.lineno,
+                col=risky_call.col_offset,
+                rule_id=self.rule_id,
+                title=self.title,
+                description=(
+                    "The default multiprocessing start method on "
+                    "Linux/BSD/POSIX (excluding macOS) is 'fork' in Python "
+                    "<= 3.13. In Python 3.14 it changes to 'forkserver'. "
+                    "This file constructs a Process/Pool or calls "
+                    "get_context() without pinning a start method; if it "
+                    "relies on fork semantics (shared memory, inherited "
+                    "file descriptors, or process creation outside an "
+                    "`if __name__ == '__main__':` guard) it may silently "
+                    "break."
+                ),
+                severity=Severity.WARNING,
+                runtime=Runtime.CPYTHON,
+                affected_from="3.14",
+                suggestion=(
+                    "Explicitly set the start method: "
+                    "multiprocessing.set_start_method('fork') "
+                    "or use multiprocessing.get_context('fork') "
+                    "to make the behaviour explicit and version-safe."
+                ),
+                docs_url=(
+                    "https://docs.python.org/3/library/multiprocessing.html"
+                    "#contexts-and-start-methods"
+                ),
+            )
+        ]

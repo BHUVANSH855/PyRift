@@ -1,10 +1,15 @@
 """
-CPY022 — Bitwise inversion on bool deprecated in Python 3.12
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~True and ~False produce -2 and -1 respectively — surprising and
-unintuitive. This behaviour is deprecated since Python 3.12 and
-will produce a DeprecationWarning. Use 'not x' for logical negation.
+CPY022 -- Bitwise inversion on bool deprecated in Python 3.12.
+
+``~True`` and ``~False`` produce ``-2`` and ``-1`` respectively.
+Python deprecated bitwise inversion of boolean values in 3.12 and
+lists it for removal in 3.16.
+
+This rule intentionally reports only statically provable boolean
+constants. It does not infer the type of arbitrary expressions or
+variables, avoiding false positives for legitimate integer inversion.
 """
+
 from __future__ import annotations
 
 import ast
@@ -16,7 +21,7 @@ from pyrift.targets import TargetConfig
 
 class BoolInversionRule(BaseRule):
     rule_id = "CPY022"
-    title   = "Bitwise inversion on bool (~True/~False) deprecated in 3.12"
+    title = "Bitwise inversion on bool (~True/~False) deprecated in 3.12"
     runtime = "cpython"
     severity = Severity.WARNING
 
@@ -37,18 +42,19 @@ class BoolInversionRule(BaseRule):
 
             operand = n.operand
 
+            # Only report boolean constants. Without type inference,
+            # flagging ``~x`` would create false positives for integers
+            # and other objects that legitimately implement __invert__.
             if not (
-                isinstance(operand, ast.Constant)
-                and isinstance(operand.value, bool)
+                isinstance(operand, ast.Constant) and isinstance(operand.value, bool)
             ):
                 continue
 
             value = operand.value
 
-            # Avoid evaluating ``~value`` directly here because Python
-            # 3.16 deprecates bitwise inversion of bool and emits a
-            # DeprecationWarning. The integer results are deterministic:
-            # ~True == -2 and ~False == -1.
+            # Do not evaluate ``~value`` here. The operation itself is
+            # deprecated on bool in Python 3.12. The historical integer
+            # results are deterministic: ~True == -2 and ~False == -1.
             inverted_value = -2 if value else -1
             logical_value = not value
 
@@ -60,23 +66,22 @@ class BoolInversionRule(BaseRule):
                     rule_id=self.rule_id,
                     title=self.title,
                     description=(
-                        f"Bitwise inversion of bool (~{value}) "
-                        f"produces {inverted_value}, not {logical_value}. "
-                        "This is deprecated since Python 3.12 and raises "
-                        "DeprecationWarning. It will be removed in a "
-                        "future version."
+                        f"Bitwise inversion of bool (~{value}) produces "
+                        f"{inverted_value}, not {logical_value}. Bitwise "
+                        "inversion of bool has been deprecated since "
+                        "Python 3.12 and is scheduled for removal in "
+                        "Python 3.16."
                     ),
                     severity=Severity.WARNING,
                     runtime=Runtime.CPYTHON,
                     affected_from="3.12",
                     suggestion=(
                         f"Use 'not {value}' for logical negation. "
-                        "If you need the bitwise integer result, use "
+                        "If you intentionally need the bitwise inversion "
+                        "of the underlying integer, use "
                         f"~int({value}) explicitly."
                     ),
-                    docs_url=(
-                        "https://docs.python.org/3/whatsnew/3.12.html"
-                    ),
+                    docs_url=("https://docs.python.org/3/whatsnew/3.12.html"),
                 )
             )
 
