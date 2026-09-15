@@ -562,7 +562,7 @@ Lists the compatibility rules and their documented behavior.
 
 - **Version:** 0.8.0
 - **Rules:** 118 total (70 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1371 passing
+- **Tests:** 1484 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -726,7 +726,7 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | CPY016 | typing.TypeVarTuple requires Python 3.11+ | cpython |
 | CPY017 | typing.Unpack requires Python 3.11+ | cpython |
 | CPY018 | typing.Required / NotRequired requires Python 3.11+ | cpython |
-| CPY019 | distutils removed in Python 3.12+ | cpython |
+| CPY019 | distutils removed from the Python standard library in 3.12+ | cpython |
 | CPY020 | datetime.UTC requires Python 3.11+ | cpython |
 | CPY022 | Bitwise inversion on bool (~True/~False) deprecated in 3.12 | cpython |
 | CPY023 | multiprocessing default start method changing in Python 3.14 | cpython |

@@ -1,4 +1,5 @@
-"""CPY019 -- distutils removed in Python 3.12+ (PEP 632)."""
+"""CPY019 -- distutils removed from the Python standard library in 3.12+."""
+
 from __future__ import annotations
 
 import ast
@@ -9,18 +10,28 @@ from pyrift.finding import Finding, Runtime, Severity
 from pyrift.targets import TargetConfig
 
 DISTUTILS_MODULES = {
-    "distutils", "distutils.core", "distutils.cmd",
-    "distutils.command", "distutils.dist", "distutils.extension",
-    "distutils.fancy_getopt", "distutils.file_util",
-    "distutils.log", "distutils.spawn", "distutils.sysconfig",
-    "distutils.text_file", "distutils.unixccompiler",
-    "distutils.util", "distutils.version",
+    "distutils",
+    "distutils.core",
+    "distutils.cmd",
+    "distutils.command",
+    "distutils.config",
+    "distutils.dist",
+    "distutils.extension",
+    "distutils.fancy_getopt",
+    "distutils.file_util",
+    "distutils.log",
+    "distutils.spawn",
+    "distutils.sysconfig",
+    "distutils.text_file",
+    "distutils.unixccompiler",
+    "distutils.util",
+    "distutils.version",
 }
 
 
 class DistutilsRule(BaseRule):
     rule_id = "CPY019"
-    title = "distutils removed in Python 3.12+"
+    title = "distutils removed from the Python standard library in 3.12+"
     runtime = "cpython"
     severity = Severity.ERROR
 
@@ -32,24 +43,36 @@ class DistutilsRule(BaseRule):
     ) -> list[Finding]:
         findings: list[Finding] = []
         imp_map = collect_imports(node)
+
         for info in imp_map.by_statement():
             mod = info.module or ""
+
             if mod in DISTUTILS_MODULES or mod.startswith("distutils."):
-                findings.append(Finding(
-                    file=filename, line=info.line, col=info.col,
-                    rule_id=self.rule_id, title=self.title,
-                    description=(
-                        f"distutils (imported as '{mod}') was deprecated in "
-                        "Python 3.10 and removed in Python 3.12 (PEP 632). "
-                        "Importing it on Python 3.12+ raises ModuleNotFoundError."
-                    ),
-                    severity=Severity.ERROR, runtime=Runtime.CPYTHON,
-                    affected_from="3.12",
-                    suggestion=(
-                        "Replace with setuptools: pip install setuptools. "
-                        "Most distutils functionality is available in "
-                        "setuptools or the standard build tools."
-                    ),
-                    docs_url="https://peps.python.org/pep-0632/",
-                ))
+                findings.append(
+                    Finding(
+                        file=filename,
+                        line=info.line,
+                        col=info.col,
+                        rule_id=self.rule_id,
+                        title=self.title,
+                        description=(
+                            f"'{mod}' uses distutils, which was deprecated "
+                            "in Python 3.10 and removed from the Python "
+                            "standard library in Python 3.12 (PEP 632)."
+                        ),
+                        severity=Severity.ERROR,
+                        runtime=Runtime.CPYTHON,
+                        affected_from="3.12",
+                        suggestion=(
+                            "Migrate from distutils to its supported "
+                            "replacement. PEP 632 recommends setuptools "
+                            "for several APIs, packaging for "
+                            "distutils.version, shutil.which for "
+                            "distutils.spawn.find_executable, and "
+                            "sysconfig for distutils.sysconfig."
+                        ),
+                        docs_url="https://peps.python.org/pep-0632/",
+                    )
+                )
+
         return findings

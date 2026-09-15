@@ -117,7 +117,7 @@ These rules detect code that behaves differently across CPython versions.
 **Severity:** Error | **Confidence:** High | **Affects:** CPython
 
 ---
-### CPY019 — distutils removed in Python 3.12+
+### CPY019 — distutils removed from the Python standard library in 3.12+
 
 **Severity:** Error | **Confidence:** High | **Affects:** CPython
 

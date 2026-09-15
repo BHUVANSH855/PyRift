@@ -424,6 +424,119 @@ class TestCPY023:
 
         assert findings == []
 
+    def test_does_not_flag_start_method_set_before_process(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing
+
+            multiprocessing.set_start_method("spawn")
+            p = multiprocessing.Process(target=worker)
+            """,
+        )
+
+        assert findings == []
+
+    def test_flags_start_method_set_after_process(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing
+
+            p = multiprocessing.Process(target=worker)
+            multiprocessing.set_start_method("spawn")
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_does_not_flag_aliased_start_method_set_before_process(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            mp.set_start_method("spawn")
+            p = mp.Process(target=worker)
+            """,
+        )
+
+        assert findings == []
+
+    def test_flags_aliased_start_method_set_after_process(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing as mp
+
+            p = mp.Process(target=worker)
+            mp.set_start_method("spawn")
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_does_not_flag_from_import_start_method_set_before_process(self):
+        findings = run(
+            self.rule,
+            """
+            from multiprocessing import Process, set_start_method
+
+            set_start_method("spawn")
+            p = Process(target=worker)
+            """,
+        )
+
+        assert findings == []
+
+    def test_flags_from_import_start_method_set_after_process(self):
+        findings = run(
+            self.rule,
+            """
+            from multiprocessing import Process, set_start_method
+
+            p = Process(target=worker)
+            set_start_method("spawn")
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_conditional_start_method_does_not_suppress(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing
+
+            if condition:
+                multiprocessing.set_start_method("spawn")
+
+            p = multiprocessing.Process(target=worker)
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
+    def test_conditional_start_method_after_process_still_flags(self):
+        findings = run(
+            self.rule,
+            """
+            import multiprocessing
+
+            p = multiprocessing.Process(target=worker)
+
+            if condition:
+                multiprocessing.set_start_method("spawn")
+            """,
+        )
+
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY023"
+
     def test_flags_bare_get_context(self):
         # get_context() with no argument still defaults to the
         # platform default start method.

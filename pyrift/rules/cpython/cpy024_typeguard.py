@@ -1,4 +1,5 @@
 """CPY024 -- typing.TypeGuard requires Python 3.10+ (PEP 647)."""
+
 from __future__ import annotations
 
 import ast
@@ -23,14 +24,29 @@ class TypeGuardRule(BaseRule):
     ) -> list[Finding]:
         findings: list[Finding] = []
         for info in collect_imports(node).imports:
-            if info.module == "typing" and info.name == "TypeGuard" and not (info.version_guarded and info.version_guarded >= (3, 10)):
-                findings.append(Finding(
-                    file=filename, line=info.line, col=info.col,
-                    rule_id=self.rule_id, title=self.title,
-                    description="typing.TypeGuard requires Python 3.10+. Raises ImportError on Python 3.9 and below.",
-                    severity=Severity.ERROR, runtime=Runtime.CPYTHON,
-                    affected_from="3.0", affected_until="3.9",
-                    suggestion="Guard with: if sys.version_info >= (3, 10): from typing import TypeGuard -- or use typing_extensions.",
-                    docs_url="https://peps.python.org/pep-647/",
-                ))
+            if (
+                info.module == "typing"
+                and info.name == "TypeGuard"
+                and not (info.version_guarded and info.version_guarded >= (3, 10))
+            ):
+                findings.append(
+                    Finding(
+                        file=filename,
+                        line=info.line,
+                        col=info.col,
+                        rule_id=self.rule_id,
+                        title=self.title,
+                        description=(
+                            "typing.TypeGuard was added to the standard-library typing "
+                            "module in Python 3.10 and is unavailable there on Python 3.9 "
+                            "and earlier."
+                        ),
+                        severity=Severity.ERROR,
+                        runtime=Runtime.CPYTHON,
+                        affected_from="3.0",
+                        affected_until="3.9",
+                        suggestion="Guard with: if sys.version_info >= (3, 10): from typing import TypeGuard -- or use typing_extensions.",
+                        docs_url="https://peps.python.org/pep-647/",
+                    )
+                )
         return findings

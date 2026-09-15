@@ -2,6 +2,7 @@
 Tests for pyrift.analysis.guards and its integration into the scanner
 as a project-wide false-positive filter (2026-09 review, points 73-78).
 """
+
 from __future__ import annotations
 
 import ast
@@ -248,6 +249,55 @@ class TestGuardReducesRisk:
         )
         assert not should_suppress
 
+    def test_older_else_branch_suppressed_for_future_api(self):
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+                if sys.version_info >= (3, 11):
+                    from typing import Self
+                else:
+                    from typing_extensions import Self
+                """
+            )
+        )
+        # The else branch only runs before 3.11, so a finding whose API
+        # starts in 3.11 is not applicable there.
+        should_suppress, reason = guard_reduces_risk(
+            index,
+            6,
+            finding_runtime="cpython",
+            affected_from="3.11",
+            affected_until="",
+            category="compatibility",
+        )
+        assert should_suppress
+        assert "before the affected 3.11 version" in reason
+
+    def test_older_else_branch_not_suppressed_for_preexisting_api(self):
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+                if sys.version_info >= (3, 11):
+                    from typing import Self
+                else:
+                    from typing_extensions import Self
+                """
+            )
+        )
+        # An API that already existed before the guard's cutoff remains
+        # relevant in the else branch.
+        should_suppress, _ = guard_reduces_risk(
+            index,
+            6,
+            finding_runtime="cpython",
+            affected_from="3.10",
+            affected_until="",
+            category="compatibility",
+        )
+        assert not should_suppress
+
     def test_semantic_finding_not_suppressed_by_shim(self):
         # Shims only neutralise API-availability (compatibility) risk,
         # never a genuine silent semantic difference.
@@ -310,6 +360,40 @@ class TestScannerIntegration:
         )
         findings = scan_file(f)
         assert not any(fi.rule_id == "CPY011" for fi in findings)
+
+    def test_version_guarded_distutils_is_suppressed_end_to_end(
+        self,
+        tmp_path,
+    ):
+        f = tmp_path / "distutils_guarded.py"
+        f.write_text(
+            textwrap.dedent(
+                """
+                import sys
+                if sys.version_info < (3, 12):
+                    import distutils
+                """
+            )
+        )
+        findings = scan_file(f)
+        assert not any(fi.rule_id == "CPY019" for fi in findings)
+
+    def test_insufficient_version_guard_does_not_suppress_distutils(
+        self,
+        tmp_path,
+    ):
+        f = tmp_path / "distutils_insufficient_guard.py"
+        f.write_text(
+            textwrap.dedent(
+                """
+                import sys
+                if sys.version_info >= (3, 11):
+                    import distutils
+                """
+            )
+        )
+        findings = scan_file(f)
+        assert any(fi.rule_id == "CPY019" for fi in findings)
 
     def test_try_except_shim_is_suppressed_end_to_end(self, tmp_path):
         f = tmp_path / "shim.py"
