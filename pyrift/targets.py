@@ -395,6 +395,97 @@ def _load_requires_python_without_tomllib(
     return None
 
 
+def _load_pyrift_config_without_tomllib(
+    pyproject: Path,
+) -> tuple[list[str] | None, list[str] | None]:
+    """
+    Extract ``[tool.pyrift]`` select/ignore settings without tomllib.
+
+    This intentionally supports only the simple configuration form used by
+    PyRift:
+
+        [tool.pyrift]
+        select = ["CPY038", "CPY067"]
+
+    or:
+
+        [tool.pyrift]
+        ignore = ["PPY014", "PPY027"]
+
+    The fallback is deliberately conservative. If the table or values cannot
+    be parsed unambiguously, raise ValueError rather than silently ignoring
+    the user's configuration.
+    """
+    try:
+        lines = pyproject.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None, None
+
+    in_pyrift_table = False
+    select: list[str] | None = None
+    ignore: list[str] | None = None
+
+    for line in lines:
+        stripped = line.strip()
+
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_pyrift_table = stripped == "[tool.pyrift]"
+            continue
+
+        if not in_pyrift_table:
+            continue
+
+        if "=" not in stripped:
+            continue
+
+        key, raw_value = stripped.split("=", 1)
+        key = key.strip()
+        raw_value = raw_value.strip()
+
+        if key not in {"select", "ignore"}:
+            continue
+
+        if not (
+            raw_value.startswith("[")
+            and raw_value.endswith("]")
+        ):
+            raise ValueError(
+                "[tool.pyrift] 'select'/'ignore' must be an array of strings"
+            )
+
+        contents = raw_value[1:-1].strip()
+
+        if not contents:
+            values: list[str] = []
+        else:
+            values = []
+
+            for item in contents.split(","):
+                item = item.strip()
+
+                if (
+                    len(item) < 2
+                    or item[0] != '"'
+                    or item[-1] != '"'
+                ):
+                    raise ValueError(
+                        "[tool.pyrift] 'select'/'ignore' must be an "
+                        "array of strings"
+                    )
+
+                values.append(item[1:-1])
+
+        if key == "select":
+            select = values
+        else:
+            ignore = values
+
+    return select, ignore
+
+
 def _find_pyproject_toml(project_path: str | Path) -> Path | None:
     """Walk upward from *project_path* to find the nearest
     ``pyproject.toml``, the same discovery logic
@@ -478,26 +569,120 @@ def load_project_targets(project_path: str | Path) -> TargetConfig | None:
 class PyriftConfig:
     """
     Project-wide PyRift settings read from a ``[tool.pyrift]`` table in
-    ``pyproject.toml`` (2026-09 audit item #34), so users don't need to
-    repeat long CLI command lines in every CI job.
+    ``pyproject.toml``.
 
-    Supported keys today (a deliberately small, real subset of the
-    audit's full config-file wishlist -- rule-severity overrides,
-    per-path ignores, and profiles are future work, not implemented
-    here)::
+    Supported keys:
 
         [tool.pyrift]
-        select = ["CPY038", "CPY067"]   # mutually exclusive with ignore
-        ignore = ["PPY014", "PPY027"]   # mutually exclusive with select
+        select = ["CPY038", "CPY067"]
 
-    CLI flags (``--select``/``--ignore``) always take precedence over
-    this file when both are given, exactly like an explicit
-    ``--python-min``/``--python-max`` already overrides
-    ``project.requires-python``.
+    or:
+
+        [tool.pyrift]
+        ignore = ["PPY014", "PPY027"]
+
+    ``select`` and ``ignore`` are mutually exclusive.
     """
 
     select: tuple[str, ...] | None = None
     ignore: tuple[str, ...] | None = None
+
+
+def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
+    """
+    Read the ``[tool.pyrift]`` table from ``pyproject.toml``.
+
+    The nearest ``pyproject.toml`` is discovered by walking upward from
+    ``project_path``.
+
+    ``tomllib`` is preferred when available. On Python versions before
+    3.11, the intentionally limited fallback parser handles the supported
+    ``select``/``ignore`` configuration.
+
+    Returns ``None`` when no PyRift configuration exists.
+
+    Raises ``ValueError`` for malformed PyRift configuration.
+    """
+    pyproject = _find_pyproject_toml(project_path)
+
+    if pyproject is None:
+        return None
+
+    if tomllib is not None:
+        try:
+            with pyproject.open("rb") as file:
+                data = tomllib.load(file)
+        except (OSError, tomllib.TOMLDecodeError):
+            return None
+
+        tool = data.get("tool")
+
+        if not isinstance(tool, dict):
+            return None
+
+        pyrift_table = tool.get("pyrift")
+
+        if not isinstance(pyrift_table, dict):
+            return None
+
+        select = _read_string_list(
+            pyrift_table.get("select"),
+            key="select",
+        )
+        ignore = _read_string_list(
+            pyrift_table.get("ignore"),
+            key="ignore",
+        )
+    else:
+        select, ignore = _load_pyrift_config_without_tomllib(
+            pyproject
+        )
+
+        if select is not None:
+            select = tuple(select)
+
+        if ignore is not None:
+            ignore = tuple(ignore)
+
+    if select is not None and ignore is not None:
+        raise ValueError(
+            "[tool.pyrift] cannot set both 'select' and 'ignore'"
+        )
+
+    if select is None and ignore is None:
+        return None
+
+    return PyriftConfig(
+        select=select,
+        ignore=ignore,
+    )
+
+
+def _read_string_list(
+    value: object,
+    *,
+    key: str,
+) -> tuple[str, ...] | None:
+    """
+    Validate a PyRift configuration list.
+
+    ``None`` means the key was absent. Any present value must be a TOML
+    array containing only strings.
+    """
+    if value is None:
+        return None
+
+    if not isinstance(value, list):
+        raise ValueError(
+            f"[tool.pyrift] '{key}' must be an array of strings"
+        )
+
+    if not all(isinstance(item, str) for item in value):
+        raise ValueError(
+            f"[tool.pyrift] '{key}' must be an array of strings"
+        )
+
+    return tuple(value)
 
 
 def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
