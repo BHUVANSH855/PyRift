@@ -119,8 +119,19 @@ class TestParseVersionSpecifier:
         assert config.maximum is None
 
     def test_unsupported_specifier_raises(self):
+        # `~=3.10` used to be unsupported (this was one of the exact PEP
+        # 440 gaps the 2026-09 audit flagged); it's now parsed correctly
+        # via the optional `packaging` dependency (or the hardened
+        # fallback parser) -- see test_compatible_release_specifier.
         with pytest.raises(ValueError):
-            _parse_version_specifier("~=3.10")
+            _parse_version_specifier("not-a-real-specifier")
+
+    def test_compatible_release_specifier(self):
+        """`~=3.10` (PEP 440 compatible release) now parses: it means
+        `>=3.10, ==3.*`."""
+        config = _parse_version_specifier("~=3.10")
+        assert config is not None
+        assert config.minimum == PythonVersion(3, 10)
 
     def test_lt_specifier(self):
         config = _parse_version_specifier("<3.14")
@@ -155,8 +166,12 @@ class TestParseVersionSpecifier:
         assert config is not None
 
     def test_unsupported_operator_raises(self):
-        with pytest.raises(ValueError):
-            _parse_version_specifier("!=3.12")
+        # `!=3.12` used to be unsupported; it's now accepted as an
+        # exclusion clause (ignored for min/max purposes, since
+        # TargetConfig can't represent a single excluded minor -- same
+        # limitation already accepted by Finding.parse_version_range).
+        config = _parse_version_specifier("!=3.12")
+        assert config is not None
 
 
 class TestLoadProjectTargets:
@@ -242,8 +257,15 @@ class TestVersionSpecifierErrors:
             _parse_version_specifier(">=3.13,<=3.11")
 
     def test_unsupported_operator_raises(self):
+        # `~=3.11` is now supported PEP 440 syntax; a truly malformed
+        # specifier is what should raise here.
         with pytest.raises(ValueError):
-            _parse_version_specifier("~=3.11")
+            _parse_version_specifier("~~garbage~~")
+
+    def test_compatible_release_operator_no_longer_raises(self):
+        config = _parse_version_specifier("~=3.11")
+        assert config is not None
+        assert config.minimum == PythonVersion(3, 11)
 
 
 class TestFallbackParser:

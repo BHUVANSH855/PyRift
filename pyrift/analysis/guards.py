@@ -97,6 +97,26 @@ class GuardIndex:
         return any(start <= line <= end for start, end in self.import_shim_ranges)
 
 
+# Sentinels for "unbounded" ends of a version interval. Real version
+# tuples always start with a non-negative major version, and no
+# realistic Python major version will ever reach 9999, so these sort
+# strictly below/above any real version tuple under tuple comparison.
+_NEG_INF: tuple[int, ...] = (-1,)
+_POS_INF: tuple[int, ...] = (9999,)
+
+
+def _parse_version(text: str) -> tuple[int, ...] | None:
+    """Parse a dotted version string like ``"3.15"`` into ``(3, 15)``.
+
+    Returns ``None`` (rather than raising) for malformed input so callers
+    can fall back to "no bound known" instead of crashing on bad metadata.
+    """
+    try:
+        return tuple(int(p) for p in text.split("."))
+    except ValueError:
+        return None
+
+
 def _const_tuple(node: ast.AST) -> tuple[int, ...] | None:
     if not isinstance(node, ast.Tuple):
         return None
@@ -192,6 +212,151 @@ def _is_pypy_check(node: ast.AST) -> bool | None:
     return None
 
 
+def _version_guard_from_test(test: ast.expr) -> VersionGuard | None:
+    """If *test* is a single ``sys.version_info <op> (X, Y)`` comparison,
+    return the ``VersionGuard`` describing when it is True. Returns
+    ``None`` for anything else (implementation checks, boolean
+    combinations, non-version tests, etc.)."""
+    if not (
+        isinstance(test, ast.Compare)
+        and len(test.ops) == 1
+        and len(test.comparators) == 1
+        and _is_version_info(test.left)
+    ):
+        return None
+
+    op = test.ops[0]
+    version = _const_tuple(test.comparators[0])
+    if version is None:
+        return None
+
+    if isinstance(op, (ast.GtE, ast.Gt)):
+        min_v = (
+            version
+            if isinstance(op, ast.GtE)
+            else (version[:-1] + (version[-1] + 1,) if version else version)
+        )
+        return VersionGuard(min_version=min_v, max_version=None)
+
+    if isinstance(op, (ast.LtE, ast.Lt)):
+        max_v = (
+            version
+            if isinstance(op, ast.Lt)
+            else (version[:-1] + (version[-1] + 1,) if version else version)
+        )
+        return VersionGuard(min_version=None, max_version=max_v)
+
+    return None
+
+
+def _negate_guard(guard: VersionGuard) -> VersionGuard:
+    """The complement of a single-bound guard from an `if` test: the
+    version range for which the test is False. Only meaningful for the
+    single-clause guards ``_version_guard_from_test`` produces (each has
+    exactly one bound set)."""
+    if guard.min_version is not None and guard.max_version is None:
+        return VersionGuard(min_version=None, max_version=guard.min_version)
+    if guard.max_version is not None and guard.min_version is None:
+        return VersionGuard(min_version=guard.max_version, max_version=None)
+    # Already both-bounded or fully unbounded -- nothing principled to
+    # negate into a single interval; treat as "no additional info".
+    return VersionGuard(min_version=None, max_version=None)
+
+
+def _intersect_guards(a: VersionGuard, b: VersionGuard) -> VersionGuard:
+    """Compose two guards into the version range where *both* hold --
+    this is what makes nested/elif version checks interval-correct
+    instead of only ever considering the innermost `if` in isolation
+    (2026-09 audit #4)."""
+    if a.min_version is None:
+        min_v = b.min_version
+    elif b.min_version is None:
+        min_v = a.min_version
+    else:
+        min_v = max(a.min_version, b.min_version)
+
+    if a.max_version is None:
+        max_v = b.max_version
+    elif b.max_version is None:
+        max_v = a.max_version
+    else:
+        max_v = min(a.max_version, b.max_version)
+
+    return VersionGuard(min_version=min_v, max_version=max_v)
+
+
+# Statement containers pyrift recurses into to propagate an ambient
+# version-guard context down to nested code (so a guard higher up the
+# tree still applies inside a nested function/try/for/with/class body).
+_CONTAINER_BODY_ATTRS = ("body", "orelse", "finalbody")
+
+
+def _child_statement_lists(node: ast.AST) -> list[list[ast.stmt]]:
+    lists: list[list[ast.stmt]] = []
+    for attr in _CONTAINER_BODY_ATTRS:
+        value = getattr(node, attr, None)
+        if value:
+            lists.append(value)
+    if isinstance(node, ast.Try):
+        for handler in node.handlers:
+            if handler.body:
+                lists.append(handler.body)
+    return lists
+
+
+def _walk_version_context(
+    statements: list[ast.stmt],
+    context: VersionGuard,
+    index: GuardIndex,
+) -> None:
+    """Recursively compose ``sys.version_info`` guards through nested
+    ``if``/``elif``/``else`` chains (and down through function/class/
+    try/for/while/with bodies), so a line deep inside several nested or
+    chained guards gets the *intersection* of all of them, not just its
+    immediately-enclosing ``if``.
+    """
+    for stmt in statements:
+        if isinstance(stmt, ast.If):
+            guard_here = _version_guard_from_test(stmt.test)
+
+            if guard_here is not None:
+                body_context = _intersect_guards(context, guard_here)
+                body_span = _span(stmt.body)
+                if body_span:
+                    index.version_guards.append((*body_span, body_context))
+                _walk_version_context(stmt.body, body_context, index)
+
+                if stmt.orelse:
+                    else_context = _intersect_guards(
+                        context, _negate_guard(guard_here)
+                    )
+                    # `elif` is represented as a single nested `If` in
+                    # `orelse` -- recursing (rather than also recording
+                    # a span for it here) lets that nested `If` record
+                    # its own, further-composed span, and still reaches
+                    # a real `else:` block at the end of the chain.
+                    is_elif = len(stmt.orelse) == 1 and isinstance(
+                        stmt.orelse[0], ast.If
+                    )
+                    if not is_elif:
+                        else_span = _span(stmt.orelse)
+                        if else_span:
+                            index.version_guards.append(
+                                (*else_span, else_context)
+                            )
+                    _walk_version_context(stmt.orelse, else_context, index)
+            else:
+                # Not a version test (implementation check, TYPE_CHECKING,
+                # arbitrary condition, ...) -- the version context is
+                # unaffected, but nested guards inside either branch
+                # still need to inherit it.
+                _walk_version_context(stmt.body, context, index)
+                _walk_version_context(stmt.orelse, context, index)
+        else:
+            for child_list in _child_statement_lists(stmt):
+                _walk_version_context(child_list, context, index)
+
+
 def _build_parent_map(tree: ast.AST) -> dict[int, ast.AST]:
     parent_map: dict[int, ast.AST] = {}
     for parent in ast.walk(tree):
@@ -212,71 +377,21 @@ def build_guard_index(tree: ast.AST) -> GuardIndex:
     """Build a :class:`GuardIndex` for an entire module AST."""
     index = GuardIndex()
 
+    # Version guards get a dedicated recursive pass so nested/elif
+    # chains compose correctly via interval intersection instead of
+    # each `if` being considered in isolation (see
+    # `_walk_version_context`).
+    module_body = getattr(tree, "body", None)
+    if module_body is not None:
+        _walk_version_context(
+            module_body,
+            VersionGuard(min_version=None, max_version=None),
+            index,
+        )
+
     for node in ast.walk(tree):
         if isinstance(node, ast.If):
             test = node.test
-
-            # --- version guards -----------------------------------
-            if (
-                isinstance(test, ast.Compare)
-                and len(test.ops) == 1
-                and len(test.comparators) == 1
-                and _is_version_info(test.left)
-            ):
-                op = test.ops[0]
-                version = _const_tuple(test.comparators[0])
-                if version is not None:
-                    body_span = _span(node.body)
-                    else_span = _span(node.orelse) if node.orelse else None
-
-                    if isinstance(op, (ast.GtE, ast.Gt)):
-                        min_v = (
-                            version
-                            if isinstance(op, ast.GtE)
-                            else (
-                                version[:-1] + (version[-1] + 1,)
-                                if version
-                                else version
-                            )
-                        )
-                        if body_span:
-                            index.version_guards.append(
-                                (
-                                    *body_span,
-                                    VersionGuard(min_version=min_v, max_version=None),
-                                )
-                            )
-                        if else_span:
-                            index.version_guards.append(
-                                (
-                                    *else_span,
-                                    VersionGuard(min_version=None, max_version=min_v),
-                                )
-                            )
-                    elif isinstance(op, (ast.LtE, ast.Lt)):
-                        max_v = (
-                            version
-                            if isinstance(op, ast.Lt)
-                            else (
-                                version[:-1] + (version[-1] + 1,)
-                                if version
-                                else version
-                            )
-                        )
-                        if body_span:
-                            index.version_guards.append(
-                                (
-                                    *body_span,
-                                    VersionGuard(min_version=None, max_version=max_v),
-                                )
-                            )
-                        if else_span:
-                            index.version_guards.append(
-                                (
-                                    *else_span,
-                                    VersionGuard(min_version=max_v, max_version=None),
-                                )
-                            )
 
             # --- implementation guards -----------------------------
             pypy_check = _is_pypy_check(test)
@@ -388,43 +503,60 @@ def guard_reduces_risk(
         return True, "inside a try/except ImportError compatibility shim"
 
     # Version guards for compatibility (introduced/removed-API) findings.
+    #
+    # Correctness note (P0 fix, 2026-09 audit): a guard must only suppress
+    # a finding when the guard's reachable version interval has NO overlap
+    # with the finding's affected version interval. The previous logic
+    # suppressed whenever `guard.min_version >= affected_from`, which is
+    # wrong for findings with a bounded affected range: a guard of
+    # `>= 3.15` does NOT neutralise a finding affected on `[3.15, 3.17)`,
+    # it *guarantees* the code still runs squarely inside the affected
+    # range. Suppression is only correct when the two intervals are
+    # disjoint. See VersionGuard/interval reasoning below.
     if category == "compatibility" and (affected_from or affected_until):
         guard = index.version_guard_at(line)
         if guard is not None:
-            if affected_from:
-                try:
-                    from_tuple = tuple(int(p) for p in affected_from.split("."))
-                except ValueError:
-                    from_tuple = None
+            from_tuple = _parse_version(affected_from) if affected_from else None
+            until_tuple = _parse_version(affected_until) if affected_until else None
 
-                if from_tuple is not None:
-                    if (
-                        guard.min_version is not None
-                        and guard.min_version >= from_tuple
-                    ):
-                        return True, (
-                            f"inside `if sys.version_info >= {guard.min_version}:` "
-                            f"which already satisfies the {affected_from}+ requirement"
-                        )
+            # Finding interval: [finding_lo, finding_hi)
+            finding_lo = from_tuple if from_tuple is not None else _NEG_INF
+            finding_hi = until_tuple if until_tuple is not None else _POS_INF
 
-                    if (
-                        guard.max_version is not None
-                        and guard.max_version <= from_tuple
-                    ):
-                        return True, (
-                            f"inside `if sys.version_info < {guard.max_version}:` "
-                            f"which only runs before the affected {affected_from} version"
-                        )
+            # Guard interval: [guard_lo, guard_hi) -- the version range for
+            # which the guarded block actually executes.
+            guard_lo = guard.min_version if guard.min_version is not None else _NEG_INF
+            guard_hi = guard.max_version if guard.max_version is not None else _POS_INF
 
-            if affected_until and guard.max_version is not None:
-                try:
-                    until_tuple = tuple(int(p) for p in affected_until.split("."))
-                except ValueError:
-                    until_tuple = None
-                if until_tuple is not None and guard.max_version <= until_tuple:
-                    return True, (
-                        f"inside `if sys.version_info < {guard.max_version}:` "
-                        "which only runs before the affected version"
+            # Disjoint intervals <=> no version can satisfy both at once.
+            is_disjoint = guard_hi <= finding_lo or finding_hi <= guard_lo
+
+            if is_disjoint:
+                if guard_hi <= finding_lo:
+                    # The guarded branch's whole reachable range ends at
+                    # or before the affected window starts.
+                    bound = guard.max_version
+                    clause = (
+                        f"`if sys.version_info < {bound}:`"
+                        if bound is not None
+                        else "this guard"
                     )
+                    return True, (
+                        f"inside {clause} which only runs entirely "
+                        "before the affected version range"
+                    )
+                # Otherwise finding_hi <= guard_lo: the guarded branch's
+                # whole reachable range starts at or after the affected
+                # window ends.
+                bound = guard.min_version
+                clause = (
+                    f"`if sys.version_info >= {bound}:`"
+                    if bound is not None
+                    else "this guard"
+                )
+                return True, (
+                    f"inside {clause} which only runs entirely "
+                    "after the affected version range"
+                )
 
     return False, ""

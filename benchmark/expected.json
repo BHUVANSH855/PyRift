@@ -422,6 +422,12 @@
       "confidence": "high",
       "evidence": "deprecation_warn"
     },
+    "CPY078": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
     "PPY001": {
       "min_true_positives": 1,
       "max_false_positives": 0,
@@ -653,8 +659,8 @@
     "PPY040": {
       "min_true_positives": 1,
       "max_false_positives": 0,
-      "confidence": "low",
-      "evidence": "observed"
+      "confidence": "high",
+      "evidence": "official_docs"
     },
     "PPY041": {
       "min_true_positives": 1,

@@ -16,6 +16,22 @@ try:
 except ModuleNotFoundError:
     tomllib = None
 
+# `packaging` is an optional soft-dependency (not required at install time --
+# PyRift keeps a zero-hard-dependency default per the 2026-09 audit's
+# packaging-risk discussion). When present, it gives PyRift a correct,
+# complete PEP 440 parser (~=, !=, X.Y.Z patch versions, .* wildcards,
+# multi-clause specifiers) instead of the small regex-based subset below.
+# Add the `full` extra (``pip install pyrift[full]``) to get it.
+try:
+    from packaging.specifiers import SpecifierSet as _SpecifierSet
+    from packaging.version import Version as _PkgVersion
+
+    _HAS_PACKAGING = True
+except ImportError:  # pragma: no cover - exercised via the fallback path
+    _SpecifierSet = None  # type: ignore[misc,assignment]
+    _PkgVersion = None  # type: ignore[misc,assignment]
+    _HAS_PACKAGING = False
+
 from .finding import Finding, Runtime
 
 _VERSION_RE = re.compile(r"^(\d+)(?:\.(\d+))?$")
@@ -124,8 +140,74 @@ class TargetConfig:
 
 def _parse_version_specifier(specifier: str) -> TargetConfig:
     """
-    Parse the intentionally small subset of PEP 440 specifiers that
-    pyrift needs for Python-version targeting.
+    Parse a ``requires-python`` style PEP 440 specifier into a
+    ``TargetConfig``.
+
+    When the optional ``packaging`` dependency is installed, this uses
+    ``packaging.specifiers.SpecifierSet`` for a fully correct PEP 440
+    parse (``~=``, ``!=``, ``X.Y.Z`` patch versions, ``.*`` wildcards,
+    multi-clause specifiers such as ``>=3.10,!=3.11.0,<4``). Without it,
+    :func:`_parse_version_specifier_fallback` handles the common subset
+    real-world ``pyproject.toml`` files actually use.
+    """
+    if _HAS_PACKAGING:
+        return _parse_version_specifier_packaging(specifier)
+    return _parse_version_specifier_fallback(specifier)
+
+
+def _parse_version_specifier_packaging(specifier: str) -> TargetConfig:
+    try:
+        spec_set = _SpecifierSet(specifier)
+    except Exception as exc:  # packaging raises InvalidSpecifier
+        raise ValueError(
+            f"Unsupported Python version specifier: {specifier!r}"
+        ) from exc
+
+    # There is no closed-form inverse of an arbitrary PEP 440 specifier
+    # set, so probe every (major, minor) pair in a generous supported
+    # range and find the lowest/highest minor that satisfies the whole
+    # specifier set at its `.0` patch release. This correctly handles
+    # `~=`, `!=`, wildcards, and combinations of clauses without
+    # re-implementing PEP 440 matching by hand.
+    probe_majors = (2, 3, 4)
+    probe_minors = range(40)
+
+    candidates: list[PythonVersion] = []
+    for major in probe_majors:
+        for minor in probe_minors:
+            probe = _PkgVersion(f"{major}.{minor}.0")
+            if spec_set.contains(probe, prereleases=True):
+                candidates.append(PythonVersion(major, minor))
+
+    if not candidates:
+        raise ValueError(
+            f"Python version specifier matches no supported version: {specifier!r}"
+        )
+
+    lowest_probed = PythonVersion(probe_majors[0], probe_minors[0])
+    highest_probed = PythonVersion(probe_majors[-1], probe_minors[-1])
+
+    minimum: PythonVersion | None = min(candidates)
+    maximum: PythonVersion | None = max(candidates)
+
+    # If the match extends all the way to either edge of the probed
+    # range, treat that side as genuinely unbounded (None) rather than
+    # reporting the probe's arbitrary ceiling/floor as a real bound --
+    # this matches the historical "None means unbounded" contract that
+    # the rest of pyrift (TargetConfig.affects_cpython, CLI output, ...)
+    # relies on.
+    if minimum == lowest_probed:
+        minimum = None
+    if maximum == highest_probed:
+        maximum = None
+
+    return TargetConfig(minimum=minimum, maximum=maximum)
+
+
+def _parse_version_specifier_fallback(specifier: str) -> TargetConfig:
+    """
+    Parse the subset of PEP 440 specifiers that ``pyrift`` supports
+    without the optional ``packaging`` dependency.
 
     Supported forms:
 
@@ -134,8 +216,14 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
         <=3.13
         <3.14
         ==3.12
+        ~=3.11
         >=3.10,<3.14
         >=3.10,<=3.13
+        >=3.10.0            (patch component is accepted and ignored)
+        !=3.11.0            (exclusion clauses are accepted and ignored --
+                              they narrow the range but PyRift's
+                              TargetConfig only tracks a min/max bound,
+                              same as `Finding.parse_version_range`)
 
     Unsupported specifiers raise ValueError rather than silently
     producing an incorrect compatibility range.
@@ -150,7 +238,7 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
             continue
 
         if part.startswith(">="):
-            version = PythonVersion.parse(part[2:])
+            version = _parse_major_minor(part[2:])
 
             if minimum is None or version > minimum:
                 minimum = version
@@ -158,7 +246,7 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
             continue
 
         if part.startswith(">"):
-            version = PythonVersion.parse(part[1:])
+            version = _parse_major_minor(part[1:])
 
             # A strict lower bound such as >3.11 means the first
             # supported Python release is the next minor version.
@@ -173,34 +261,58 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
             continue
 
         if part.startswith("<="):
-            version = PythonVersion.parse(part[2:])
+            version = _parse_major_minor(part[2:])
 
             if maximum is None or version < maximum:
                 maximum = version
 
             continue
 
+        if part.startswith("~="):
+            # `~=3.11` means ">=3.11, ==3.*" (compatible release): the
+            # major version is pinned, minor may be this value or higher.
+            version = _parse_major_minor(part[2:])
+
+            if minimum is None or version > minimum:
+                minimum = version
+
+            continue
+
+        if part.startswith("!="):
+            # Exclusion clause. TargetConfig only tracks a min/max range,
+            # so a single excluded version can't be represented exactly;
+            # accept and ignore it rather than failing the whole parse,
+            # matching `Finding.parse_version_range`'s existing behavior.
+            _parse_major_minor(part[2:].rstrip("*").rstrip("."))
+            continue
+
         if part.startswith("<"):
-            version = PythonVersion.parse(part[1:])
+            version = _parse_major_minor(part[1:])
 
             if version.minor > 0:
-                candidate = PythonVersion(
+                upper_candidate: PythonVersion | None = PythonVersion(
                     version.major,
                     version.minor - 1,
                 )
             else:
-                candidate = PythonVersion(
-                    version.major - 1,
-                    11,
-                )
+                # A bare "<X" with no minor component (e.g. "<4") means
+                # "any version before major X" -- there's no principled
+                # minor-level ceiling to infer for the previous major
+                # from this clause alone (unlike a real PEP 440 parse,
+                # which would just exclude major X entirely). Leave this
+                # side unbounded; a companion `>=` clause on the same
+                # major still constrains the effective range correctly.
+                upper_candidate = None
 
-            if maximum is None or candidate < maximum:
-                maximum = candidate
+            if upper_candidate is not None and (
+                maximum is None or upper_candidate < maximum
+            ):
+                maximum = upper_candidate
 
             continue
 
         if part.startswith("=="):
-            version = PythonVersion.parse(part[2:])
+            version = _parse_major_minor(part[2:].rstrip("*").rstrip("."))
 
             if minimum is None or version > minimum:
                 minimum = version
@@ -227,6 +339,17 @@ def _parse_version_specifier(specifier: str) -> TargetConfig:
         minimum=minimum,
         maximum=maximum,
     )
+
+
+def _parse_major_minor(value: str) -> PythonVersion:
+    """Parse a version string, tolerating a patch component (``3.10.4``)
+    by truncating it to major.minor, since ``PythonVersion`` only models
+    major.minor granularity."""
+    value = value.strip()
+    parts = value.split(".")
+    if len(parts) >= 2:
+        value = f"{parts[0]}.{parts[1]}"
+    return PythonVersion.parse(value)
 
 
 def _load_requires_python_without_tomllib(
@@ -272,6 +395,28 @@ def _load_requires_python_without_tomllib(
     return None
 
 
+def _find_pyproject_toml(project_path: str | Path) -> Path | None:
+    """Walk upward from *project_path* to find the nearest
+    ``pyproject.toml``, the same discovery logic
+    :func:`load_project_targets` uses, so ``pyrift scan src/package``
+    finds the repository root's config the same way
+    ``pyrift scan .`` does."""
+    path = Path(project_path)
+
+    if path.is_file():
+        directory = path.parent
+    else:
+        directory = path
+
+    directory = directory.resolve()
+    for candidate_directory in (directory, *directory.parents):
+        pyproject = candidate_directory / "pyproject.toml"
+        if pyproject.exists():
+            return pyproject
+
+    return None
+
+
 def load_project_targets(project_path: str | Path) -> TargetConfig | None:
     """
     Read ``project.requires-python`` from the ``pyproject.toml``
@@ -290,22 +435,9 @@ def load_project_targets(project_path: str | Path) -> TargetConfig | None:
     - the TOML is invalid;
     - the version specifier is unsupported.
     """
-    path = Path(project_path)
+    pyproject = _find_pyproject_toml(project_path)
 
-    if path.is_file():
-        directory = path.parent
-    else:
-        directory = path
-
-    # Resolve the nearest project configuration by walking upward. This makes
-    # ``pyrift scan src/package`` behave the same as ``pyrift scan .`` when
-    # the project's pyproject.toml lives at the repository root.
-    directory = directory.resolve()
-    for candidate_directory in (directory, *directory.parents):
-        pyproject = candidate_directory / "pyproject.toml"
-        if pyproject.exists():
-            break
-    else:
+    if pyproject is None:
         return None
 
     requires_python: str | None = None
@@ -340,3 +472,99 @@ def load_project_targets(project_path: str | Path) -> TargetConfig | None:
         return _parse_version_specifier(requires_python)
     except ValueError:
         return None
+
+
+@dataclass(frozen=True)
+class PyriftConfig:
+    """
+    Project-wide PyRift settings read from a ``[tool.pyrift]`` table in
+    ``pyproject.toml`` (2026-09 audit item #34), so users don't need to
+    repeat long CLI command lines in every CI job.
+
+    Supported keys today (a deliberately small, real subset of the
+    audit's full config-file wishlist -- rule-severity overrides,
+    per-path ignores, and profiles are future work, not implemented
+    here)::
+
+        [tool.pyrift]
+        select = ["CPY038", "CPY067"]   # mutually exclusive with ignore
+        ignore = ["PPY014", "PPY027"]   # mutually exclusive with select
+
+    CLI flags (``--select``/``--ignore``) always take precedence over
+    this file when both are given, exactly like an explicit
+    ``--python-min``/``--python-max`` already overrides
+    ``project.requires-python``.
+    """
+
+    select: tuple[str, ...] | None = None
+    ignore: tuple[str, ...] | None = None
+
+
+def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
+    """
+    Read the ``[tool.pyrift]`` table from the ``pyproject.toml``
+    associated with *project_path*, if any.
+
+    Returns ``None`` when:
+    - no pyproject.toml exists;
+    - the file has no ``[tool.pyrift]`` table;
+    - the TOML is invalid;
+    - ``tomllib`` isn't available (Python < 3.11 without the backport --
+      the intentionally limited fallback parser used for
+      ``project.requires-python`` only handles that one key, not
+      arbitrary tables, so config-file support requires tomllib);
+    - both ``select`` and ``ignore`` are given (that combination is
+      rejected the same way the CLI flags reject it, so a project
+      accidentally shipping a broken config fails loudly instead of
+      silently picking one).
+    """
+    if tomllib is None:
+        return None
+
+    pyproject = _find_pyproject_toml(project_path)
+
+    if pyproject is None:
+        return None
+
+    try:
+        with pyproject.open("rb") as file:
+            data = tomllib.load(file)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+
+    tool = data.get("tool")
+    if not isinstance(tool, dict):
+        return None
+
+    pyrift_table = tool.get("pyrift")
+    if not isinstance(pyrift_table, dict):
+        return None
+
+    select = _read_string_list(pyrift_table.get("select"))
+    ignore = _read_string_list(pyrift_table.get("ignore"))
+
+    if select is not None and ignore is not None:
+        raise ValueError(
+            "[tool.pyrift] cannot set both 'select' and 'ignore'"
+        )
+
+    if select is None and ignore is None:
+        return None
+
+    return PyriftConfig(select=select, ignore=ignore)
+
+
+def _read_string_list(value: object) -> tuple[str, ...] | None:
+    """Validate that *value* is a TOML array of strings, returning it
+    as a tuple, or None if the key was absent. Raises ValueError for
+    anything malformed (wrong type, non-string entries) rather than
+    silently ignoring a broken config."""
+    if value is None:
+        return None
+    if not isinstance(value, list) or not all(
+        isinstance(item, str) for item in value
+    ):
+        raise ValueError(
+            "[tool.pyrift] 'select'/'ignore' must be an array of strings"
+        )
+    return tuple(value)

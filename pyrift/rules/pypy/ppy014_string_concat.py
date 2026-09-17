@@ -5,6 +5,19 @@ PPY014 — Repeated string concatenation in loops is O(n²) on PyPy
 Repeated string concatenation in loops can have different performance
 characteristics between CPython and PyPy.
 
+Evidence (2026-09 audit item #17, re-verified 2026-09-17): PyPy's own
+engineering blog confirms the core claim directly -- "+= on strings in
+a loop has quadratic complexity in PyPy" because PyPy, unlike CPython,
+is not reference-counted and so cannot implement CPython's in-place
+resize optimization for `s = s + t` / `s += t`. The factual claim is
+well-evidenced (kept at HIGH confidence, Tier A). What the audit
+flagged as needing correction was *framing*: a static analyzer cannot
+know the actual iteration count, string sizes, or whether the loop is
+even on a hot path, so this stays an INFO-level, category=PERFORMANCE
+finding rather than a WARNING implying a likely correctness bug --
+consistent with how PyRift's own RuleCategory taxonomy documents this
+exact pattern as its PERFORMANCE example.
+
 This rule intentionally reports only augmented string concatenation
 where the target can be identified as a string through static analysis.
 
@@ -29,7 +42,7 @@ class StringConcatLoopRule(BaseRule):
     rule_id = "PPY014"
     title = "String concatenation in loop is O(n²) on PyPy"
     runtime = "pypy"
-    severity = Severity.WARNING
+    severity = Severity.INFO
 
     _SCOPE_TYPES = (
         ast.Module,
@@ -301,7 +314,7 @@ class StringConcatLoopRule(BaseRule):
                                 "different performance characteristics on "
                                 "PyPy and may become O(n²) for large inputs."
                             ),
-                            severity=Severity.WARNING,
+                            severity=Severity.INFO,
                             runtime=Runtime.PYPY,
                             suggestion=(
                                 "Use a list and join at the end: "

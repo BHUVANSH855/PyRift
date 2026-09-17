@@ -2,8 +2,16 @@
 PPY025 — Set ordering differs between CPython and PyPy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 On CPython, sets are unordered — iteration order is not guaranteed.
-On PyPy, sets maintain insertion order. Code that depends on set
+On PyPy, sets maintain insertion order (PyPy's own documentation:
+"Dictionaries and sets are ordered on PyPy"). Code that depends on set
 iteration order may produce different results across runtimes.
+
+Framing (2026-09 audit item #19): neither runtime gives set iteration
+a stable *language-level* ordering contract -- PyPy's ordering is a
+PyPy-specific implementation behavior, not a portable guarantee any
+more than CPython's lack of ordering is. The finding is framed around
+that portability principle ("your code depends on set order, which is
+undefined") rather than "PyPy differs from CPython", per the review.
 """
 from __future__ import annotations
 
@@ -74,11 +82,15 @@ class SetOrderingRule(BaseRule):
             rule_id=self.rule_id,
             title=self.title,
             description=(
-                f"{context} may produce different results across "
-                "runtimes. On CPython, sets are unordered — iteration "
-                "order is not guaranteed. On PyPy, sets maintain "
-                "insertion order. Code that depends on set iteration "
-                "order may produce different results."
+                f"{context} depends on set iteration order, which is "
+                "not part of the Python language's set contract on "
+                "either runtime -- CPython's sets remain unordered "
+                "even in current versions, while PyPy's sets are "
+                "documented as maintaining insertion order (PyPy's own "
+                "docs: \"Dictionaries and sets are ordered on PyPy\"). "
+                "Relying on either behavior, rather than treating set "
+                "order as genuinely undefined, is what makes this code "
+                "non-portable."
             ),
             severity=Severity.WARNING,
             runtime=Runtime.PYPY,
@@ -109,11 +121,15 @@ class SetOrderingRule(BaseRule):
             rule_id=self.rule_id,
             title=self.title,
             description=(
-                f"Converting a set with {source}. "
-                "On CPython, sets are unordered — iteration "
-                "order is not guaranteed. On PyPy, sets maintain "
-                "insertion order. Code relying on set iteration "
-                "order will produce different results across runtimes."
+                f"Converting a set with {source} depends on set "
+                "iteration order, which is not part of the Python "
+                "language's set contract on either runtime -- "
+                "CPython's sets remain unordered even in current "
+                "versions, while PyPy's sets are documented as "
+                "maintaining insertion order. Relying on either "
+                "behavior, rather than treating set order as "
+                "genuinely undefined, is what makes this code "
+                "non-portable."
             ),
             severity=Severity.WARNING,
             runtime=Runtime.PYPY,

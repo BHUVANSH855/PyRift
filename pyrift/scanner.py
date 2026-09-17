@@ -93,6 +93,9 @@ from .rules.cpython.cpy076_ssl_wrap_socket import SslWrapSocketRule
 from .rules.cpython.cpy077_typing_typeddict_functional import (
     TypingTypedDictFunctionalRule,
 )
+from .rules.cpython.cpy078_functools_reduce_kwargs import (
+    FunctoolsReduceKeywordArgsRule,
+)
 from .rules.pypy.ppy001_gc_finalizer import GcFinalizerRule
 from .rules.pypy.ppy002_ctypes import CtypesRule
 from .rules.pypy.ppy003_getrefcount import GetRefcountRule
@@ -217,6 +220,7 @@ ALL_RULES: list[BaseRule] = [
     HttpServerCGIHandlerRule(),
     SslWrapSocketRule(),
     TypingTypedDictFunctionalRule(),
+    FunctoolsReduceKeywordArgsRule(),
     # PyPy rules (sorted by rule ID)
     GcFinalizerRule(),
     CtypesRule(),

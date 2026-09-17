@@ -159,10 +159,18 @@ class InstanceDictOrderRule(BaseRule):
                     title=self.title,
                     description=(
                         "The code uses an instance __dict__ in an "
-                        "order-sensitive context. CPython preserves "
-                        "instance dictionary insertion order, while "
-                        "PyPy does not provide the same ordering "
-                        "guarantee for this usage."
+                        "order-sensitive context. This is narrower than "
+                        "general dict ordering (which is a portable "
+                        "language guarantee on both CPython and PyPy "
+                        "since Python 3.7): PyPy's own documentation "
+                        "notes that *instance* dicts specifically are "
+                        "represented using Self-style maps/hidden "
+                        "classes for performance, and \"for instance "
+                        "dictionaries, this is not always possible\" "
+                        "to preserve insertion order the way CPython "
+                        "does. Do not treat this specific usage "
+                        "(obj.__dict__ iteration order) as a portable "
+                        "contract."
                     ),
                     severity=Severity.WARNING,
                     runtime=Runtime.PYPY,

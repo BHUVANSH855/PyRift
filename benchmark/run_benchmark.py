@@ -153,8 +153,8 @@ GOLDEN = {
                 "import asyncio as aio\n"
                 "loop = aio.get_event_loop()"
             ),
-            False,
-            "aliased module not caught",
+            True,
+            "aliased module now resolved via symbol table (2026-09 audit #7)",
         ),
         (
             "get_event_loop()",
@@ -528,6 +528,14 @@ GOLDEN = {
     "PPY040": [
         ("subprocess.Popen(['cmd'], stdout=subprocess.PIPE)", True, "PIPE stdout"),
         ("subprocess.run(['cmd'])", False, "run ok"),
+        (
+            (
+                "p = subprocess.Popen(['cmd'], stdout=subprocess.PIPE)\n"
+                "out, err = p.communicate()"
+            ),
+            False,
+            "communicate() already used -- false positive fix",
+        ),
     ],
     "PPY042": [
         ("print('msg', flush=True)", True, "print flush"),
@@ -764,6 +772,33 @@ GOLDEN = {
         ("TypedDict('Name', None)", True, "None-field form removed"),
         ("TypedDict('Point', {'x': int})", False, "dict form still valid"),
         ("class Point(TypedDict):\n    x: int", False, "class form ok"),
+    ],
+    "CPY078": [
+        (
+            "import functools\nfunctools.reduce(function=f, sequence=xs)",
+            True,
+            "both as keywords",
+        ),
+        (
+            "import functools\nfunctools.reduce(f, sequence=xs)",
+            True,
+            "sequence as keyword",
+        ),
+        (
+            "import functools\nfunctools.reduce(f, xs)",
+            False,
+            "positional args ok",
+        ),
+        (
+            "import functools\nfunctools.reduce(f, xs, 0)",
+            False,
+            "positional with initial ok",
+        ),
+        (
+            "import functools as ft\nft.reduce(function=f, sequence=xs)",
+            True,
+            "aliased import still caught",
+        ),
     ],
 
     "PPY049": [

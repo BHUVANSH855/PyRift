@@ -366,6 +366,7 @@ _CPY_TITLES = {
     "CPY075": "http.server.CGIHTTPRequestHandler deprecated in 3.13, removed in 3.15",
     "CPY076": "ssl.wrap_socket() removed in Python 3.12",
     "CPY077": "typing.TypedDict zero-field syntax removed in Python 3.15",
+    "CPY078": "functools.reduce() keyword arguments deprecated, removal scheduled for 3.16",
 }
 
 
@@ -473,6 +474,7 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     "CPY075": _cpy("high", "deprecation_warn", "CPY075", last_verified="2026-08-29", affected_versions=">=3.13,<3.15"),
     "CPY076": _cpy("high", "official_docs", "CPY076", last_verified="2026-08-29", affected_versions=">=3.12"),
     "CPY077": _cpy("high", "deprecation_warn", "CPY077", last_verified="2026-08-29", affected_versions=">=3.13,<3.15"),
+    "CPY078": _cpy("high", "official_docs", "CPY078", last_verified="2026-09-17", affected_versions=">=3.14,<3.16"),
     "PPY001": _ppy("high", "official_docs", "PPY001", last_verified="2026-08-29"),
     "PPY002": _ppy("medium", "official_docs", "PPY002", last_verified="2026-08-29"),
     "PPY003": _ppy("high", "official_docs", "PPY003", last_verified="2026-08-29"),
@@ -486,7 +488,10 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     "PPY011": _ppy("high", "official_docs", "PPY011", last_verified="2026-08-29"),
     "PPY012": _ppy("high", "official_docs", "PPY012", last_verified="2026-08-29"),
     "PPY013": _ppy("high", "official_docs", "PPY013", last_verified="2026-08-29"),
-    "PPY014": _ppy("high", "official_docs", "PPY014", last_verified="2026-08-29"),
+    "PPY014": _ppy(
+        "high", "official_docs", "PPY014", last_verified="2026-09-17",
+        category=RuleCategory.PERFORMANCE,
+    ),
     "PPY015": _ppy("high", "official_docs", "PPY015", last_verified="2026-08-29"),
     "PPY016": _ppy("high", "official_docs", "PPY016", last_verified="2026-08-29"),
     "PPY017": _ppy("high", "official_docs", "PPY017", last_verified="2026-08-29"),
@@ -507,14 +512,16 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     "PPY033": _ppy("medium", "inferred", "PPY033", last_verified="2026-08-29"),
     "PPY034": _ppy("high", "official_docs", "PPY034", last_verified="2026-08-29"),
     "PPY035": _ppy(
-        "medium", "official_docs", "PPY035", last_verified="2026-08-29",
+        "medium", "official_docs", "PPY035", last_verified="2026-09-17",
         claim_confidence="medium",
     ),
     "PPY036": _ppy("medium", "official_docs", "PPY036", last_verified="2026-08-29"),
     "PPY037": _ppy("low", "observed", "PPY037", last_verified="2026-08-29"),
     "PPY038": _ppy("medium", "official_docs", "PPY038", last_verified="2026-08-29"),
     "PPY039": _ppy("low", "observed", "PPY039", last_verified="2026-08-29"),
-    "PPY040": _ppy("low", "observed", "PPY040", last_verified="2026-08-29"),
+    "PPY040": _ppy(
+        "high", "official_docs", "PPY040", last_verified="2026-09-17",
+    ),
     "PPY041": _ppy("high", "pep:584", "PPY041", last_verified="2026-08-29"),
     "PPY042": _ppy("low", "observed", "PPY042", last_verified="2026-08-29"),
     "PPY044": _ppy("medium", "inferred", "PPY044", last_verified="2026-08-29"),
@@ -523,5 +530,8 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     "PPY049": _ppy("medium", "official_docs", "PPY049", last_verified="2026-08-29"),
     "PPY051": _ppy("medium", "observed", "PPY051", last_verified="2026-08-29"),
     "PPY052": _ppy("low", "observed", "PPY052", last_verified="2026-08-29"),
-    "PPY053": _ppy("low", "observed", "PPY053", last_verified="2026-08-29"),
+    "PPY053": _ppy(
+        "low", "observed", "PPY053", last_verified="2026-08-29",
+        status="experimental",
+    ),
 }

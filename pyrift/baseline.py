@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from .finding import Finding
-from .fingerprint import finding_fingerprint
+from .fingerprint import compute_fingerprints
 
 BASELINE_VERSION = 1
 DEFAULT_BASELINE_FILE = ".pyrift-baseline.json"
@@ -35,12 +35,7 @@ def create_baseline(
     """
     baseline_path = Path(path)
 
-    fingerprints = sorted(
-        {
-            finding_fingerprint(finding, root)
-            for finding in findings
-        }
-    )
+    fingerprints = sorted(set(compute_fingerprints(findings, root)))
 
     data = {
         "version": BASELINE_VERSION,
@@ -124,9 +119,9 @@ def filter_baseline_findings(
     new_findings: list[Finding] = []
     baseline_findings: list[Finding] = []
 
-    for finding in findings:
-        fingerprint = finding_fingerprint(finding, root)
+    fingerprints = compute_fingerprints(findings, root)
 
+    for finding, fingerprint in zip(findings, fingerprints):
         if fingerprint in baseline:
             baseline_findings.append(finding)
         else:
