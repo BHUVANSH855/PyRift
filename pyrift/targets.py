@@ -673,70 +673,16 @@ def _read_string_list(
         return None
 
     if not isinstance(value, list):
-        raise ValueError(
+        raise TypeError(
             f"[tool.pyrift] '{key}' must be an array of strings"
         )
 
     if not all(isinstance(item, str) for item in value):
-        raise ValueError(
+        raise TypeError(
             f"[tool.pyrift] '{key}' must be an array of strings"
         )
 
     return tuple(value)
-
-
-def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
-    """
-    Read the ``[tool.pyrift]`` table from the ``pyproject.toml``
-    associated with *project_path*, if any.
-
-    Returns ``None`` when:
-    - no pyproject.toml exists;
-    - the file has no ``[tool.pyrift]`` table;
-    - the TOML is invalid;
-    - ``tomllib`` isn't available (Python < 3.11 without the backport --
-      the intentionally limited fallback parser used for
-      ``project.requires-python`` only handles that one key, not
-      arbitrary tables, so config-file support requires tomllib);
-    - both ``select`` and ``ignore`` are given (that combination is
-      rejected the same way the CLI flags reject it, so a project
-      accidentally shipping a broken config fails loudly instead of
-      silently picking one).
-    """
-    if tomllib is None:
-        return None
-
-    pyproject = _find_pyproject_toml(project_path)
-
-    if pyproject is None:
-        return None
-
-    try:
-        with pyproject.open("rb") as file:
-            data = tomllib.load(file)
-    except (OSError, tomllib.TOMLDecodeError):
-        return None
-
-    tool = data.get("tool")
-    if not isinstance(tool, dict):
-        return None
-
-    pyrift_table = tool.get("pyrift")
-    if not isinstance(pyrift_table, dict):
-        return None
-
-    select = _read_string_list(pyrift_table.get("select"))
-    ignore = _read_string_list(pyrift_table.get("ignore"))
-
-    if select is not None and ignore is not None:
-        raise ValueError(
-            "[tool.pyrift] cannot set both 'select' and 'ignore'"
-        )
-
-    if select is None and ignore is None:
-        return None
-
-    return PyriftConfig(select=select, ignore=ignore)
 
 
 def _read_string_list(value: object) -> tuple[str, ...] | None:
