@@ -673,17 +673,21 @@ def _read_string_list(
 
     ``None`` means the key was absent. Any present value must be a TOML
     array containing only strings.
+
+    ``ValueError`` is intentional here: malformed TOML configuration is
+    reported as a configuration validation error, regardless of whether
+    the malformed value has the wrong Python type.
     """
     if value is None:
         return None
 
     if not isinstance(value, list):
-        raise TypeError(
+        raise ValueError(  # noqa: TRY004
             f"[tool.pyrift] '{key}' must be an array of strings"
         )
 
     if not all(isinstance(item, str) for item in value):
-        raise TypeError(
+        raise ValueError(
             f"[tool.pyrift] '{key}' must be an array of strings"
         )
 
