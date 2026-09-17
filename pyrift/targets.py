@@ -634,15 +634,20 @@ def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
             key="ignore",
         )
     else:
-        select, ignore = _load_pyrift_config_without_tomllib(
-            pyproject
+        fallback_select, fallback_ignore = (
+            _load_pyrift_config_without_tomllib(pyproject)
         )
 
-        if select is not None:
-            select = tuple(select)
-
-        if ignore is not None:
-            ignore = tuple(ignore)
+        select = (
+            tuple(fallback_select)
+            if fallback_select is not None
+            else None
+        )
+        ignore = (
+            tuple(fallback_ignore)
+            if fallback_ignore is not None
+            else None
+        )
 
     if select is not None and ignore is not None:
         raise ValueError(
@@ -682,20 +687,4 @@ def _read_string_list(
             f"[tool.pyrift] '{key}' must be an array of strings"
         )
 
-    return tuple(value)
-
-
-def _read_string_list(value: object) -> tuple[str, ...] | None:
-    """Validate that *value* is a TOML array of strings, returning it
-    as a tuple, or None if the key was absent. Raises ValueError for
-    anything malformed (wrong type, non-string entries) rather than
-    silently ignoring a broken config."""
-    if value is None:
-        return None
-    if not isinstance(value, list) or not all(
-        isinstance(item, str) for item in value
-    ):
-        raise ValueError(
-            "[tool.pyrift] 'select'/'ignore' must be an array of strings"
-        )
     return tuple(value)
