@@ -20,8 +20,8 @@ def test_python_version_comparison_le_and_ge():
 
     assert older <= newer
     assert newer >= older
-    assert older <= older
-    assert newer >= newer
+    assert older <= PythonVersion(3, 10)
+    assert newer >= PythonVersion(3, 12)
 
 
 def test_greater_than_or_equal_range(tmp_path):
@@ -460,7 +460,7 @@ class TestLoadPyriftConfig:
 
 
 def test_parse_version_specifier_fallback_common_forms(monkeypatch):
-    import pyrift.targets as targets
+    from pyrift import targets
 
     monkeypatch.setattr(targets, "_HAS_PACKAGING", False)
 
@@ -492,21 +492,21 @@ def test_parse_version_specifier_fallback_common_forms(monkeypatch):
 
 
 def test_parse_version_specifier_fallback_invalid_range():
-    import pyrift.targets as targets
+    from pyrift import targets
 
     with pytest.raises(ValueError):
         targets._parse_version_specifier_fallback(">=3.14,<3.10")
 
 
 def test_parse_version_specifier_fallback_unsupported():
-    import pyrift.targets as targets
+    from pyrift import targets
 
     with pytest.raises(ValueError):
         targets._parse_version_specifier_fallback("===3.12")
 
 
 def test_parse_version_specifier_fallback_empty_parts():
-    import pyrift.targets as targets
+    from pyrift import targets
 
     result = targets._parse_version_specifier_fallback(
         ">=3.10,,<3.14"
@@ -553,7 +553,7 @@ def test_requires_python_without_tomllib_missing(tmp_path):
 
 
 def test_pyrift_config_without_tomllib(tmp_path, monkeypatch):
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -572,7 +572,7 @@ def test_pyrift_config_without_tomllib(tmp_path, monkeypatch):
 
 
 def test_pyrift_config_ignore_without_tomllib(tmp_path, monkeypatch):
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -594,7 +594,7 @@ def test_pyrift_config_without_tomllib_invalid_value(
     tmp_path,
     monkeypatch,
 ):
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -613,7 +613,7 @@ def test_pyrift_config_without_tomllib_non_string(
     tmp_path,
     monkeypatch,
 ):
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -632,7 +632,7 @@ def test_pyrift_config_without_tomllib_both_select_ignore(
     tmp_path,
     monkeypatch,
 ):
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -652,7 +652,7 @@ def test_pyrift_config_without_tomllib_malformed_array(
     tmp_path,
     monkeypatch,
 ):
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -670,7 +670,7 @@ def test_pyrift_config_without_tomllib_malformed_array(
 def test_parse_version_specifier_fallback_accepts_empty_part(
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     monkeypatch.setattr(targets, "_HAS_PACKAGING", False)
 
@@ -683,7 +683,7 @@ def test_parse_version_specifier_fallback_accepts_empty_part(
 def test_parse_version_specifier_fallback_rejects_invalid_operator(
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     monkeypatch.setattr(targets, "_HAS_PACKAGING", False)
 
@@ -697,7 +697,7 @@ def test_parse_version_specifier_fallback_rejects_invalid_operator(
 def test_parse_version_specifier_fallback_handles_multiple_specifiers(
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     monkeypatch.setattr(targets, "_HAS_PACKAGING", False)
 
@@ -712,7 +712,7 @@ def test_parse_version_specifier_fallback_handles_multiple_specifiers(
 
 
 def test_parse_major_minor_rejects_missing_version() -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     with pytest.raises(ValueError):
         targets._parse_major_minor("")
@@ -722,7 +722,7 @@ def test_requires_python_fallback_ignores_other_project_keys(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -752,7 +752,7 @@ def test_pyrift_config_fallback_ignores_other_tables(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -782,7 +782,7 @@ def test_pyrift_config_fallback_ignores_comments(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -808,7 +808,7 @@ def test_pyrift_config_fallback_rejects_unquoted_values(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -832,7 +832,7 @@ def test_pyrift_config_fallback_rejects_non_array(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -859,7 +859,7 @@ def test_load_project_targets_without_pyproject(tmp_path) -> None:
 def test_load_project_targets_with_invalid_toml(
     tmp_path,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -878,7 +878,7 @@ name = "broken"
 def test_load_pyrift_config_with_invalid_toml(
     tmp_path,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -896,7 +896,7 @@ select = ["CPY038"]
 def test_parse_version_specifier_fallback_empty_specifier(
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     monkeypatch.setattr(targets, "_HAS_PACKAGING", False)
 
@@ -909,7 +909,7 @@ def test_parse_version_specifier_fallback_empty_specifier(
 def test_parse_version_specifier_fallback_invalid_version(
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     monkeypatch.setattr(targets, "_HAS_PACKAGING", False)
 
@@ -1011,7 +1011,7 @@ def test_pyrift_config_fallback_ignores_unknown_keys(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -1035,7 +1035,7 @@ def test_pyrift_config_fallback_ignores_invalid_lines(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -1059,7 +1059,7 @@ def test_pyrift_config_fallback_empty_select(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -1083,7 +1083,7 @@ def test_pyrift_config_fallback_empty_ignore(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -1107,7 +1107,7 @@ def test_pyrift_config_fallback_unknown_table(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -1132,7 +1132,7 @@ def test_requires_python_fallback_returns_none_on_read_error(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -1153,7 +1153,7 @@ def test_pyrift_config_fallback_returns_none_on_read_error(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -1197,7 +1197,7 @@ def test_project_table_with_non_mapping_value_returns_none(tmp_path) -> None:
 
 
 def test_load_pyrift_config_with_non_mapping_table_returns_none(tmp_path):
-    import pyrift.targets as targets
+    from pyrift import targets
 
     (tmp_path / "pyproject.toml").write_text(
         'tool.pyrift = "not-a-table"\n',
@@ -1210,7 +1210,7 @@ def test_load_project_targets_without_requires_python_fallback_returns_none(
     tmp_path,
     monkeypatch,
 ) -> None:
-    import pyrift.targets as targets
+    from pyrift import targets
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
