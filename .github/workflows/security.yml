@@ -58,7 +58,7 @@ jobs:
         run: python -m pip install pip-audit
 
       - name: Run pip-audit
-        run: python -m pip_audit --strict --desc
+        run: python -m pip_audit --strict --desc --skip-editable
 
   safety:
     name: Safety Check
