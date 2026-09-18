@@ -1,6 +1,6 @@
 # pyrift — Rule Reference
 
-Complete documentation for all 118 pyrift rules.
+Complete documentation for all 119 pyrift rules.
 
 ## Confidence levels
 
@@ -377,6 +377,11 @@ These rules detect code that behaves differently across CPython versions.
 **Severity:** Error | **Confidence:** High | **Affects:** CPython
 
 ---
+### CPY078 — functools.reduce() keyword arguments deprecated, removal scheduled for 3.16
+
+**Severity:** Warning | **Confidence:** High | **Affects:** CPython
+
+---
 
 ---
 
@@ -446,7 +451,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 ---
 ### PPY014 — String concatenation in loop is O(n²) on PyPy
 
-**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
+**Severity:** Info | **Confidence:** High | **Affects:** PyPy
 
 ---
 ### PPY015 — Generator cleanup timing differs on PyPy
@@ -544,9 +549,9 @@ These rules detect code that behaves differently on PyPy vs CPython.
 **Severity:** Info | **Confidence:** High | **Affects:** PyPy
 
 ---
-### PPY035 — C extension packages may not work correctly on PyPy
+### PPY035 — C extension package may need PyPy compatibility verification
 
-**Severity:** Warning | **Confidence:** Medium | **Affects:** PyPy
+**Severity:** Info | **Confidence:** Medium | **Affects:** PyPy
 
 ---
 ### PPY036 — open() line buffering behaves differently on PyPy
@@ -569,9 +574,9 @@ These rules detect code that behaves differently on PyPy vs CPython.
 **Severity:** Warning | **Confidence:** Low | **Affects:** PyPy
 
 ---
-### PPY040 — subprocess.PIPE buffering may cause deadlocks on PyPy
+### PPY040 — subprocess Popen(...PIPE) without communicate() risks deadlock
 
-**Severity:** Warning | **Confidence:** Low | **Affects:** PyPy
+**Severity:** Warning | **Confidence:** High | **Affects:** PyPy
 
 ---
 ### PPY041 — dict | operator requires PyPy 7.3.7+ (Python 3.9 compat)

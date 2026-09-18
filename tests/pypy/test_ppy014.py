@@ -242,3 +242,42 @@ class TestPPY014:
         findings = run(self.rule, src)
 
         assert len(findings) == 1
+
+class TestPPY014EvidenceAndFraming:
+    """2026-09 audit item #17: PPY014's core claim is well-evidenced
+    (PyPy's own engineering blog confirms += string concat is quadratic
+    on PyPy), so it stays HIGH confidence/Tier A -- but a static
+    analyzer can't know iteration count or string size, so it should
+    present as an INFO-level performance heuristic, not a WARNING
+    implying a likely correctness bug."""
+
+    rule = StringConcatLoopRule()
+
+    def test_severity_is_info_not_warning(self):
+        from pyrift.finding import Severity
+        findings = run(
+            self.rule,
+            'def f():\n    s = ""\n    for x in xs:\n        s += x\n    return s',
+        )
+        assert len(findings) == 1
+        assert findings[0].severity == Severity.INFO
+
+    def test_category_is_performance_not_implementation(self):
+        from pyrift.finding import RuleCategory
+        findings = run(
+            self.rule,
+            'def f():\n    s = ""\n    for x in xs:\n        s += x\n    return s',
+        )
+        assert findings[0].category == RuleCategory.PERFORMANCE
+
+    def test_confidence_and_tier_stay_high_tier_a(self):
+        """The factual claim itself is well-evidenced, so it keeps its
+        confidence and tier -- only the severity/category framing
+        changed, not the evidence quality."""
+        from pyrift.finding import Confidence, RuleTier
+        findings = run(
+            self.rule,
+            'def f():\n    s = ""\n    for x in xs:\n        s += x\n    return s',
+        )
+        assert findings[0].confidence == Confidence.HIGH
+        assert findings[0].rule_tier == RuleTier.TIER_A

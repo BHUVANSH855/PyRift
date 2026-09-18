@@ -561,8 +561,8 @@ Lists the compatibility rules and their documented behavior.
 ### Project status
 
 - **Version:** 0.8.0
-- **Rules:** 118 total (70 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1484 passing
+- **Rules:** 119 total (71 CPython + 47 PyPy + 1 cross-runtime)
+- **Tests:** 1625 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -778,6 +778,7 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | CPY075 | http.server.CGIHTTPRequestHandler deprecated in 3.13, removed in 3.15 | cpython |
 | CPY076 | ssl.wrap_socket() removed in Python 3.12 | cpython |
 | CPY077 | typing.TypedDict zero-field syntax removed in Python 3.15 | cpython |
+| CPY078 | functools.reduce() keyword arguments deprecated, removal scheduled for 3.16 | cpython |
 | PPY001 | Relying on __del__ for resource cleanup breaks on PyPy | pypy |
 | PPY002 | ctypes usage may differ on PyPy | pypy |
 | PPY003 | sys.getrefcount() is meaningless on PyPy | pypy |
@@ -811,12 +812,12 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | PPY032 | Mutating dict keys raises RuntimeError on PyPy | pypy |
 | PPY033 | Exceptions in __del__ appear at unpredictable times on PyPy | pypy |
 | PPY034 | hash() values may differ between CPython and PyPy | pypy |
-| PPY035 | C extension packages may not work correctly on PyPy | pypy |
+| PPY035 | C extension package may need PyPy compatibility verification | pypy |
 | PPY036 | open() line buffering behaves differently on PyPy | pypy |
 | PPY037 | os.urandom() source may differ on PyPy | pypy |
 | PPY038 | decimal module uses different backend on PyPy | pypy |
 | PPY039 | os.fork() may not work correctly on all PyPy platforms | pypy |
-| PPY040 | subprocess.PIPE buffering may cause deadlocks on PyPy | pypy |
+| PPY040 | subprocess Popen(...PIPE) without communicate() risks deadlock | pypy |
 | PPY041 | dict \| operator requires PyPy 7.3.7+ (Python 3.9 compat) | pypy |
 | PPY042 | print(flush=True) may not flush immediately on PyPy | pypy |
 | PPY044 | Exception variable cleanup timing differs on PyPy | pypy |

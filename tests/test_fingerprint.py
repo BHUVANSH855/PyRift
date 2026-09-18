@@ -1,5 +1,9 @@
 from pyrift.finding import Finding, Runtime, Severity
-from pyrift.fingerprint import _normalize_path, finding_fingerprint
+from pyrift.fingerprint import (
+    _normalize_path,
+    compute_fingerprints,
+    finding_fingerprint,
+)
 
 
 def make_finding(
@@ -315,5 +319,102 @@ class TestNormalizePathRegression:
             )
             assert len(baseline_findings) == 1
             assert len(new_findings) == 0
+        finally:
+            os.unlink(baseline_path)
+
+class TestComputeFingerprintsDisambiguation:
+    """P0 regression suite (2026-09 audit #6/#140): two independent
+    occurrences of the same rule/title/range in one file must not
+    collapse to a single fingerprint, or a baseline can silently
+    swallow a genuinely new occurrence as already-known."""
+
+    def _finding(self, line, col=0, rule_id="CPY030"):
+        return Finding(
+            file="pkg/mod.py",
+            line=line,
+            col=col,
+            rule_id=rule_id,
+            title="sys.path no longer accepts bytes entries in Python 3.11+",
+            description="desc",
+            severity=Severity.ERROR,
+            runtime=Runtime.CPYTHON,
+            affected_from="3.11",
+            affected_until="",
+        )
+
+    def test_two_distinct_occurrences_get_distinct_fingerprints(self):
+        first = self._finding(line=10)
+        second = self._finding(line=20)
+
+        fps = compute_fingerprints([first, second])
+
+        assert fps[0] != fps[1]
+
+    def test_exact_duplicate_entries_still_collapse(self):
+        """Same rule AND same exact source position -- e.g. the same
+        finding passed twice by accident -- still fingerprints the same,
+        preserving the original dedup behavior."""
+        same_line = self._finding(line=10)
+        same_line_again = self._finding(line=10)
+
+        fps = compute_fingerprints([same_line, same_line_again])
+
+        assert fps[0] == fps[1]
+
+    def test_three_occurrences_all_distinct(self):
+        findings = [self._finding(line=n) for n in (5, 10, 15)]
+        fps = compute_fingerprints(findings)
+        assert len(set(fps)) == 3
+
+    def test_fingerprint_order_independent_of_input_order(self):
+        """The same set of source positions produces the same set of
+        fingerprints regardless of what order they're passed in, so
+        baseline creation and a later filter pass stay consistent even
+        if scan ordering ever changes."""
+        a = self._finding(line=10)
+        b = self._finding(line=20)
+
+        forward = set(compute_fingerprints([a, b]))
+        backward = set(compute_fingerprints([b, a]))
+
+        assert forward == backward
+
+    def test_baseline_does_not_swallow_new_occurrence_of_known_rule(self):
+        """End-to-end regression for the exact bug: a project baselines
+        2 known occurrences of a rule; a 3rd, genuinely new occurrence
+        appears later and must be reported, not silently suppressed."""
+        import os
+        import tempfile
+
+        from pyrift.baseline import (
+            create_baseline,
+            filter_baseline_findings,
+            load_baseline,
+        )
+
+        known = [self._finding(line=10), self._finding(line=20)]
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w") as tmp:
+            baseline_path = tmp.name
+
+        try:
+            create_baseline(known, baseline_path)
+            baseline = load_baseline(baseline_path)
+
+            # Later scan: the 2 known occurrences are still there, plus
+            # a brand new 3rd occurrence at a different line.
+            later_scan = [
+                self._finding(line=10),
+                self._finding(line=20),
+                self._finding(line=30),
+            ]
+
+            new_findings, baseline_findings = filter_baseline_findings(
+                later_scan, baseline
+            )
+
+            assert len(baseline_findings) == 2
+            assert len(new_findings) == 1
+            assert new_findings[0].line == 30
         finally:
             os.unlink(baseline_path)

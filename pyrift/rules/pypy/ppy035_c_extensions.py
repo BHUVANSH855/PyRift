@@ -1,4 +1,24 @@
-"""PPY035 -- C extension packages may not work correctly on PyPy."""
+"""PPY035 -- C extension packages may need PyPy compatibility verification.
+
+2026-09 audit item #16: this rule's original wording ("may not work
+correctly... some crash, some produce wrong results") overstated the
+risk uniformly across the whole KNOWN_PROBLEMATIC list. Verified against
+current evidence (Sept 2026): PyPy's own FAQ states cpyext is "mature
+enough" that upstream numpy "passes the test suite" -- the documented
+cost for cpyext-based packages is primarily *performance* overhead, not
+general correctness breakage -- and several packages in this list
+(cryptography, MarkupSafe, pydantic-core) now publish official PyPy
+wheels on PyPI, meaning they have first-class native support rather
+than running through the cpyext compatibility shim at all.
+
+The rule still flags a real, worth-checking category (per-package,
+per-version PyPy support varies and does need verification before
+deploying), but presents it as that -- a checklist item -- rather than
+an assumed-broken warning. A future PPY-CAPI-001-style rule that
+inspects actual C-API usage patterns (rather than the mere presence of
+an import) would be the real fix for the underlying precision problem;
+this change only corrects the current rule's overstated framing.
+"""
 from __future__ import annotations
 
 import ast
@@ -23,9 +43,9 @@ KNOWN_PROBLEMATIC = {
 
 class CExtensionsRule(BaseRule):
     rule_id = "PPY035"
-    title = "C extension packages may not work correctly on PyPy"
+    title = "C extension package may need PyPy compatibility verification"
     runtime = "pypy"
-    severity = Severity.WARNING
+    severity = Severity.INFO
 
     def check(
         self,
@@ -45,17 +65,26 @@ class CExtensionsRule(BaseRule):
                     file=filename, line=info.line, col=info.col,
                     rule_id=self.rule_id, title=self.title,
                     description=(
-                        f"'{base}' is a C extension package. PyPy's C API "
-                        "compatibility layer (cpyext) is not 100% complete — "
-                        "some packages work, some crash, some produce wrong results."
+                        f"'{base}' is a C extension package. PyPy runs "
+                        "most such packages through its cpyext "
+                        "compatibility layer, which is correctness-"
+                        "complete for many widely used packages but "
+                        "carries a real performance overhead, and "
+                        "per-package/per-version support still varies. "
+                        "Some packages now ship native PyPy wheels "
+                        "(no cpyext involved); others don't. Verify "
+                        "this specific package's current PyPy support "
+                        "before deploying, rather than assuming either "
+                        "way."
                     ),
-                    severity=Severity.WARNING,
-                    confidence=Confidence.HIGH,
+                    severity=Severity.INFO,
+                    confidence=Confidence.MEDIUM,
                     runtime=Runtime.PYPY,
                     suggestion=(
-                        f"Check PyPy compatibility for '{base}' at "
-                        "https://pypy.org/compat.html before deploying on PyPy. "
-                        "Consider cffi-based alternatives where available."
+                        f"Check '{base}''s current PyPy support (native "
+                        "wheel vs. cpyext vs. unsupported) at "
+                        "https://pypy.org/compat.html or on PyPI before "
+                        "deploying on PyPy."
                     ),
                     docs_url="https://doc.pypy.org/en/latest/cpython_differences.html",
                 ))

@@ -28,8 +28,8 @@ from .baseline import (
 from .finding import Runtime
 from .git import GitError, changed_python_files
 from .reporter import to_json, to_markdown, to_sarif, to_text
-from .scanner import ALL_RULES, ScanResult, scan
-from .targets import PythonVersion, TargetConfig
+from .scanner import ALL_RULES, BaseRule, ScanResult, scan
+from .targets import PythonVersion, TargetConfig, load_pyrift_config
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -151,6 +151,25 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Git revision used as the comparison base for "
             "--changed-only (default: HEAD)."
+        ),
+    )
+
+    scan_cmd.add_argument(
+        "--select",
+        default=None,
+        help=(
+            "Comma-separated list of rule IDs to run, e.g. "
+            "'CPY038,CPY067'. All other rules are skipped. "
+            "Cannot be combined with --ignore."
+        ),
+    )
+    scan_cmd.add_argument(
+        "--ignore",
+        default=None,
+        help=(
+            "Comma-separated list of rule IDs to skip, e.g. "
+            "'PPY014,PPY027'. All other rules still run. "
+            "Cannot be combined with --select."
         ),
     )
 
@@ -287,6 +306,87 @@ def _format_result(
 
     return to_text(result)
 
+def _resolve_selected_rules(
+    args: argparse.Namespace,
+    path: Path | None = None,
+) -> list[BaseRule] | None:
+    """
+    Resolve ``--select``/``--ignore`` into an explicit rule list for
+    :func:`pyrift.scanner.scan`, or ``None`` to run every rule (the
+    default, unfiltered behavior ``scan()`` already has).
+
+    Precedence (2026-09 audit item #34): explicit CLI flags always win.
+    If neither ``--select`` nor ``--ignore`` was passed on the command
+    line, fall back to a ``[tool.pyrift]`` table in ``pyproject.toml``
+    when one exists, so a project doesn't need to repeat a long CLI
+    command line in every CI job.
+
+    Validates rule IDs against the real registry rather than silently
+    accepting typos: an unknown ID in either flag is a hard error,
+    because a silently-ignored typo would mean "pyrift --select
+    CPY0038" (note the extra 0) quietly runs *every* rule instead of
+    just one, which is the opposite of what was asked and easy to miss
+    in CI output.
+    """
+    select = getattr(args, "select", None)
+    ignore = getattr(args, "ignore", None)
+
+    if not select and not ignore and path is not None and not getattr(
+        args, "no_project_config", False
+    ):
+        try:
+            config = load_pyrift_config(path)
+        except ValueError as exc:
+            print(f"pyrift: invalid [tool.pyrift] config: {exc}", file=sys.stderr)
+            sys.exit(2)
+
+        if config is not None:
+            if config.select:
+                select = ",".join(config.select)
+            elif config.ignore:
+                ignore = ",".join(config.ignore)
+
+    if not select and not ignore:
+        return None
+
+    if select and ignore:
+        print(
+            "pyrift: --select and --ignore cannot be combined",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    known_ids = {rule.rule_id for rule in ALL_RULES}
+
+    def _parse_ids(raw: str) -> list[str]:
+        return [part.strip().upper() for part in raw.split(",") if part.strip()]
+
+    if select:
+        wanted = _parse_ids(select)
+        unknown = [rule_id for rule_id in wanted if rule_id not in known_ids]
+        if unknown:
+            print(
+                f"pyrift: unknown rule ID(s) in --select: "
+                f"{', '.join(unknown)}",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+        wanted_set = set(wanted)
+        return [rule for rule in ALL_RULES if rule.rule_id in wanted_set]
+
+    excluded = _parse_ids(ignore) if ignore is not None else []
+    unknown = [rule_id for rule_id in excluded if rule_id not in known_ids]
+    if unknown:
+        print(
+            f"pyrift: unknown rule ID(s) in --ignore: "
+            f"{', '.join(unknown)}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+    excluded_set = set(excluded)
+    return [rule for rule in ALL_RULES if rule.rule_id not in excluded_set]
+
+
 def _scan_changed_files(
     path: Path,
     args: argparse.Namespace,
@@ -299,6 +399,8 @@ def _scan_changed_files(
         print(f"pyrift: {exc}", file=sys.stderr)
         sys.exit(2)
 
+    selected_rules = _resolve_selected_rules(args, path)
+
     findings = []
     rule_errors = []
     files_scanned = 0
@@ -306,6 +408,7 @@ def _scan_changed_files(
     for changed_file in changed:
         file_result = scan(
             changed_file,
+            rules=selected_rules,
             target_config=target_config,
             use_project_config=not args.no_project_config,
         )
@@ -465,6 +568,7 @@ def _run_scan(args: argparse.Namespace) -> None:
         sys.exit(2)
 
     target_config = _build_target_config(args)
+    selected_rules = _resolve_selected_rules(args, path)
     changed_count: int | None = None
 
     if args.changed_only:
@@ -476,6 +580,7 @@ def _run_scan(args: argparse.Namespace) -> None:
     else:
         result = scan(
             path,
+            rules=selected_rules,
             target_config=target_config,
             use_project_config=not args.no_project_config,
         )

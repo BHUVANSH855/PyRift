@@ -1,1 +1,1 @@
-# pyrift rules package
+# pypy rules

@@ -208,6 +208,13 @@ class TestTypeChecking:
 
 class TestGuardReducesRisk:
     def test_compatibility_finding_suppressed_by_satisfying_version_guard(self):
+        # Real rules (e.g. CPY011, CPY030) encode "requires Python X+" as
+        # affected_from="<earliest broken version>",
+        # affected_until="<version just before the fix/requirement>" --
+        # i.e. the *window during which the code is broken*, not the
+        # version that introduces the API. A guard of `>= 3.11` makes the
+        # guarded branch run only where the API is actually available
+        # (outside the broken window [3.0, 3.11)), so it should suppress.
         index = build_guard_index(
             parse(
                 """
@@ -221,12 +228,62 @@ class TestGuardReducesRisk:
             index,
             4,
             finding_runtime="cpython",
-            affected_from="3.11",
-            affected_until="",
+            affected_from="3.0",
+            affected_until="3.11",
             category="compatibility",
         )
         assert should_suppress
         assert "version_info" in reason
+
+    def test_compatibility_finding_not_suppressed_when_affected_forever_after_guard(self):
+        # P0 regression (2026-09 audit): a guard of `>= affected_from`
+        # must NOT suppress a finding whose affected window starts at
+        # (or before) the guard's own lower bound and has no upper bound
+        # -- the guarded branch runs squarely inside the affected range.
+        # This is the exact bug reported against CPY047
+        # (collections.abc.ByteString, affected [3.15, 3.17)).
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+                if sys.version_info >= (3, 15):
+                    from collections.abc import ByteString
+                """
+            )
+        )
+        should_suppress, _reason = guard_reduces_risk(
+            index,
+            4,
+            finding_runtime="cpython",
+            affected_from="3.15",
+            affected_until="3.17",
+            category="compatibility",
+        )
+        assert not should_suppress
+
+    def test_compatibility_finding_not_suppressed_when_guard_fully_inside_unbounded_range(self):
+        # affected_from set, no affected_until => affected "forever from
+        # that point on". A guard whose lower bound is >= affected_from
+        # still runs entirely inside the affected range and must not be
+        # suppressed.
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+                if sys.version_info >= (3, 14):
+                    import something_removed_in_3_14
+                """
+            )
+        )
+        should_suppress, _reason = guard_reduces_risk(
+            index,
+            4,
+            finding_runtime="cpython",
+            affected_from="3.14",
+            affected_until="",
+            category="compatibility",
+        )
+        assert not should_suppress
 
     def test_compatibility_finding_not_suppressed_when_guard_insufficient(self):
         index = build_guard_index(
@@ -261,18 +318,43 @@ class TestGuardReducesRisk:
                 """
             )
         )
-        # The else branch only runs before 3.11, so a finding whose API
-        # starts in 3.11 is not applicable there.
-        should_suppress, reason = guard_reduces_risk(
+        # The else branch only runs before 3.11. Using the real-rule
+        # encoding, the API requirement is expressed as a broken window
+        # of [3.0, 3.11) -- and the else branch (< 3.11) runs entirely
+        # *inside* that broken window, so it must NOT be suppressed: the
+        # else branch is exactly the code path that needs the shim.
+        should_suppress, _reason = guard_reduces_risk(
             index,
             6,
             finding_runtime="cpython",
-            affected_from="3.11",
+            affected_from="3.0",
+            affected_until="3.11",
+            category="compatibility",
+        )
+        assert not should_suppress
+
+    def test_earlier_branch_suppressed_when_guard_runs_before_affected_window(self):
+        # A guard that runs strictly before the affected window starts
+        # (disjoint, guard fully "to the left") is correctly suppressed.
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+                if sys.version_info < (3, 12):
+                    from distutils import setup
+                """
+            )
+        )
+        should_suppress, reason = guard_reduces_risk(
+            index,
+            4,
+            finding_runtime="cpython",
+            affected_from="3.12",
             affected_until="",
             category="compatibility",
         )
         assert should_suppress
-        assert "before the affected 3.11 version" in reason
+        assert "before the affected version range" in reason
 
     def test_older_else_branch_not_suppressed_for_preexisting_api(self):
         index = build_guard_index(
@@ -429,3 +511,134 @@ class TestScannerIntegration:
         )
         findings = scan_file(f)
         assert not any(fi.rule_id == "CPY011" for fi in findings)
+
+
+class TestNestedAndElifIntervalComposition:
+    """Item #4 (2026-09 audit): nested/elif version guards must compose
+    via interval intersection, not just consider the innermost `if` in
+    isolation."""
+
+    def test_nested_if_composes_bounded_interval(self):
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+                if sys.version_info >= (3, 12):
+                    if sys.version_info < (3, 15):
+                        from collections.abc import ByteString
+                """
+            )
+        )
+        # composed reachable range for the innermost body is [3.12, 3.15)
+        should_suppress, _reason = guard_reduces_risk(
+            index,
+            5,
+            finding_runtime="cpython",
+            affected_from="3.15",
+            affected_until="",
+            category="compatibility",
+        )
+        assert should_suppress
+
+    def test_nested_if_does_not_falsely_suppress_overlapping_finding(self):
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+                if sys.version_info >= (3, 12):
+                    if sys.version_info < (3, 17):
+                        from collections.abc import ByteString
+                """
+            )
+        )
+        # composed reachable range [3.12, 3.17) genuinely overlaps a
+        # [3.15, 3.17) affected window -- must NOT suppress.
+        should_suppress, _reason = guard_reduces_risk(
+            index,
+            5,
+            finding_runtime="cpython",
+            affected_from="3.15",
+            affected_until="3.17",
+            category="compatibility",
+        )
+        assert not should_suppress
+
+    def test_elif_chain_composes_bounded_interval(self):
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+                if sys.version_info >= (3, 14):
+                    pass
+                elif sys.version_info >= (3, 12):
+                    from collections.abc import ByteString
+                else:
+                    pass
+                """
+            )
+        )
+        # elif body's composed reachable range is [3.12, 3.14) --
+        # disjoint from a [3.15, inf) affected finding.
+        should_suppress, _reason = guard_reduces_risk(
+            index,
+            6,
+            finding_runtime="cpython",
+            affected_from="3.15",
+            affected_until="",
+            category="compatibility",
+        )
+        assert should_suppress
+
+    def test_elif_else_branch_composes_correctly(self):
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+                if sys.version_info >= (3, 14):
+                    pass
+                elif sys.version_info >= (3, 12):
+                    pass
+                else:
+                    from collections.abc import ByteString
+                """
+            )
+        )
+        # else body's composed reachable range is (-inf, 3.12) --
+        # disjoint from a [3.15, inf) affected finding.
+        should_suppress, _reason = guard_reduces_risk(
+            index,
+            8,
+            finding_runtime="cpython",
+            affected_from="3.15",
+            affected_until="",
+            category="compatibility",
+        )
+        assert should_suppress
+
+    def test_nested_guard_inside_function_still_composes(self):
+        """A version guard inside a function body still needs the
+        surrounding module-level guard context, if any (here there's no
+        outer guard, but the nested `if` inside the function must still
+        get its own composed context correctly, exercising the
+        recursion into non-`if` statement containers)."""
+        index = build_guard_index(
+            parse(
+                """
+                import sys
+
+                def setup():
+                    if sys.version_info >= (3, 12):
+                        if sys.version_info < (3, 15):
+                            from collections.abc import ByteString
+                """
+            )
+        )
+        should_suppress, _reason = guard_reduces_risk(
+            index,
+            7,
+            finding_runtime="cpython",
+            affected_from="3.15",
+            affected_until="",
+            category="compatibility",
+        )
+        assert should_suppress

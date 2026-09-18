@@ -34,6 +34,10 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-cov", "pytest-xdist", "ruff", "mypy", "build", "twine"]
+# Optional, not required: gives targets.py a complete PEP 440 parser
+# (~=, !=, X.Y.Z patch versions, .* wildcards) instead of the built-in
+# regex-based subset. PyRift works fully without it.
+full = ["packaging>=21.0"]
 
 [project.scripts]
 pyrift = "pyrift.cli:main"

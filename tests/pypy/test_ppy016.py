@@ -209,3 +209,31 @@ class TestPPY016:
         )
 
         assert findings == []
+
+class TestPPY016Framing:
+    """2026-09 audit item #18: the finding must not overgeneralize to
+    "dict ordering isn't reliable" (general dict order IS a portable
+    language guarantee on both runtimes since 3.7) -- it should be
+    precise that only *instance* __dict__ is the exception, and why
+    (PyPy's own docs: instance dicts use Self-style maps/hidden
+    classes)."""
+
+    rule = InstanceDictOrderRule()
+
+    def test_description_specifies_instance_dict_not_general_dicts(self):
+        findings = run(
+            self.rule,
+            "for k in obj.__dict__:\n    pass",
+        )
+        assert len(findings) == 1
+        description = findings[0].description.lower()
+        assert "general dict ordering" in description
+        assert "portable language guarantee" in description
+
+    def test_description_cites_specific_pypy_mechanism(self):
+        findings = run(
+            self.rule,
+            "for k in obj.__dict__:\n    pass",
+        )
+        description = findings[0].description.lower()
+        assert "hidden classes" in description or "self-style maps" in description
