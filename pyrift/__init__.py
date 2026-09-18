@@ -9,7 +9,7 @@ from .finding import (
 from .reporter import to_json
 from .scanner import ALL_RULES, ScanResult, scan
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 __all__ = [
     "ALL_RULES",

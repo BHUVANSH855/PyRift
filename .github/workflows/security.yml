@@ -50,9 +50,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: |
-          python -m pip install -e ".[dev]"
-          python -m pip install -r benchmark/requirements.txt
+        run: python -m pip install -r benchmark/requirements.txt
 
       - name: Install pip-audit
         run: python -m pip install pip-audit

@@ -560,7 +560,7 @@ Lists the compatibility rules and their documented behavior.
 
 ### Project status
 
-- **Version:** 0.8.0
+- **Version:** 0.9.0
 - **Rules:** 119 total (71 CPython + 47 PyPy + 1 cross-runtime)
 - **Tests:** 1625 passing
 - **Dependencies:** zero
