@@ -63,6 +63,25 @@ jobs:
       - name: Run runtime differential harness
         run: python benchmark/runtime_harness.py
 
+      - name: Validate release version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python -c "
+          import os
+          import pyrift
+
+          expected = f'v{pyrift.__version__}'
+          actual = os.environ['RELEASE_TAG']
+
+          assert actual == expected, (
+              f'Release tag/version mismatch: '
+              f'tag={actual}, package={expected}'
+          )
+
+          print(f'Release version valid: {actual}')
+          "
+
       - name: Validate rule inventory
         run: |
           python -c "
