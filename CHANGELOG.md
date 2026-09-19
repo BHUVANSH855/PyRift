@@ -4,7 +4,7 @@
 - Hardened compatibility rules and analysis behavior.
 - Improved scanning, evidence, documentation, and project quality checks.
 - Updated project configuration and release tooling.
-- 1625 tests total
+- 1637 tests total
 
 ## [0.8.0] - 2026-08-26
 
