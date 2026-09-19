@@ -62,7 +62,10 @@ def get_test_count() -> int:
     )
 
 
-def _current_changelog_section(content: str, version: str) -> tuple[str, str]:
+def _current_changelog_section(
+    content: str,
+    version: str,
+) -> tuple[str, int, int]:
     """Return the current version section and its boundaries."""
     match = re.search(
         rf"^## \[{re.escape(version)}\].*$",
@@ -88,7 +91,7 @@ def _current_changelog_section(content: str, version: str) -> tuple[str, str]:
     else:
         end = match.end() + next_heading.start()
 
-    return content[start:end], content[:start] + content[end:]
+    return content[start:end], start, end
 
 
 def update_readme(
@@ -140,13 +143,13 @@ def update_changelog(
     version: str,
     test_count: int,
 ) -> str:
-    section, outside = _current_changelog_section(
+    section, start, end = _current_changelog_section(
         content,
         version,
     )
 
     updated_section, replacements = re.subn(
-        r"^(- \*\*|\-\s*)?(\d+)\s+tests?\s+(?:total|passing)\s*$",
+        r"^(- \*\*|-\s*)?(\d+)[ \t]+tests?[ \t]+(?:total|passing)[ \t]*$",
         lambda match: f"- {test_count} tests total",
         section,
         count=1,
@@ -159,7 +162,7 @@ def update_changelog(
             f"- {test_count} tests total\n"
         )
 
-    return outside[:0] + updated_section + outside
+    return content[:start] + updated_section + content[end:]
 
 
 def generate_rule_table() -> str:
