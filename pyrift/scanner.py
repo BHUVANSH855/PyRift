@@ -456,14 +456,15 @@ def _apply_guards(findings: list[Finding], tree: ast.AST) -> tuple[list[Finding]
     return kept, suppressed
 
 
-def _scan_file_detailed(
-    filepath: str | Path,
+def _scan_source_detailed(
+    source: str,
+    filename: str,
     rules: list[BaseRule] | None = None,
     target_config: TargetConfig | None = None,
 ) -> tuple[list[Finding], list[str], int]:
-    """Scan a single file and return findings, rule execution failures,
-    and a count of findings suppressed by guard/shim detection."""
-    filepath = Path(filepath)
+    """Scan Python source and return findings, rule execution failures,
+    and a count of findings suppressed by guard/shim detection.
+    """
     rules = _filter_rules_for_target(
         rules or ALL_RULES,
         target_config,
@@ -473,39 +474,12 @@ def _scan_file_detailed(
     rule_errors: list[str] = []
 
     try:
-        try:
-            source = filepath.read_text(encoding="utf-8-sig")
-        except UnicodeDecodeError:
-            logger.warning(
-                "Skipping %s: unable to decode with UTF-8",
-                filepath,
-            )
-            return findings, rule_errors, 0
-        except OSError as exc:
-            from .finding import Severity
-
-            findings.append(
-                Finding(
-                    file=str(filepath),
-                    line=1,
-                    rule_id="PARSE",
-                    title="File could not be read",
-                    description=(
-                        "The source file could not be read by pyrift: "
-                        f"{type(exc).__name__}: {exc}"
-                    ),
-                    severity=Severity.ERROR,
-                    runtime=Runtime.BOTH,
-                )
-            )
-            return findings, rule_errors, 0
-
         if "\x00" in source:
             from .finding import Severity
 
             findings.append(
                 Finding(
-                    file=str(filepath),
+                    file=filename,
                     line=1,
                     rule_id="PARSE",
                     title="Null bytes — file could not be parsed",
@@ -519,13 +493,13 @@ def _scan_file_detailed(
             )
             return findings, rule_errors, 0
 
-        tree = ast.parse(source, filename=str(filepath))
+        tree = ast.parse(source, filename=filename)
     except SyntaxError as exc:
         from .finding import Severity
 
         findings.append(
             Finding(
-                file=str(filepath),
+                file=filename,
                 line=exc.lineno or 1,
                 rule_id="PARSE",
                 title="Syntax error — file could not be parsed",
@@ -540,7 +514,7 @@ def _scan_file_detailed(
         try:
             rule_findings = rule.check(
                 tree,
-                str(filepath),
+                filename,
                 target_config,
             )
 
@@ -551,24 +525,117 @@ def _scan_file_detailed(
                 # that predate/lack a metadata entry, so a blanket override
                 # here can no longer silently collapse every finding to
                 # "compatibility" (2026-09 review, point 2 / section 47).
-                if f.category == RuleCategory.COMPATIBILITY and rule.category != "compatibility":
+                if (
+                    f.category == RuleCategory.COMPATIBILITY
+                    and rule.category != "compatibility"
+                ):
                     f.category = rule.category
 
             findings.extend(rule_findings)
         except Exception as exc:
             message = (
-                f"{filepath}: {rule.rule_id}: "
+                f"{filename}: {rule.rule_id}: "
                 f"{type(exc).__name__}: {exc}"
             )
             rule_errors.append(message)
             logger.exception(
                 "Rule %s failed for %s",
                 rule.rule_id,
-                filepath,
+                filename,
             )
 
     findings, guard_suppressed = _apply_guards(findings, tree)
     return findings, rule_errors, guard_suppressed
+
+
+def _scan_file_detailed(
+    filepath: str | Path,
+    rules: list[BaseRule] | None = None,
+    target_config: TargetConfig | None = None,
+) -> tuple[list[Finding], list[str], int]:
+    """Scan a single file and return findings, rule execution failures,
+    and a count of findings suppressed by guard/shim detection.
+    """
+    filepath = Path(filepath)
+    rules = _filter_rules_for_target(
+        rules or ALL_RULES,
+        target_config,
+    )
+
+    findings: list[Finding] = []
+    rule_errors: list[str] = []
+
+    try:
+        source = filepath.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError:
+        logger.warning(
+            "Skipping %s: unable to decode with UTF-8",
+            filepath,
+        )
+        return findings, rule_errors, 0
+    except OSError as exc:
+        from .finding import Severity
+
+        findings.append(
+            Finding(
+                file=str(filepath),
+                line=1,
+                rule_id="PARSE",
+                title="File could not be read",
+                description=(
+                    "The source file could not be read by pyrift: "
+                    f"{type(exc).__name__}: {exc}"
+                ),
+                severity=Severity.ERROR,
+                runtime=Runtime.BOTH,
+            )
+        )
+        return findings, rule_errors, 0
+
+    return _scan_source_detailed(
+        source,
+        str(filepath),
+        rules,
+        target_config,
+    )
+
+
+def _scan_source_at_revision(
+    filepath: str | Path,
+    revision: str,
+    root: str | Path = ".",
+    rules: list[BaseRule] | None = None,
+    target_config: TargetConfig | None = None,
+) -> tuple[list[Finding], list[str], int]:
+    """Scan a Python file from a Git revision without modifying the worktree."""
+    from .git import read_file_at_revision
+
+    filepath = Path(filepath)
+    source_bytes = read_file_at_revision(
+        filepath,
+        revision,
+        root,
+    )
+
+    if source_bytes is None:
+        return [], [], 0
+
+    try:
+        source = source_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        logger.warning(
+            "Skipping %s at revision %s: unable to decode with UTF-8",
+            filepath,
+            revision,
+        )
+        return [], [], 0
+
+    return _scan_source_detailed(
+        source,
+        str(filepath),
+        rules,
+        target_config,
+    )
 
 
 def scan_file(

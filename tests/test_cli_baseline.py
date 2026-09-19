@@ -721,3 +721,94 @@ class TestBaselineCLI:
         assert "PPY998" in output
         assert "PPY999" not in output
         assert "Baseline" in output or "baseline" in output
+
+
+class TestNewFromBase:
+    def test_new_from_base_requires_changed_only(
+        self,
+        tmp_path,
+        capsys,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--new-from-base",
+                ]
+            )
+
+        assert exc.value.code == 2
+
+        error = capsys.readouterr().err
+
+        assert "--new-from-base requires --changed-only" in error
+
+    def test_new_from_base_reports_only_new_findings(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        changed = project / "changed.py"
+        write_python_file(changed)
+
+        existing = make_finding(
+            file=str(changed),
+            line=10,
+            rule_id="PPY999",
+        )
+        new = make_finding(
+            file=str(changed),
+            line=20,
+            rule_id="PPY998",
+        )
+
+        monkeypatch.setattr(
+            "pyrift.cli.changed_python_files",
+            lambda path, base: [changed],
+        )
+
+        monkeypatch.setattr(
+            "pyrift.cli.scan",
+            lambda *args, **kwargs: ScanResult(
+                [existing, new],
+                1,
+            ),
+        )
+
+        monkeypatch.setattr(
+            "pyrift.scanner._scan_source_at_revision",
+            lambda *args, **kwargs: (
+                [existing],
+                [],
+                1,
+            ),
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--changed-only",
+                    "--new-from-base",
+                    "--base",
+                    "origin/main",
+                    "--no-baseline",
+                ]
+            )
+
+        assert exc.value.code == 0
+
+        output = capsys.readouterr().out
+
+        assert "PyRift changed-only scan" in output
+        assert "PPY998" in output
+        assert "PPY999" not in output
