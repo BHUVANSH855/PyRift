@@ -418,3 +418,89 @@ class TestComputeFingerprintsDisambiguation:
             assert new_findings[0].line == 30
         finally:
             os.unlink(baseline_path)
+
+
+class TestFilterNewFindings:
+    def test_ignores_source_line_changes(self):
+        base = [make_finding(line=10)]
+        current = [make_finding(line=100)]
+
+        from pyrift.fingerprint import filter_new_findings
+
+        new_findings = filter_new_findings(current, base)
+
+        assert new_findings == []
+
+    def test_reports_new_logical_finding(self):
+        base = [make_finding(line=10)]
+        current = [
+            make_finding(line=10),
+            make_finding(
+                line=20,
+                title="Different finding",
+            ),
+        ]
+
+        from pyrift.fingerprint import filter_new_findings
+
+        new_findings = filter_new_findings(current, base)
+
+        assert len(new_findings) == 1
+        assert new_findings[0].line == 20
+        assert new_findings[0].title == "Different finding"
+
+    def test_preserves_new_duplicate_occurrence(self):
+        base = [
+            make_finding(line=10),
+            make_finding(line=20),
+        ]
+        current = [
+            make_finding(line=10),
+            make_finding(line=20),
+            make_finding(line=30),
+        ]
+
+        from pyrift.fingerprint import filter_new_findings
+
+        new_findings = filter_new_findings(current, base)
+
+        assert len(new_findings) == 1
+        assert new_findings[0].line == 30
+
+    def test_does_not_report_fewer_occurrences_as_new(self):
+        base = [
+            make_finding(line=10),
+            make_finding(line=20),
+            make_finding(line=30),
+        ]
+        current = [
+            make_finding(line=10),
+            make_finding(line=20),
+        ]
+
+        from pyrift.fingerprint import filter_new_findings
+
+        new_findings = filter_new_findings(current, base)
+
+        assert new_findings == []
+
+    def test_empty_base_reports_all_current_findings(self):
+        current = [
+            make_finding(line=10),
+            make_finding(line=20),
+        ]
+
+        from pyrift.fingerprint import filter_new_findings
+
+        new_findings = filter_new_findings(current, [])
+
+        assert new_findings == current
+
+    def test_empty_current_reports_no_findings(self):
+        base = [make_finding(line=10)]
+
+        from pyrift.fingerprint import filter_new_findings
+
+        new_findings = filter_new_findings([], base)
+
+        assert new_findings == []

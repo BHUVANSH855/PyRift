@@ -259,3 +259,53 @@ def changed_python_files(
         changed.append(absolute)
 
     return sorted(changed)
+
+
+def read_file_at_revision(
+    path: str | Path,
+    revision: str,
+    root: str | Path = ".",
+) -> bytes | None:
+    """Read a file from a Git revision without modifying the working tree.
+
+    Returns the file contents as bytes when the path exists at the revision.
+    Returns None when the path does not exist at the revision.
+    Raises RuntimeError for Git command failures other than a missing path.
+    """
+    root = Path(root)
+    path = Path(path)
+
+    try:
+        relative_path = path.resolve().relative_to(root.resolve())
+    except ValueError as exc:
+        raise ValueError(
+            f"Path {path} is outside Git root {root}"
+        ) from exc
+
+    result = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "show",
+            f"{revision}:{relative_path.as_posix()}",
+        ],
+        check=False,
+        capture_output=True,
+    )
+
+    if result.returncode != 0:
+        stderr = result.stderr.decode("utf-8", errors="replace")
+
+        if (
+            "does not exist in" in stderr
+            or "exists on disk, but not in" in stderr
+        ):
+            return None
+
+        raise RuntimeError(
+            f"git show failed for {revision}:{relative_path}: "
+            f"{stderr.strip()}"
+        )
+
+    return result.stdout

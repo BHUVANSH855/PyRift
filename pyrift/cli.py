@@ -126,6 +126,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "Ignore .pyrift-baseline.json when scanning."
         ),
     )
+
     scan_cmd.add_argument(
         "--changed-only",
         action="store_true",
@@ -142,6 +143,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "PR mode: require a baseline and show only NEW findings "
             "not present in the baseline."
+        ),
+    )
+
+    scan_cmd.add_argument(
+        "--new-from-base",
+        action="store_true",
+        help=(
+            "PR mode: compare changed-file findings with the Git base "
+            "revision and show only NEW findings."
         ),
     )
 
@@ -402,6 +412,7 @@ def _scan_changed_files(
     selected_rules = _resolve_selected_rules(args, path)
 
     findings = []
+    base_findings = []
     rule_errors = []
     files_scanned = 0
 
@@ -415,6 +426,38 @@ def _scan_changed_files(
         findings.extend(file_result.findings)
         rule_errors.extend(file_result.rule_errors)
         files_scanned += file_result.files_scanned
+
+        if getattr(args, "new_from_base", False):
+            try:
+                from .scanner import _scan_source_at_revision
+
+                base_file_findings, base_file_errors, _ = (
+                    _scan_source_at_revision(
+                        changed_file,
+                        args.base,
+                        path,
+                        rules=selected_rules,
+                        target_config=target_config,
+                    )
+                )
+            except (GitError, RuntimeError) as exc:
+                print(
+                    f"pyrift: unable to scan base revision: {exc}",
+                    file=sys.stderr,
+                )
+                sys.exit(2)
+
+            base_findings.extend(base_file_findings)
+            rule_errors.extend(base_file_errors)
+
+    if getattr(args, "new_from_base", False):
+        from .fingerprint import filter_new_findings
+
+        findings = filter_new_findings(
+            findings,
+            base_findings,
+            root=str(path),
+        )
 
     result = ScanResult(
         findings,
@@ -689,6 +732,13 @@ def main(argv: list[str] | None = None) -> None:
     """Parse arguments and dispatch to the appropriate command."""
     parser = _build_parser()
     args = parser.parse_args(argv)
+
+    if args.command == "scan" and args.new_from_base and not args.changed_only:
+        print(
+            "pyrift: --new-from-base requires --changed-only",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
     if args.command is None:
         parser.print_help()

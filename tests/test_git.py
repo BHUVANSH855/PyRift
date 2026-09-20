@@ -9,7 +9,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pyrift.git import GitError, changed_python_files, repository_root
+from pyrift.git import (
+    GitError,
+    changed_python_files,
+    read_file_at_revision,
+    repository_root,
+)
 
 
 class TestRepositoryRoot:
@@ -578,3 +583,78 @@ class TestChangedPythonFiles:
             result = changed_python_files(subdirectory)
 
         assert result == []
+
+
+class TestReadFileAtRevision:
+    def test_returns_file_contents(self, tmp_path):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = b"value = 1\n"
+        mock_result.stderr = b""
+
+        with patch("subprocess.run", return_value=mock_result) as mock_run:
+            result = read_file_at_revision(
+                tmp_path / "example.py",
+                "origin/main",
+                tmp_path,
+            )
+
+        assert result == b"value = 1\n"
+
+        mock_run.assert_called_once_with(
+            [
+                "git",
+                "-C",
+                str(tmp_path),
+                "show",
+                "origin/main:example.py",
+            ],
+            check=False,
+            capture_output=True,
+        )
+
+    def test_returns_none_when_file_does_not_exist_at_revision(
+        self,
+        tmp_path,
+    ):
+        mock_result = MagicMock()
+        mock_result.returncode = 128
+        mock_result.stdout = b""
+        mock_result.stderr = (
+            b"fatal: path 'example.py' does not exist in 'origin/main'\n"
+        )
+
+        with patch("subprocess.run", return_value=mock_result):
+            result = read_file_at_revision(
+                tmp_path / "example.py",
+                "origin/main",
+                tmp_path,
+            )
+
+        assert result is None
+
+    def test_raises_for_git_failure(self, tmp_path):
+        mock_result = MagicMock()
+        mock_result.returncode = 128
+        mock_result.stdout = b""
+        mock_result.stderr = b"fatal: bad revision 'origin/main'\n"
+
+        with (
+            patch("subprocess.run", return_value=mock_result),
+            pytest.raises(RuntimeError, match="git show failed"),
+        ):
+            read_file_at_revision(
+                tmp_path / "example.py",
+                "origin/main",
+                tmp_path,
+            )
+
+    def test_raises_when_path_is_outside_git_root(self, tmp_path):
+        outside = tmp_path.parent / "outside.py"
+
+        with pytest.raises(ValueError, match="outside Git root"):
+            read_file_at_revision(
+                outside,
+                "origin/main",
+                tmp_path,
+            )

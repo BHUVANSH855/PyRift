@@ -163,3 +163,35 @@ def compute_fingerprints(findings: list[Finding], root: str = "") -> list[str]:
         fingerprints.append(hashlib.sha256(payload.encode("utf-8")).hexdigest())
 
     return fingerprints
+
+
+def filter_new_findings(
+    findings: list[Finding],
+    baseline_findings: list[Finding],
+    root: str = "",
+) -> list[Finding]:
+    """Return findings that exceed the logical occurrence count in a baseline.
+
+    Unlike :func:`compute_fingerprints`, this comparison intentionally ignores
+    source positions. It is suitable for comparing a Git base revision with
+    the current working tree, where existing findings may move because of
+    unrelated code changes.
+    """
+    baseline_counts: dict[str, int] = {}
+
+    for finding in baseline_findings:
+        key = _base_key(finding, root)
+        baseline_counts[key] = baseline_counts.get(key, 0) + 1
+
+    new_findings: list[Finding] = []
+
+    for finding in findings:
+        key = _base_key(finding, root)
+        remaining = baseline_counts.get(key, 0)
+
+        if remaining:
+            baseline_counts[key] = remaining - 1
+        else:
+            new_findings.append(finding)
+
+    return new_findings
