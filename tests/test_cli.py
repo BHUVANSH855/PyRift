@@ -7,17 +7,29 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 from pyrift.cli import _build_parser, _build_target_config
 from pyrift.finding import Runtime
 
 
 def run_cli(*args: str) -> tuple[int, str, str]:
-    """Run pyrift CLI and return (returncode, stdout, stderr)."""
+    """Run the local pyrift CLI and return (returncode, stdout, stderr)."""
+    env = os.environ.copy()
+    repo_root = Path(__file__).resolve().parents[1]
+
+    pythonpath = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = (
+        str(repo_root)
+        if not pythonpath
+        else os.pathsep.join((str(repo_root), pythonpath))
+    )
+
     result = subprocess.run(
         [sys.executable, "-m", "pyrift.cli", *args],
         capture_output=True,
         text=True,
+        env=env,
     )
     return result.returncode, result.stdout, result.stderr
 

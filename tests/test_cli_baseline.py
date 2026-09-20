@@ -812,3 +812,53 @@ class TestNewFromBase:
         assert "PyRift changed-only scan" in output
         assert "PPY998" in output
         assert "PPY999" not in output
+
+    def test_new_from_base_reports_base_scan_error(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+    ):
+        project = tmp_path / "project"
+        project.mkdir()
+
+        changed = project / "changed.py"
+        write_python_file(changed)
+
+        monkeypatch.setattr(
+            "pyrift.cli.changed_python_files",
+            lambda path, base: [changed],
+        )
+
+        monkeypatch.setattr(
+            "pyrift.cli.scan",
+            lambda *args, **kwargs: ScanResult([], 1),
+        )
+
+        def fail_base_scan(*args, **kwargs):
+            raise RuntimeError("unable to read base revision")
+
+        monkeypatch.setattr(
+            "pyrift.scanner._scan_source_at_revision",
+            fail_base_scan,
+        )
+
+        with pytest.raises(SystemExit) as exc:
+            main(
+                [
+                    "scan",
+                    str(project),
+                    "--changed-only",
+                    "--new-from-base",
+                    "--base",
+                    "origin/main",
+                    "--no-baseline",
+                ]
+            )
+
+        assert exc.value.code == 2
+
+        error = capsys.readouterr().err
+
+        assert "unable to scan base revision" in error
+        assert "unable to read base revision" in error

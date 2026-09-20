@@ -1,11 +1,15 @@
-"""
-Scanner and Reporter integration tests.
-"""
+"""Scanner and Reporter integration tests."""
+
 import json
 
 from pyrift.finding import Finding, Runtime
 from pyrift.reporter import to_json, to_markdown, to_text
-from pyrift.scanner import ScanResult, scan, scan_file
+from pyrift.scanner import (
+    ScanResult,
+    _scan_source_at_revision,
+    scan,
+    scan_file,
+)
 from pyrift.targets import PythonVersion, TargetConfig
 
 
@@ -389,3 +393,79 @@ class TestScannerEdgeCases:
             if f.rule_id == "PARSE"
         ]
         assert len(parse_findings) == 1
+
+
+class TestScanSourceAtRevision:
+    def test_returns_empty_when_file_does_not_exist_at_revision(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        filepath = tmp_path / "removed.py"
+
+        monkeypatch.setattr(
+            "pyrift.git.read_file_at_revision",
+            lambda *args, **kwargs: None,
+        )
+
+        findings, rule_errors, guard_suppressed = _scan_source_at_revision(
+            filepath,
+            "origin/main",
+            tmp_path,
+        )
+
+        assert findings == []
+        assert rule_errors == []
+        assert guard_suppressed == 0
+
+    def test_skips_invalid_utf8_from_revision(
+        self,
+        tmp_path,
+        monkeypatch,
+        caplog,
+    ):
+        filepath = tmp_path / "invalid.py"
+
+        monkeypatch.setattr(
+            "pyrift.git.read_file_at_revision",
+            lambda *args, **kwargs: b"\xff\xfe\xfd",
+        )
+
+        findings, rule_errors, guard_suppressed = _scan_source_at_revision(
+            filepath,
+            "origin/main",
+            tmp_path,
+        )
+
+        assert findings == []
+        assert rule_errors == []
+        assert guard_suppressed == 0
+        assert "unable to decode with UTF-8" in caplog.text
+
+    def test_scans_source_from_revision(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        filepath = tmp_path / "example.py"
+
+        monkeypatch.setattr(
+            "pyrift.git.read_file_at_revision",
+            lambda *args, **kwargs: (
+                b"import datetime\n"
+                b"datetime.datetime.utcnow()\n"
+            ),
+        )
+
+        findings, rule_errors, guard_suppressed = _scan_source_at_revision(
+            filepath,
+            "origin/main",
+            tmp_path,
+        )
+
+        assert any(
+            finding.rule_id == "CPY036"
+            for finding in findings
+        )
+        assert rule_errors == []
+        assert guard_suppressed == 0
