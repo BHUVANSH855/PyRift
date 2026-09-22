@@ -3,7 +3,7 @@ repos:
     hooks:
       - id: pyrift
         name: pyrift
-        entry: pyrift scan pyrift
+        entry: python -m pyrift scan --fail-on-findings
         language: python
         types: [python]
-        pass_filenames: false
+        pass_filenames: true
