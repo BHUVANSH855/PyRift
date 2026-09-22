@@ -1,0 +1,51 @@
+name: PyRift PR Compatibility
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pyrift-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pyrift:
+    name: PyRift New Findings
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install PyRift
+        run: python -m pip install .
+
+      - name: Show PyRift version
+        run: |
+          pyrift --version
+          echo "PR base: ${{ github.event.pull_request.base.sha }}"
+
+      - name: Run PyRift compatibility gate
+        env:
+          PYRIFT_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          pyrift scan . \
+            --changed-only \
+            --new-from-base \
+            --base "$PYRIFT_BASE" \
+            --no-baseline \
+            --format json \
+            --output pyrift-report.json \
+            --fail-on-findings
