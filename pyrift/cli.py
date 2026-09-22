@@ -54,10 +54,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Scan a file or directory",
     )
     scan_cmd.add_argument(
-        "path",
-        nargs="?",
-        default=".",
-        help="File or directory to scan (default: current directory)",
+        "paths",
+        nargs="*",
+        default=None,
+        help="File or directory paths to scan (default: current directory)",
     )
     scan_cmd.add_argument(
         "--format",
@@ -76,6 +76,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--exit-zero",
         action="store_true",
         help="Always exit 0 even when findings are found",
+    )
+    scan_cmd.add_argument(
+        "--fail-on-findings",
+        action="store_true",
+        help="Exit 1 when compatibility findings are found",
     )
     scan_cmd.add_argument(
         "--python-min",
@@ -468,6 +473,51 @@ def _scan_changed_files(
     return result, len(changed)
 
 
+def _scan_paths(
+    paths: list[Path],
+    args: argparse.Namespace,
+    target_config: TargetConfig | None,
+) -> ScanResult:
+    """Scan multiple explicitly supplied files or directories."""
+    findings = []
+    rule_errors = []
+    files_scanned = 0
+    guard_suppressed = 0
+
+    for path in paths:
+        selected_rules = _resolve_selected_rules(args, path)
+
+        result = scan(
+            path,
+            rules=selected_rules,
+            target_config=target_config,
+            use_project_config=not args.no_project_config,
+        )
+
+        findings.extend(result.findings)
+        rule_errors.extend(result.rule_errors)
+        files_scanned += result.files_scanned
+        guard_suppressed += result.guard_suppressed
+
+    findings.sort(
+        key=lambda finding: (
+            finding.file.replace("\\", "/").casefold(),
+            finding.line,
+            finding.col,
+            finding.rule_id,
+            finding.title,
+        )
+    )
+    rule_errors.sort()
+
+    return ScanResult(
+        findings,
+        files_scanned,
+        rule_errors=rule_errors,
+        guard_suppressed=guard_suppressed,
+    )
+
+
 def _apply_baseline(
     result: ScanResult,
     path: Path,
@@ -601,34 +651,44 @@ def _run_baseline_create(args: argparse.Namespace) -> None:
 
 def _run_scan(args: argparse.Namespace) -> None:
     """Handle ``pyrift scan``."""
-    path = Path(args.path).resolve()
+    raw_paths = args.paths or ["."]
 
-    if not path.exists():
-        print(
-            f"pyrift: path not found: {path}",
-            file=sys.stderr,
-        )
-        sys.exit(2)
+    paths = [Path(raw_path).resolve() for raw_path in raw_paths]
+
+    for path in paths:
+        if not path.exists():
+            print(
+                f"pyrift: path not found: {path}",
+                file=sys.stderr,
+            )
+            sys.exit(2)
 
     target_config = _build_target_config(args)
-    selected_rules = _resolve_selected_rules(args, path)
     changed_count: int | None = None
 
     if args.changed_only:
+        if len(paths) != 1:
+            print(
+                "pyrift: --changed-only accepts exactly one path",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
+        path = paths[0]
         result, changed_count = _scan_changed_files(
             path,
             args,
             target_config,
         )
     else:
-        result = scan(
-            path,
-            rules=selected_rules,
-            target_config=target_config,
-            use_project_config=not args.no_project_config,
+        result = _scan_paths(
+            paths,
+            args,
+            target_config,
         )
 
-    result = _apply_baseline(result, path, args)
+    # Baseline filtering is rooted at the first supplied path.
+    result = _apply_baseline(result, paths[0], args)
 
     output = _format_result(result, args.format)
 
@@ -644,8 +704,12 @@ def _run_scan(args: argparse.Namespace) -> None:
 
     _write_output(output, args.output)
 
-    if not args.exit_zero and (result.errors or result.rule_errors):
-        sys.exit(1)
+    if not args.exit_zero:
+        if result.errors or result.rule_errors:
+            sys.exit(1)
+
+        if args.fail_on_findings and result.findings:
+            sys.exit(1)
 
     sys.exit(0)
 

@@ -103,6 +103,65 @@ class TestCliErrorPaths:
         code, _out, _err = run_cli("scan", str(tmp_path))
         assert code != 0
 
+    def test_fail_on_findings_fails_warning_only_scan(self, tmp_path):
+        py_file = tmp_path / "test.py"
+        py_file.write_text("import datetime\ndatetime.datetime.utcnow()\n")
+
+        code, _out, _err = run_cli(
+            "scan",
+            str(tmp_path),
+            "--select",
+            "CPY036",
+            "--fail-on-findings",
+        )
+
+        assert code == 1
+
+    def test_warning_only_scan_still_exits_zero_without_fail_on_findings(
+        self, tmp_path
+    ):
+        py_file = tmp_path / "test.py"
+        py_file.write_text("import datetime\ndatetime.datetime.utcnow()\n")
+
+        code, _out, _err = run_cli(
+            "scan",
+            str(tmp_path),
+            "--select",
+            "CPY036",
+        )
+
+        assert code == 0
+
+    def test_exit_zero_overrides_fail_on_findings(self, tmp_path):
+        py_file = tmp_path / "test.py"
+        py_file.write_text("import datetime\ndatetime.datetime.utcnow()\n")
+
+        code, _out, _err = run_cli(
+            "scan",
+            str(tmp_path),
+            "--select",
+            "CPY036",
+            "--fail-on-findings",
+            "--exit-zero",
+        )
+
+        assert code == 0
+
+    def test_scan_multiple_paths(self, tmp_path):
+        first = tmp_path / "first.py"
+        second = tmp_path / "second.py"
+        first.write_text("x = 1\n")
+        second.write_text("y = 2\n")
+
+        code, out, _err = run_cli(
+            "scan",
+            str(first),
+            str(second),
+        )
+
+        assert code == 0
+        assert "2 file(s) scanned" in out
+
     def test_clean_scan_exits_zero(self, tmp_path):
         py_file = tmp_path / "test.py"
         py_file.write_text("x = 1\n")

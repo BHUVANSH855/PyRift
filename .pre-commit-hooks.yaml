@@ -2,8 +2,7 @@
   name: pyrift
   description: Detect silent Python behaviour differences across CPython versions and PyPy
   language: python
-  entry: pyrift
-  args: [scan]
+  entry: pyrift scan --fail-on-findings
   types: [python]
-  pass_filenames: false
+  pass_filenames: true
   minimum_pre_commit_version: "2.9.0"
