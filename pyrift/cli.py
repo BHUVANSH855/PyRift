@@ -680,6 +680,25 @@ def _run_scan(args: argparse.Namespace) -> None:
             )
             sys.exit(2)
 
+    # Apply [tool.pyrift] settings beyond select/ignore (which
+    # _resolve_selected_rules handles) — format, fail_on_findings,
+    # only_documented.  CLI flags always win; config is applied only when
+    # the flag is at its default value.
+    if not getattr(args, "no_project_config", False):
+        from .targets import load_pyrift_config as _load_pyrift_cfg  # noqa: PLC0415
+
+        try:
+            _file_cfg = _load_pyrift_cfg(paths[0])
+        except (ValueError, OSError):
+            _file_cfg = None
+        if _file_cfg is not None:
+            if _file_cfg.fail_on_findings:
+                args.fail_on_findings = True
+            if _file_cfg.only_documented:
+                args.only_documented = True
+            if _file_cfg.format and args.format == "text":
+                args.format = _file_cfg.format
+
     target_config = _build_target_config(args)
     changed_count: int | None = None
 
