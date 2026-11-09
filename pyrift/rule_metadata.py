@@ -187,6 +187,8 @@ def _metadata(
     detection_confidence: str | None = None,
     platform_scope: str = "",
     taxonomy_reviewed: bool = False,
+    whatsnew_ref: str = "",
+    gh_issue: str = "",
 ) -> dict[str, object]:
     if evidence.startswith("pep:"):
         evidence_type = EvidenceType.PEP
@@ -233,12 +235,41 @@ def _metadata(
         "runtime_verification": RuntimeVerificationState.NOT_APPLICABLE,
         "platform_scope": platform_scope,
         "taxonomy_reviewed": taxonomy_reviewed,
+        "whatsnew_ref": whatsnew_ref,
+        "gh_issue": gh_issue,
     }
     if category is not None:
         entry["category"] = category
     if contract_status is not None:
         entry["contract_status"] = contract_status
     return entry
+
+
+def _tombstone(reason: str) -> dict[str, object]:
+    """Minimal metadata for a permanently retired rule-ID slot.
+
+    Tombstone entries prevent numeric-slot reuse and let
+    ``pyrift explain <ID>`` surface a helpful message rather than
+    the generic "unknown rule" error.
+    """
+    return {
+        "status": "tombstone",
+        "tombstone_reason": reason,
+        "confidence": Confidence.LOW,
+        "claim_confidence": Confidence.LOW,
+        "detection_confidence": Confidence.LOW,
+        "evidence_type": EvidenceType.INFERRED,
+        "evidence_source": "inferred",
+        "intent_basis": IntentBasis.INFERRED,
+        "last_verified": "",
+        "affected_versions": "",
+        "rule_tier": RuleTier.NOT_TIERED,
+        "runtime_verification": RuntimeVerificationState.NOT_APPLICABLE,
+        "platform_scope": "",
+        "taxonomy_reviewed": False,
+        "whatsnew_ref": "",
+        "gh_issue": "",
+    }
 
 
 REQUIRED_METADATA_FIELDS = (
@@ -316,6 +347,7 @@ _CPY_TITLES = {
     "CPY018": "typing.Required / NotRequired requires Python 3.11+",
     "CPY019": "distutils removed in Python 3.12+",
     "CPY020": "datetime.UTC requires Python 3.11+",
+    "CPY021": "[RETIRED] formerly covered by CPY001; slot reserved",
     "CPY022": "Bitwise inversion on bool (~True/~False) deprecated in 3.12",
     "CPY023": "multiprocessing default start method changing in Python 3.14",
     "CPY024": "typing.TypeGuard requires Python 3.10+",
@@ -346,9 +378,11 @@ _CPY_TITLES = {
     "CPY049": "compression.zstd requires Python 3.14+",
     "CPY050": "PurePath.is_reserved() deprecated in 3.13, removed in 3.15",
     "CPY051": "Module-level mutable state may require synchronization in free-threaded Python",
+    "CPY052": "[RETIRED] superseded by CPY051; slot reserved",
     "CPY053": "typing.get_overloads() requires Python 3.11+",
     "CPY054": "int() no longer delegates to __trunc__() in Python 3.14",
     "CPY055": "NotImplemented in boolean context raises TypeError in Python 3.14",
+    "CPY056": "[RETIRED] draft rule; never shipped; slot reserved",
     "CPY057": "pickle default protocol changed to 5 in Python 3.14",
     "CPY062": "string.templatelib requires Python 3.14+",
     "CPY063": "annotationlib requires Python 3.14+",
@@ -414,6 +448,7 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     "CPY018": _cpy("high", "pep:655", "CPY018", last_verified="2026-08-29"),
     "CPY019": _cpy("high", "pep:632", "CPY019", last_verified="2026-08-29"),
     "CPY020": _cpy("high", "official_docs", "CPY020", last_verified="2026-08-29"),
+    "CPY021": _tombstone("formerly covered by CPY001; slot reserved"),
     "CPY022": _cpy("high", "deprecation_warn", "CPY022", last_verified="2026-08-29"),
     "CPY023": _cpy(
         "medium", "official_docs", "CPY023", last_verified="2026-08-29",
@@ -454,9 +489,16 @@ RULE_METADATA: dict[str, dict[str, object]] = {
         "medium", "pep:703", "CPY051", last_verified="2026-08-29",
         claim_confidence="medium",
     ),
+    "CPY052": _tombstone("superseded by CPY051; slot reserved"),
     "CPY053": _cpy("high", "official_docs", "CPY053", last_verified="2026-08-29"),
     "CPY054": _cpy("high", "official_docs", "CPY054", last_verified="2026-08-29", affected_versions=">=3.14"),
-    "CPY055": _cpy("high", "official_docs", "CPY055", last_verified="2026-08-29", affected_versions=">=3.14"),
+    "CPY055": _cpy(
+        "high", "official_docs", "CPY055", last_verified="2026-08-29",
+        affected_versions=">=3.14",
+        whatsnew_ref="3.14#changes-in-python-behavior",
+        gh_issue="cpython/issues/116023",
+    ),
+    "CPY056": _tombstone("draft rule; never shipped; slot reserved"),
     "CPY057": _cpy("high", "official_docs", "CPY057", last_verified="2026-08-29"),
     "CPY062": _cpy("high", "pep:750", "CPY062", last_verified="2026-08-29"),
     "CPY063": _cpy("high", "pep:749", "CPY063", last_verified="2026-08-29"),

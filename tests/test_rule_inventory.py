@@ -61,9 +61,13 @@ def _test_rule_ids() -> set[str]:
 
 def test_rule_inventory_matches_metadata() -> None:
     registered = {rule.rule_id for rule in ALL_RULES}
-    metadata = set(RULE_METADATA)
-
-    assert registered == metadata
+    # Exclude tombstone entries — they reserve retired slots and have
+    # no active rule by design.
+    active_metadata = {
+        rule_id for rule_id, meta in RULE_METADATA.items()
+        if meta.get("status") != "tombstone"
+    }
+    assert registered == active_metadata
 
 
 def test_rule_inventory_matches_quality_contracts() -> None:

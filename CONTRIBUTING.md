@@ -58,6 +58,8 @@ Each rule returns `Finding` objects with `severity` (`ERROR`/`WARNING`/`INFO`), 
 
 **Conservation rule:** an unreviewed rule (no `RULE_METADATA` entry) stays at `LOW`/`INFERRED` — it must never claim high confidence silently.
 
+**Rule-ID permanence policy:** once a numeric slot (e.g. `CPY021`) has been used, it is permanent. Retired IDs get a tombstone entry in `RULE_METADATA` with `"status": "tombstone"` and a `"tombstone_reason"` string, and are never reassigned to a new rule. This prevents a user's `--ignore CPY021` suppression from silently suppressing a completely different rule in a future release. When retiring a rule, do **not** delete its metadata entry — replace its `_cpy()`/`_ppy()` call with `_tombstone("<reason>")` and remove the rule from `ALL_RULES` and its source file.
+
 **Intentionality rule:** `evidence_type` and `intent_basis` are separate. A
 runtime probe proves that a difference occurs; it does not prove that CPython
 intended the difference. Use `documented` for authoritative PEP/official-doc

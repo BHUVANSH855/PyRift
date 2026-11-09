@@ -153,7 +153,13 @@ class TestRuleLifecycle:
 
     def test_every_metadata_entry_has_imported_rule(self):
         active_ids = {rule.rule_id for rule in ALL_RULES}
-        orphaned = set(RULE_METADATA) - active_ids
+        # Tombstone entries deliberately have no active rule — they
+        # exist only to permanently reserve a retired numeric slot.
+        non_tombstone_ids = {
+            rule_id for rule_id, meta in RULE_METADATA.items()
+            if meta.get("status") != "tombstone"
+        }
+        orphaned = non_tombstone_ids - active_ids
         assert not orphaned, f"Orphaned metadata entries: {sorted(orphaned)}"
 
     def test_tombstone_files_exist(self):

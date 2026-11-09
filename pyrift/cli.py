@@ -718,6 +718,26 @@ def _run_explain(args: argparse.Namespace) -> None:
     """Handle ``pyrift explain``."""
     rule_id = args.rule_id.upper()
 
+    try:
+        from .rule_metadata import RULE_METADATA
+    except ImportError:
+        RULE_METADATA = {}
+
+    # Tombstoned IDs are intentionally absent from ALL_RULES but carry a
+    # RULE_METADATA entry with status == "tombstone" so we can give a
+    # useful message rather than the generic "unknown rule ID" error.
+    metadata = RULE_METADATA.get(rule_id, {})
+    if metadata.get("status") == "tombstone":
+        reason = metadata.get("tombstone_reason", "retired")
+        print(
+            f"pyrift: {rule_id} is a retired rule ID.\n"
+            f"Reason: {reason}\n"
+            f"This slot is permanently reserved to prevent ID reuse. "
+            f"No active rule carries this identifier.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
     rule = next(
         (candidate for candidate in ALL_RULES
          if candidate.rule_id == rule_id),
@@ -730,13 +750,6 @@ def _run_explain(args: argparse.Namespace) -> None:
             file=sys.stderr,
         )
         sys.exit(2)
-
-    try:
-        from .rule_metadata import RULE_METADATA
-    except ImportError:
-        RULE_METADATA = {}
-
-    metadata = RULE_METADATA.get(rule_id, {})
 
     lines = [
         f"Rule:        {rule_id}",
