@@ -39,11 +39,11 @@ def _import_pyrift():
     if str(_REPO) not in sys.path:
         sys.path.insert(0, str(_REPO))
 
-    from pyrift.rule_metadata import (  # noqa: PLC0415
+    from pyrift.rule_metadata import (
         REQUIRED_METADATA_FIELDS,
         RULE_METADATA,
     )
-    from pyrift.scanner import ALL_RULES  # noqa: PLC0415
+    from pyrift.scanner import ALL_RULES
 
     return RULE_METADATA, REQUIRED_METADATA_FIELDS, ALL_RULES
 
@@ -126,7 +126,7 @@ def probe_self_scan(rule_id: str) -> tuple[bool, str]:
     if result.returncode == 2:
         return False, f"scan exited 2: {result.stderr.strip()[:120]}"
     # Check for rule_errors in JSON output
-    import json  # noqa: PLC0415
+    import json
     try:
         data = json.loads(result.stdout)
         rule_errors = data.get("rule_errors", [])

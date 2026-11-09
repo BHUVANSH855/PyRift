@@ -685,7 +685,7 @@ def _run_scan(args: argparse.Namespace) -> None:
     # only_documented.  CLI flags always win; config is applied only when
     # the flag is at its default value.
     if not getattr(args, "no_project_config", False):
-        from .targets import load_pyrift_config as _load_pyrift_cfg  # noqa: PLC0415
+        from .targets import load_pyrift_config as _load_pyrift_cfg
 
         try:
             _file_cfg = _load_pyrift_cfg(paths[0])
