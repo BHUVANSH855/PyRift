@@ -58,10 +58,11 @@ def to_github_annotations(result: ScanResult) -> str:
         # Description is the most useful annotation body; fall back to title.
         message = _escape(finding.description or finding.title)
 
-        params = f"file={file_path},line={finding.line}"
+        param_parts = [f"file={file_path}", f"line={finding.line}"]
         if finding.col:
-            params += f",col={finding.col}"
-        params += f",title={title}"
+            param_parts.append(f"col={finding.col}")
+        param_parts.append(f"title={title}")
+        params = ",".join(param_parts)
 
         lines.append(f"::{level} {params}::{message}")
 
