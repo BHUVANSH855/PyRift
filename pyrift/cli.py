@@ -62,7 +62,7 @@ def _build_parser() -> argparse.ArgumentParser:
     scan_cmd.add_argument(
         "--format",
         "-f",
-        choices=["text", "json", "markdown", "sarif"],
+        choices=["text", "json", "markdown", "sarif", "github"],
         default="text",
         help="Output format (default: text)",
     )
@@ -331,6 +331,10 @@ def _format_result(
 
     if output_format == "sarif":
         return to_sarif(result)
+
+    if output_format == "github":
+        from .formatters.github import to_github_annotations
+        return to_github_annotations(result)
 
     return to_text(result)
 
