@@ -386,6 +386,7 @@ class Finding:
             "description": self.description,
             "severity": self.severity.value,
             "confidence": self.confidence.value,
+            "confidence_tier": self.confidence_tier,
             "claim_confidence": self.claim_confidence.value,
             "detection_confidence": self.detection_confidence.value,
             "runtime_verification": self.runtime_verification.value,
@@ -435,3 +436,20 @@ class Finding:
         CPython core developer explicitly communicated.
         """
         return self.intent_basis in (IntentBasis.DOCUMENTED, IntentBasis.DEPRECATION)
+
+    @property
+    def confidence_tier(self) -> str:
+        """Aggregate confidence tier: 'high', 'medium', or 'low'.
+
+        ``__post_init__`` already caps ``self.confidence`` to the minimum
+        of claim_confidence and detection_confidence (review #24/#58).
+        This property exposes that value under a single stable key so SARIF
+        serialisers, JSON consumers, and CI integrations can reference it
+        without having to replicate the min-logic or choose between the
+        three individual confidence fields.
+
+        Example — a rule with claim=HIGH but detection=MEDIUM yields
+        'medium' (and this finding's confidence field likewise holds
+        Confidence.MEDIUM).
+        """
+        return self.confidence.value
