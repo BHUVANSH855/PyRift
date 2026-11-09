@@ -164,6 +164,59 @@ pyrift scan . --exit-zero
 
 ---
 
+## pre-commit
+
+PyRift ships a [pre-commit](https://pre-commit.com) hook definition so you
+can run it automatically before every commit.
+
+### Setup
+
+Install pre-commit (once per machine):
+
+```bash
+pip install pre-commit
+```
+
+Add a `.pre-commit-config.yaml` to your project root:
+
+```yaml
+repos:
+  - repo: https://github.com/BHUVANSH855/PyRift
+    rev: v0.9.1          # pin to a release tag
+    hooks:
+      - id: pyrift
+```
+
+Install the hook into your local clone:
+
+```bash
+pre-commit install
+```
+
+From this point on, `pyrift scan` runs automatically on every `git commit`
+and blocks the commit when findings are found.
+
+### Run manually
+
+```bash
+pre-commit run pyrift --all-files
+```
+
+### Options
+
+Pass extra arguments via `args` in your config:
+
+```yaml
+repos:
+  - repo: https://github.com/BHUVANSH855/PyRift
+    rev: v0.9.1
+    hooks:
+      - id: pyrift
+        args: [--only-documented]   # restrict to documented CPython changes
+```
+
+---
+
 ## Example Finding
 
 A PyRift finding contains more than a rule name.
