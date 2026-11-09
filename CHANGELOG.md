@@ -19,6 +19,7 @@
 - `Finding.confidence_tier` property: stable single-key alias for the aggregate
   confidence (minimum of claim and detection confidence). Added to `to_dict()`,
   `to_text()` output, and SARIF `properties` bag.
+- 1645 tests total
 
 ## [0.9.0] - 2026-09-19
 
