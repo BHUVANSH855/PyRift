@@ -133,6 +133,19 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     scan_cmd.add_argument(
+        "--only-documented",
+        action="store_true",
+        default=False,
+        help=(
+            "Show only findings backed by a documented or deprecated "
+            "intent basis — i.e. changes that CPython announced via a "
+            "PEP, official docs, or an explicit deprecation path. "
+            "Useful when evaluating how a codebase is affected by "
+            "intentional, documented CPython behavior changes."
+        ),
+    )
+
+    scan_cmd.add_argument(
         "--changed-only",
         action="store_true",
         help=(
@@ -690,6 +703,20 @@ def _run_scan(args: argparse.Namespace) -> None:
     # Baseline filtering is rooted at the first supplied path.
     result = _apply_baseline(result, paths[0], args)
 
+    # --only-documented: keep findings where intent is documented or
+    # follows an explicit deprecation path.
+    if getattr(args, "only_documented", False):
+        from .scanner import ScanResult as _SR
+
+        kept = [f for f in result.findings if f.is_documented_change]
+        result = _SR(
+            kept,
+            result.files_scanned,
+            baseline_suppressed=result.baseline_suppressed,
+            rule_errors=result.rule_errors,
+            guard_suppressed=result.guard_suppressed,
+        )
+
     output = _format_result(result, args.format)
 
     if args.changed_only and args.format == "text":
@@ -757,6 +784,23 @@ def _run_explain(args: argparse.Namespace) -> None:
         f"Runtime:     {rule.runtime}",
         f"Category:    {getattr(rule, 'category', 'compatibility')}",
     ]
+
+    whatsnew_ref = str(metadata.get("whatsnew_ref", ""))
+    if whatsnew_ref:
+        if "#" in whatsnew_ref:
+            ver, anchor = whatsnew_ref.split("#", 1)
+            whatsnew_url = f"https://docs.python.org/3/whatsnew/{ver}.html#{anchor}"
+        else:
+            whatsnew_url = f"https://docs.python.org/3/whatsnew/{whatsnew_ref}.html"
+        lines.append(f"What's New:  {whatsnew_url}")
+
+    gh_issue = str(metadata.get("gh_issue", ""))
+    if gh_issue:
+        if gh_issue.startswith("cpython/issues/"):
+            gh_url = f"https://github.com/{gh_issue}"
+        else:
+            gh_url = f"https://bugs.python.org/issue/{gh_issue.lstrip('bpo-')}"
+        lines.append(f"CPython issue: {gh_url}")
 
     confidence = metadata.get("confidence", "low")
     if hasattr(confidence, "value"):

@@ -189,6 +189,7 @@ def _metadata(
     taxonomy_reviewed: bool = False,
     whatsnew_ref: str = "",
     gh_issue: str = "",
+    docs_url: str = "",
 ) -> dict[str, object]:
     if evidence.startswith("pep:"):
         evidence_type = EvidenceType.PEP
@@ -237,6 +238,7 @@ def _metadata(
         "taxonomy_reviewed": taxonomy_reviewed,
         "whatsnew_ref": whatsnew_ref,
         "gh_issue": gh_issue,
+        "docs_url": docs_url,
     }
     if category is not None:
         entry["category"] = category
