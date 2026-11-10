@@ -613,7 +613,7 @@ Lists the compatibility rules and their documented behavior.
 
 ### Project status
 
-- **Version:** 0.9.0
+- **Version:** 0.9.1
 - **Rules:** 119 total (71 CPython + 47 PyPy + 1 cross-runtime)
 - **Tests:** 1645 passing
 - **Dependencies:** zero
