@@ -56,13 +56,26 @@ def build_parent_map(node: ast.AST) -> dict[int, ast.AST]:
 def is_version_guarded(node: ast.AST,
                         parent_map: dict[int, ast.AST],
                         min_version: tuple[int, ...]) -> bool:
-    """Return True if node is inside an `if sys.version_info >= (x, y)` block.
+    """Return True if node is inside an ``if sys.version_info >= (x, y)``
+    block whose guard version is at or above *min_version*.
 
-    This suppresses false positives when code is properly guarded:
+    This suppresses false positives when code is properly guarded::
+
         if sys.version_info >= (3, 11):
             from typing import Self  # correctly guarded
 
-    For > (x, y) guards, the effective minimum version is (x, y+1).
+    For ``> (x, y)`` guards, the effective minimum version is ``(x, y+1)``.
+
+    .. note::
+        This function is a conservative subset of the full version-guard
+        analysis in :func:`pyrift.analysis.guards.build_guard_index`.  It
+        recognises only ``>=`` and ``>`` comparisons in an enclosing ``if``.
+        It does *not* compose ``elif``/``else`` interval intersections, nor
+        does it recognise ``<``/``==`` guards or ``sys.implementation.name``
+        checks.  When adding new guard patterns, update
+        :mod:`pyrift.analysis.guards` as the authoritative implementation;
+        updates here may also be needed for rules that call this helper
+        directly.
     """
     current = parent_map.get(id(node))
     while current is not None:

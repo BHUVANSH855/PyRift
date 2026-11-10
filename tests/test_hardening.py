@@ -43,7 +43,9 @@ class TestParseVersionRange:
         assert parse_version_range(">=3.13") == ("3.13", "")
 
     def test_gt(self):
-        assert parse_version_range(">3.10") == ("3.10", "")
+        # > bumps the minor version: >3.10 means "3.11 and above".
+        # This matches _parse_version_specifier_fallback behaviour.
+        assert parse_version_range(">3.10") == ("3.11", "")
 
     def test_lt(self):
         assert parse_version_range("<3.15") == ("", "3.15")

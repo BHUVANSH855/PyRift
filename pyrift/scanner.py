@@ -324,6 +324,13 @@ class ScanResult:
         number. Kept only for backward compatibility with existing
         callers/dashboards. Prefer :meth:`breakdown`.
         """
+        import warnings
+        warnings.warn(
+            "ScanResult.score is deprecated and will be removed in a future "
+            "release; use ScanResult.breakdown() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         deductions = len(self.errors) * 10 + len(self.warnings) * 3
         return max(0, 100 - deductions)
 
@@ -431,14 +438,13 @@ def _apply_guards(findings: list[Finding], tree: ast.AST) -> tuple[list[Finding]
             kept.append(f)
             continue
 
-        category = f.category.value if isinstance(f.category, RuleCategory) else f.category
         should_suppress, reason = guard_reduces_risk(
             index,
             f.line,
-            finding_runtime=f.runtime.value,
+            finding_runtime=f.runtime,
             affected_from=f.affected_from,
             affected_until=f.affected_until,
-            category=category,
+            category=f.category,
         )
 
         if should_suppress:

@@ -501,9 +501,13 @@ def _scan_paths(
     files_scanned = 0
     guard_suppressed = 0
 
-    for path in paths:
-        selected_rules = _resolve_selected_rules(args, path)
+    # Resolve the rule set once from the first (or only) path so a
+    # multi-path invocation (``pyrift scan src tests``) always uses a
+    # single consistent rule configuration rather than potentially
+    # loading a different ``[tool.pyrift]`` table from each directory.
+    selected_rules = _resolve_selected_rules(args, paths[0] if paths else None)
 
+    for path in paths:
         result = scan(
             path,
             rules=selected_rules,
@@ -684,11 +688,13 @@ def _run_scan(args: argparse.Namespace) -> None:
     # _resolve_selected_rules handles) — format, fail_on_findings,
     # only_documented.  CLI flags always win; config is applied only when
     # the flag is at its default value.
+    # NOTE: load_pyrift_config is also called inside _resolve_selected_rules
+    # for select/ignore. This second read is accepted as a minor cost (the
+    # file is small); the per-path loop in _scan_paths has been fixed to
+    # call it once instead of once per directory.
     if not getattr(args, "no_project_config", False):
-        from .targets import load_pyrift_config as _load_pyrift_cfg
-
         try:
-            _file_cfg = _load_pyrift_cfg(paths[0])
+            _file_cfg = load_pyrift_config(paths[0])
         except (ValueError, OSError):
             _file_cfg = None
         if _file_cfg is not None:
@@ -723,8 +729,16 @@ def _run_scan(args: argparse.Namespace) -> None:
             target_config,
         )
 
-    # Baseline filtering is rooted at the first supplied path.
-    result = _apply_baseline(result, paths[0], args)
+    # Baseline filtering root: use the common ancestor of all supplied paths
+    # so that multi-path scans (``pyrift scan src tests``) normalise finding
+    # paths consistently regardless of which input directory produced them.
+    # For a single path the common ancestor is simply that path itself.
+    if len(paths) > 1:
+        import os as _os
+        _baseline_root = Path(_os.path.commonpath([str(p) for p in paths]))
+    else:
+        _baseline_root = paths[0]
+    result = _apply_baseline(result, _baseline_root, args)
 
     # --only-documented: keep findings where intent is documented or
     # follows an explicit deprecation path.
@@ -842,8 +856,17 @@ def _run_explain(args: argparse.Namespace) -> None:
     if hasattr(evidence_source, "value"):
         evidence_source = evidence_source.value
 
+    # Format evidence source for readability:
+    # "pep:0667" → "PEP 667",  "official_docs" → "official docs", etc.
+    _ev_display = str(evidence_source)
+    if isinstance(evidence_source, str) and evidence_source.startswith("pep:"):
+        pep_num = evidence_source[4:].lstrip("0") or "0"
+        _ev_display = f"PEP {pep_num}"
+    elif isinstance(evidence_source, str):
+        _ev_display = evidence_source.replace("_", " ")
+
     lines.append(
-        f"Evidence:    {evidence_type} ({evidence_source})"
+        f"Evidence:    {evidence_type} ({_ev_display})"
     )
 
     intent_basis = metadata.get("intent_basis", "inferred")

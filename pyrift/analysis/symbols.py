@@ -147,7 +147,10 @@ def build_symbol_table(tree: ast.AST) -> SymbolTable:
         if isinstance(n, ast.Assign):
             for t in n.targets:
                 target_names.extend(_assign_target_names(t))
-        elif isinstance(n, (ast.AnnAssign, ast.AugAssign)) and n.target is not None or isinstance(n, (ast.For, ast.AsyncFor)):
+        elif (
+            (isinstance(n, (ast.AnnAssign, ast.AugAssign)) and n.target is not None)
+            or isinstance(n, (ast.For, ast.AsyncFor))
+        ):
             target_names.extend(_assign_target_names(n.target))
         elif isinstance(n, (ast.With, ast.AsyncWith)):
             for item in n.items:

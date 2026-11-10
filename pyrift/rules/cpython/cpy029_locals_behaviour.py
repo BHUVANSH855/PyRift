@@ -44,8 +44,19 @@ class LocalsBehaviourRule(BaseRule):
         findings: list[Finding] = []
 
         for n in ast.walk(node):
-            # Flag: d = locals() — storing implies likely mutation
-            if isinstance(n, ast.Assign) and _is_locals_call(n.value):
+            # Flag: d = locals() or d: dict = locals() — storing implies
+            # likely mutation.  Both ast.Assign and ast.AnnAssign are
+            # checked because `d: dict = locals()` uses AnnAssign.
+            is_plain_assign = (
+                isinstance(n, ast.Assign) and _is_locals_call(n.value)
+            )
+            is_ann_assign = (
+                isinstance(n, ast.AnnAssign)
+                and n.value is not None
+                and _is_locals_call(n.value)
+            )
+            if is_plain_assign or is_ann_assign:
+                assert isinstance(n, (ast.Assign, ast.AnnAssign))
                 findings.append(Finding(
                         file=filename,
                         line=n.lineno,
