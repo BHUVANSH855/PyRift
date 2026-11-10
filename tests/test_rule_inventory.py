@@ -106,7 +106,7 @@ def test_rule_inventory_has_dedicated_tests() -> None:
     # PPY020 — retired slot (unreliable detection); tombstone smoke test
     # PPY046 — retired slot (too many false positives); tombstone smoke test
     # PPY048 — contradicts PPY013; test kept for history
-    known_removed = {"CPY021", "CPY052", "PPY020", "PPY046", "PPY048"}
+    known_removed = {"CPY021", "CPY052", "CPY056", "PPY020", "PPY043", "PPY046", "PPY048"}
     real_extra = extra - known_removed
     assert not real_extra, f"Tests without registered rules: {sorted(real_extra)}"
 

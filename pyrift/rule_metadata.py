@@ -797,6 +797,7 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     ),
     # PPY tombstones — retired rule slots; permanently reserved per ID policy.
     "PPY020": _tombstone("kwargs string-key assumption rule; detection was unreliable; slot reserved"),
+    "PPY043": _tombstone("__slots__ memory savings rule; detection was unreliable across PyPy versions; slot reserved"),
     "PPY046": _tombstone("debug constant rule; too many false positives in debug builds; slot reserved"),
     "PPY048": _tombstone("sys.getsizeof rule; contradicts PPY013 which asserts TypeError; slot reserved"),
     # All PPY active rules use PyPy version numbering (e.g. ">=pypy7.3").
