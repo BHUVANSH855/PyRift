@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from pyrift.finding import Confidence, Finding, IntentBasis
 
-
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _finding(**kwargs) -> Finding:

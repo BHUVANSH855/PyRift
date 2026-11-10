@@ -9,7 +9,6 @@ from pyrift.formatters.github import _annotation_level, _escape
 from pyrift.formatters.github import to_github_annotations as _direct
 from pyrift.scanner import ScanResult
 
-
 # ── helpers ─────────────────────────────────────────────────────────────────
 
 def _make_finding(
