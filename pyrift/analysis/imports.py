@@ -194,13 +194,14 @@ def _extract_max_version_guard(parent_map: dict[int, ast.AST],
                     for e in elts
                 ):
                     from typing import cast as _cast
-                    version = [_cast(ast.Constant, e).value for e in elts]
+                    version: list[int] = [
+                        _cast(int, _cast(ast.Constant, e).value)
+                        for e in elts
+                    ]
                     # ``<= (x, y)`` → exclusive upper bound is ``(x, y+1)``
                     if isinstance(test.ops[0], ast.LtE) and len(version) >= 2:
-                        last = version[-1]
-                        if isinstance(last, int):
-                            version[-1] = last + 1
-                    return tuple(version)  # type: ignore[return-value]
+                        version[-1] += 1
+                    return tuple(version)
         current = parent_map.get(id(current))
     return None
 

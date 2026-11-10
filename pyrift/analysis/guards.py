@@ -486,16 +486,8 @@ def guard_reduces_risk(
     # Normalise enum members to their string values so callers may pass
     # either Runtime/RuleCategory enum members or plain strings without
     # needing to serialise them first.
-    _runtime: str = (
-        finding_runtime.value  # type: ignore[union-attr]
-        if hasattr(finding_runtime, "value")
-        else str(finding_runtime)
-    )
-    _category: str = (
-        category.value  # type: ignore[union-attr]
-        if hasattr(category, "value")
-        else str(category)
-    )
+    _runtime: str = str(getattr(finding_runtime, "value", finding_runtime))
+    _category: str = str(getattr(category, "value", category))
 
     # TYPE_CHECKING: code never executes at runtime. Downgrade, don't drop
     # -- this can still matter for users running a type checker on an

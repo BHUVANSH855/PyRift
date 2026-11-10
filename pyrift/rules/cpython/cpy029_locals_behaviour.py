@@ -56,6 +56,7 @@ class LocalsBehaviourRule(BaseRule):
                 and _is_locals_call(n.value)
             )
             if is_plain_assign or is_ann_assign:
+                assert isinstance(n, (ast.Assign, ast.AnnAssign))
                 findings.append(Finding(
                         file=filename,
                         line=n.lineno,
