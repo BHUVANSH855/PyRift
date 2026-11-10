@@ -465,7 +465,9 @@ RULE_METADATA: dict[str, dict[str, object]] = {
         whatsnew_ref="3.13#pep-594-remove-dead-batteries-from-the-standard-library",
         gh_issue="cpython/issues/42611",
     ),
-    "CPY008": _cpy("medium", "official_docs", "CPY008", last_verified="2026-08-29"),
+    "CPY008": _cpy("medium", "official_docs", "CPY008", last_verified="2026-08-29",
+        affected_versions="<3.10",
+    ),
     "CPY009": _cpy("high", "pep:654", "CPY009", last_verified="2026-08-29",
         affected_versions=">=3.11",
         whatsnew_ref="3.11#pep-654-exception-groups-and-except",
@@ -796,6 +798,7 @@ RULE_METADATA: dict[str, dict[str, object]] = {
     # PPY tombstones — retired rule slots; permanently reserved per ID policy.
     "PPY020": _tombstone("kwargs string-key assumption rule; detection was unreliable; slot reserved"),
     "PPY046": _tombstone("debug constant rule; too many false positives in debug builds; slot reserved"),
+    "PPY048": _tombstone("sys.getsizeof rule; contradicts PPY013 which asserts TypeError; slot reserved"),
     # All PPY active rules use PyPy version numbering (e.g. ">=pypy7.3").
     # PyPy 7.3 (Dec 2019) is the earliest widely-deployed Python 3 release;
     # all GC/JIT/runtime-model differences below have been present since then.

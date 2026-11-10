@@ -108,6 +108,8 @@ These rules detect code that behaves differently across CPython versions.
 
 **Severity:** Info | **Confidence:** Medium | **Runtime:** CPython
 
+**Affected versions:** `<3.10`
+
 **Contract:** Documented | **Basis:** Documented
 
 ---

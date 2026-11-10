@@ -616,7 +616,7 @@ Lists the compatibility rules and their documented behavior.
 
 - **Version:** 0.9.1
 - **Rules:** 119 total (71 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1725 passing
+- **Tests:** 1726 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 

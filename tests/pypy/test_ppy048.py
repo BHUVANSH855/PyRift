@@ -6,6 +6,7 @@ history; the test_rule_inventory.py known_removed set references it.
 """
 import importlib
 
+from pyrift.rule_metadata import RULE_METADATA
 from pyrift.scanner import ALL_RULES
 
 
@@ -29,3 +30,19 @@ def test_ppy048_module_is_importable():
     """The stub module must be importable without errors (graceful removal)."""
     mod = importlib.import_module("pyrift.rules.pypy.ppy048_sys_getsizeof")
     assert mod is not None
+
+
+def test_ppy048_tombstone_in_metadata():
+    """PPY048 must have a tombstone entry in RULE_METADATA.
+
+    Without a tombstone, ``pyrift explain PPY048`` returns "unknown rule ID"
+    instead of a retirement message, and a user's ``--ignore PPY048``
+    suppression could silently apply to a future rule reusing the slot.
+    """
+    assert "PPY048" in RULE_METADATA, (
+        "PPY048 tombstone entry is missing from RULE_METADATA; "
+        "retired IDs must be permanently reserved."
+    )
+    assert RULE_METADATA["PPY048"].get("status") == "tombstone", (
+        "PPY048 must have status='tombstone' in RULE_METADATA."
+    )
