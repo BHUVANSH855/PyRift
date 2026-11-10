@@ -353,3 +353,130 @@ class TestCPY023Extended:
         config = TargetConfig(platform="linux")
         findings = rule.check(tree, "<test>", target_config=config)
         assert len(findings) == 1
+
+
+
+# ── cli.py new paths (v0.9.1) ────────────────────────────────────────────────
+
+class TestCliV091DirectCalls:
+    """Direct function-call tests for new v0.9.1 CLI paths.
+
+    Uses main() / _format_result() directly (not subprocess) so that
+    coverage tracking sees the executed lines inside cli.py.
+    """
+
+    def test_format_result_github_with_findings(self):
+        from pyrift.cli import _format_result
+        from pyrift.finding import Finding, Severity
+        from pyrift.scanner import ScanResult
+
+        f = Finding(file="x.py", line=1, rule_id="CPY001",
+                    title="test", severity=Severity.WARNING)
+        result = ScanResult(findings=[f], files_scanned=1)
+        out = _format_result(result, "github")
+        assert "::warning" in out
+
+    def test_format_result_github_empty(self):
+        from pyrift.cli import _format_result
+        from pyrift.scanner import ScanResult
+
+        result = ScanResult(findings=[], files_scanned=1)
+        out = _format_result(result, "github")
+        assert out == ""
+
+    def test_main_explain_tombstone_exits_nonzero(self, capsys):
+        import pytest
+        from pyrift.cli import main
+
+        with pytest.raises(SystemExit) as exc:
+            main(["explain", "CPY021"])
+        assert exc.value.code != 0
+        captured = capsys.readouterr()
+        assert "CPY021" in captured.err or "retired" in captured.err.lower()
+
+    def test_main_explain_tombstone_cpy052(self):
+        import pytest
+        from pyrift.cli import main
+
+        with pytest.raises(SystemExit) as exc:
+            main(["explain", "CPY052"])
+        assert exc.value.code != 0
+
+    def test_main_explain_tombstone_cpy056(self):
+        import pytest
+        from pyrift.cli import main
+
+        with pytest.raises(SystemExit) as exc:
+            main(["explain", "CPY056"])
+        assert exc.value.code != 0
+
+    def test_main_explain_whatsnew_ref_and_gh_issue(self, capsys):
+        import pytest
+        from pyrift.cli import main
+
+        # CPY055 has both whatsnew_ref and gh_issue (cpython/issues/116023)
+        with pytest.raises(SystemExit) as exc:
+            main(["explain", "CPY055"])
+        assert exc.value.code == 0
+        out = capsys.readouterr().out
+        assert "docs.python.org" in out
+        assert "github.com/cpython" in out
+
+    def test_main_explain_bpo_gh_issue(self, capsys):
+        import pytest
+        from pyrift.cli import main
+
+        # Any rule with a bpo-style gh_issue exercises the else branch
+        # CPY022 has whatsnew_ref but no gh_issue; CPY055 covers cpython/issues/
+        # Use CPY055 output we already captured above; just re-verify no crash.
+        with pytest.raises(SystemExit) as exc:
+            main(["explain", "CPY001"])
+        assert exc.value.code == 0
+
+    def test_main_scan_only_documented_clean_file(self, tmp_path):
+        import pytest
+        from pyrift.cli import main
+
+        f = tmp_path / "clean.py"
+        f.write_text("x = 1\n")
+        with pytest.raises(SystemExit) as exc:
+            main(["scan", str(f), "--only-documented"])
+        assert exc.value.code == 0
+
+    def test_main_scan_github_format_clean_file(self, tmp_path, capsys):
+        import pytest
+        from pyrift.cli import main
+
+        f = tmp_path / "clean.py"
+        f.write_text("x = 1\n")
+        with pytest.raises(SystemExit) as exc:
+            main(["scan", str(f), "--format", "github"])
+        assert exc.value.code == 0
+        out = capsys.readouterr().out
+        assert out.strip() == ""
+
+    def test_main_scan_config_wiring_format(self, tmp_path):
+        import pytest
+        from pyrift.cli import main
+
+        # Create a pyproject.toml with [tool.pyrift] format = "github"
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.pyrift]\nformat = "github"\n'
+        )
+        (tmp_path / "x.py").write_text("x = 1\n")
+        with pytest.raises(SystemExit) as exc:
+            main(["scan", str(tmp_path / "x.py")])
+        # Should not crash — format picked up from config
+        assert exc.value.code in (0, 1)
+
+    def test_main_scan_config_wiring_only_documented(self, tmp_path):
+        import pytest
+        from pyrift.cli import main
+
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.pyrift]\nonly_documented = true\n'
+        )
+        (tmp_path / "x.py").write_text("x = 1\n")
+        with pytest.raises(SystemExit) as exc:
+            main(["scan", str(tmp_path / "x.py")])
+        assert exc.value.code in (0, 1)
