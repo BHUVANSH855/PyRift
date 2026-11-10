@@ -62,7 +62,7 @@ def _build_parser() -> argparse.ArgumentParser:
     scan_cmd.add_argument(
         "--format",
         "-f",
-        choices=["text", "json", "markdown", "sarif"],
+        choices=["text", "json", "markdown", "sarif", "github"],
         default="text",
         help="Output format (default: text)",
     )
@@ -129,6 +129,19 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Ignore .pyrift-baseline.json when scanning."
+        ),
+    )
+
+    scan_cmd.add_argument(
+        "--only-documented",
+        action="store_true",
+        default=False,
+        help=(
+            "Show only findings backed by a documented or deprecated "
+            "intent basis — i.e. changes that CPython announced via a "
+            "PEP, official docs, or an explicit deprecation path. "
+            "Useful when evaluating how a codebase is affected by "
+            "intentional, documented CPython behavior changes."
         ),
     )
 
@@ -318,6 +331,10 @@ def _format_result(
 
     if output_format == "sarif":
         return to_sarif(result)
+
+    if output_format == "github":
+        from .formatters.github import to_github_annotations
+        return to_github_annotations(result)
 
     return to_text(result)
 
@@ -663,6 +680,25 @@ def _run_scan(args: argparse.Namespace) -> None:
             )
             sys.exit(2)
 
+    # Apply [tool.pyrift] settings beyond select/ignore (which
+    # _resolve_selected_rules handles) — format, fail_on_findings,
+    # only_documented.  CLI flags always win; config is applied only when
+    # the flag is at its default value.
+    if not getattr(args, "no_project_config", False):
+        from .targets import load_pyrift_config as _load_pyrift_cfg
+
+        try:
+            _file_cfg = _load_pyrift_cfg(paths[0])
+        except (ValueError, OSError):
+            _file_cfg = None
+        if _file_cfg is not None:
+            if _file_cfg.fail_on_findings:
+                args.fail_on_findings = True
+            if _file_cfg.only_documented:
+                args.only_documented = True
+            if _file_cfg.format and args.format == "text":
+                args.format = _file_cfg.format
+
     target_config = _build_target_config(args)
     changed_count: int | None = None
 
@@ -689,6 +725,20 @@ def _run_scan(args: argparse.Namespace) -> None:
 
     # Baseline filtering is rooted at the first supplied path.
     result = _apply_baseline(result, paths[0], args)
+
+    # --only-documented: keep findings where intent is documented or
+    # follows an explicit deprecation path.
+    if getattr(args, "only_documented", False):
+        from .scanner import ScanResult as _SR
+
+        kept = [f for f in result.findings if f.is_documented_change]
+        result = _SR(
+            kept,
+            result.files_scanned,
+            baseline_suppressed=result.baseline_suppressed,
+            rule_errors=result.rule_errors,
+            guard_suppressed=result.guard_suppressed,
+        )
 
     output = _format_result(result, args.format)
 
@@ -718,6 +768,26 @@ def _run_explain(args: argparse.Namespace) -> None:
     """Handle ``pyrift explain``."""
     rule_id = args.rule_id.upper()
 
+    try:
+        from .rule_metadata import RULE_METADATA
+    except ImportError:
+        RULE_METADATA = {}
+
+    # Tombstoned IDs are intentionally absent from ALL_RULES but carry a
+    # RULE_METADATA entry with status == "tombstone" so we can give a
+    # useful message rather than the generic "unknown rule ID" error.
+    metadata = RULE_METADATA.get(rule_id, {})
+    if metadata.get("status") == "tombstone":
+        reason = metadata.get("tombstone_reason", "retired")
+        print(
+            f"pyrift: {rule_id} is a retired rule ID.\n"
+            f"Reason: {reason}\n"
+            f"This slot is permanently reserved to prevent ID reuse. "
+            f"No active rule carries this identifier.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
     rule = next(
         (candidate for candidate in ALL_RULES
          if candidate.rule_id == rule_id),
@@ -731,19 +801,29 @@ def _run_explain(args: argparse.Namespace) -> None:
         )
         sys.exit(2)
 
-    try:
-        from .rule_metadata import RULE_METADATA
-    except ImportError:
-        RULE_METADATA = {}
-
-    metadata = RULE_METADATA.get(rule_id, {})
-
     lines = [
         f"Rule:        {rule_id}",
         f"Title:       {rule.title}",
         f"Runtime:     {rule.runtime}",
         f"Category:    {getattr(rule, 'category', 'compatibility')}",
     ]
+
+    whatsnew_ref = str(metadata.get("whatsnew_ref", ""))
+    if whatsnew_ref:
+        if "#" in whatsnew_ref:
+            ver, anchor = whatsnew_ref.split("#", 1)
+            whatsnew_url = f"https://docs.python.org/3/whatsnew/{ver}.html#{anchor}"
+        else:
+            whatsnew_url = f"https://docs.python.org/3/whatsnew/{whatsnew_ref}.html"
+        lines.append(f"What's New:  {whatsnew_url}")
+
+    gh_issue = str(metadata.get("gh_issue", ""))
+    if gh_issue:
+        if gh_issue.startswith("cpython/issues/"):
+            gh_url = f"https://github.com/{gh_issue}"
+        else:
+            gh_url = f"https://bugs.python.org/issue/{gh_issue.lstrip('bpo-')}"
+        lines.append(f"CPython issue: {gh_url}")
 
     confidence = metadata.get("confidence", "low")
     if hasattr(confidence, "value"):

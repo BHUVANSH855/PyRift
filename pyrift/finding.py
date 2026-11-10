@@ -267,6 +267,13 @@ class Finding:
     # it. Empty when no such context applies.
     context_note: str = ""
 
+    # Cross-references to CPython change tracking (populated from
+    # RULE_METADATA).  ``whatsnew_ref`` is an "X.Y#anchor" string that
+    # points into the official What's New page; ``gh_issue`` is a
+    # CPython issue tracker reference such as "cpython/issues/83960".
+    whatsnew_ref: str = ""
+    gh_issue: str = ""
+
     def __post_init__(self) -> None:
         """Attach reviewed rule metadata when available."""
         try:
@@ -341,6 +348,20 @@ class Finding:
         if platform_scope and not self.platform_scope:
             self.platform_scope = str(platform_scope)
 
+        whatsnew_ref = metadata.get("whatsnew_ref")
+        if whatsnew_ref and not self.whatsnew_ref:
+            self.whatsnew_ref = str(whatsnew_ref)
+
+        gh_issue = metadata.get("gh_issue")
+        if gh_issue and not self.gh_issue:
+            self.gh_issue = str(gh_issue)
+
+        # Fall back to the centralised docs_url from RULE_METADATA when
+        # the rule did not set one explicitly in its Finding constructor call.
+        meta_docs_url = metadata.get("docs_url")
+        if meta_docs_url and not self.docs_url:
+            self.docs_url = str(meta_docs_url)
+
     def __str__(self) -> str:
         loc = f"{self.file}:{self.line}"
         if self.col:  # pragma: no branch
@@ -365,6 +386,7 @@ class Finding:
             "description": self.description,
             "severity": self.severity.value,
             "confidence": self.confidence.value,
+            "confidence_tier": self.confidence_tier,
             "claim_confidence": self.claim_confidence.value,
             "detection_confidence": self.detection_confidence.value,
             "runtime_verification": self.runtime_verification.value,
@@ -383,4 +405,51 @@ class Finding:
             "docs_url": self.docs_url,
             "category": category,
             "context_note": self.context_note,
+            "whatsnew_ref": self.whatsnew_ref,
+            "gh_issue": self.gh_issue,
+            "whatsnew_url": self.whatsnew_url,
         }
+
+
+    @property
+    def whatsnew_url(self) -> str:
+        """Construct the full What's New URL from ``whatsnew_ref``.
+
+        Returns an empty string when ``whatsnew_ref`` is not set.
+        Example: "3.13#pep-667-locals" →
+        "https://docs.python.org/3/whatsnew/3.13.html#pep-667-locals"
+        """
+        if not self.whatsnew_ref:
+            return ""
+        if "#" in self.whatsnew_ref:
+            version, anchor = self.whatsnew_ref.split("#", 1)
+            return f"https://docs.python.org/3/whatsnew/{version}.html#{anchor}"
+        return f"https://docs.python.org/3/whatsnew/{self.whatsnew_ref}.html"
+
+    @property
+    def is_documented_change(self) -> bool:
+        """True when this finding is backed by a documented/deprecated intent basis.
+
+        Distinguishes intentional, announced changes (PEP, official docs,
+        explicit deprecation) from observed or inferred differences.
+        Used by ``--only-documented`` to filter findings to those a
+        CPython core developer explicitly communicated.
+        """
+        return self.intent_basis in (IntentBasis.DOCUMENTED, IntentBasis.DEPRECATION)
+
+    @property
+    def confidence_tier(self) -> str:
+        """Aggregate confidence tier: 'high', 'medium', or 'low'.
+
+        ``__post_init__`` already caps ``self.confidence`` to the minimum
+        of claim_confidence and detection_confidence (review #24/#58).
+        This property exposes that value under a single stable key so SARIF
+        serialisers, JSON consumers, and CI integrations can reference it
+        without having to replicate the min-logic or choose between the
+        three individual confidence fields.
+
+        Example — a rule with claim=HIGH but detection=MEDIUM yields
+        'medium' (and this finding's confidence field likewise holds
+        Confidence.MEDIUM).
+        """
+        return self.confidence.value

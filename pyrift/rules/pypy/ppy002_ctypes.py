@@ -88,12 +88,11 @@ class CtypesRule(BaseRule):
 
                 findings.append(self._make_finding(filename, current))
 
-            elif isinstance(current, ast.Call):
-                if (
-                    isinstance(current.func, ast.Name)
-                    and current.func.id in direct_imports
-                ):
-                    findings.append(self._make_finding(filename, current))
+            elif isinstance(current, ast.Call) and (
+                isinstance(current.func, ast.Name)
+                and current.func.id in direct_imports
+            ):
+                findings.append(self._make_finding(filename, current))
 
         return findings
 

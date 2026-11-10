@@ -177,6 +177,9 @@ def to_text(result: ScanResult) -> str:
         lines.append(
             f"    intent basis: {finding.intent_basis.value}"
         )
+        lines.append(
+            f"    confidence tier: {finding.confidence_tier}"
+        )
 
         if finding.suggestion:
             lines.append(
@@ -277,6 +280,7 @@ def to_sarif(result: ScanResult) -> str:
 
         sarif_properties: dict[str, str | None] = {
             "confidence": finding.confidence.value,
+            "confidence_tier": finding.confidence_tier,
             "evidence_type": finding.evidence_type.value,
             "intent_basis": finding.intent_basis.value,
             "runtime": finding.runtime.value,

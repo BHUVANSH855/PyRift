@@ -1,3 +1,26 @@
+## [0.9.1] - 2026-11-09
+
+### Added
+- Rule-ID permanence policy: tombstone entries for retired IDs CPY021, CPY052,
+  CPY056 permanently reserve those slots; `pyrift explain <retired-id>` now
+  prints a helpful retirement message instead of "unknown rule". (`CONTRIBUTING.md`
+  updated with the conservation policy.)
+- `Finding.whatsnew_ref` and `Finding.gh_issue` dataclass fields, populated from
+  `RULE_METADATA`. `Finding.whatsnew_url` property constructs the full CPython
+  What's New URL from `whatsnew_ref`. `_metadata()` gains `docs_url`, `whatsnew_ref`,
+  and `gh_issue` keyword parameters so documentation links are centralised in one
+  place rather than scattered across rule modules.
+- `--only-documented` scan flag: filters results to findings backed by a documented
+  or deprecated intent basis (PEP, official docs, explicit deprecation path).
+- `Finding.is_documented_change` property: `True` when `intent_basis` is
+  `DOCUMENTED` or `DEPRECATION`.
+- `pyrift explain` now displays the What's New URL and CPython issue tracker link
+  when present in `RULE_METADATA`.
+- `Finding.confidence_tier` property: stable single-key alias for the aggregate
+  confidence (minimum of claim and detection confidence). Added to `to_dict()`,
+  `to_text()` output, and SARIF `properties` bag.
+- 1709 tests total
+
 ## [0.9.0] - 2026-09-19
 
 - Expanded compatibility analysis and project configuration.

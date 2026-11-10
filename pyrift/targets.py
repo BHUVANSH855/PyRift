@@ -574,18 +574,20 @@ class PyriftConfig:
     Supported keys:
 
         [tool.pyrift]
-        select = ["CPY038", "CPY067"]
-
-    or:
-
-        [tool.pyrift]
-        ignore = ["PPY014", "PPY027"]
+        select = ["CPY038", "CPY067"]    # run only these rules
+        ignore = ["PPY014", "PPY027"]    # skip these rules
+        format = "json"                   # default output format
+        fail_on_findings = true           # exit 1 when any finding is produced
+        only_documented = true            # filter to documented/deprecated changes
 
     ``select`` and ``ignore`` are mutually exclusive.
     """
 
     select: tuple[str, ...] | None = None
     ignore: tuple[str, ...] | None = None
+    format: str = ""          # empty string means "do not override CLI default"
+    fail_on_findings: bool = False
+    only_documented: bool = False
 
 
 def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
@@ -633,6 +635,13 @@ def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
             pyrift_table.get("ignore"),
             key="ignore",
         )
+        fmt = (
+            str(pyrift_table["format"])
+            if isinstance(pyrift_table.get("format"), str)
+            else ""
+        )
+        fail_on_findings = bool(pyrift_table.get("fail_on_findings", False))
+        only_documented = bool(pyrift_table.get("only_documented", False))
     else:
         fallback_select, fallback_ignore = (
             _load_pyrift_config_without_tomllib(pyproject)
@@ -648,18 +657,32 @@ def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
             if fallback_ignore is not None
             else None
         )
+        # The fallback parser (Python < 3.11, no tomli backport) handles
+        # only select/ignore; the extended settings require tomllib.
+        fmt = ""
+        fail_on_findings = False
+        only_documented = False
 
     if select is not None and ignore is not None:
         raise ValueError(
             "[tool.pyrift] cannot set both 'select' and 'ignore'"
         )
 
-    if select is None and ignore is None:
+    if (
+        select is None
+        and ignore is None
+        and not fmt
+        and not fail_on_findings
+        and not only_documented
+    ):
         return None
 
     return PyriftConfig(
         select=select,
         ignore=ignore,
+        format=fmt,
+        fail_on_findings=fail_on_findings,
+        only_documented=only_documented,
     )
 
 

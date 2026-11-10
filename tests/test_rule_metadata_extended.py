@@ -97,8 +97,10 @@ class TestRuleMetadataRegistry:
         assert RULE_METADATA["PPY007"]["confidence"] == Confidence.LOW
 
     def test_no_unknown_rule_ids(self):
-        """RULE_METADATA should only contain real rule IDs."""
+        """RULE_METADATA should only contain real rule IDs or tombstone slots."""
         from pyrift import ALL_RULES
         all_ids = {r.rule_id for r in ALL_RULES}
-        for rule_id in RULE_METADATA:
+        for rule_id, meta in RULE_METADATA.items():
+            if meta.get("status") == "tombstone":
+                continue  # tombstones reserve retired slots — no active rule expected
             assert rule_id in all_ids, f"{rule_id} in metadata but not in ALL_RULES"
