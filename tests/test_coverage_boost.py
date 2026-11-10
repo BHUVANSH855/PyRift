@@ -386,6 +386,7 @@ class TestCliV091DirectCalls:
 
     def test_main_explain_tombstone_exits_nonzero(self, capsys):
         import pytest
+
         from pyrift.cli import main
 
         with pytest.raises(SystemExit) as exc:
@@ -396,6 +397,7 @@ class TestCliV091DirectCalls:
 
     def test_main_explain_tombstone_cpy052(self):
         import pytest
+
         from pyrift.cli import main
 
         with pytest.raises(SystemExit) as exc:
@@ -404,6 +406,7 @@ class TestCliV091DirectCalls:
 
     def test_main_explain_tombstone_cpy056(self):
         import pytest
+
         from pyrift.cli import main
 
         with pytest.raises(SystemExit) as exc:
@@ -412,6 +415,7 @@ class TestCliV091DirectCalls:
 
     def test_main_explain_whatsnew_ref_and_gh_issue(self, capsys):
         import pytest
+
         from pyrift.cli import main
 
         # CPY055 has both whatsnew_ref and gh_issue (cpython/issues/116023)
@@ -424,6 +428,7 @@ class TestCliV091DirectCalls:
 
     def test_main_explain_bpo_gh_issue(self, capsys):
         import pytest
+
         from pyrift.cli import main
 
         # Any rule with a bpo-style gh_issue exercises the else branch
@@ -435,6 +440,7 @@ class TestCliV091DirectCalls:
 
     def test_main_scan_only_documented_clean_file(self, tmp_path):
         import pytest
+
         from pyrift.cli import main
 
         f = tmp_path / "clean.py"
@@ -445,6 +451,7 @@ class TestCliV091DirectCalls:
 
     def test_main_scan_github_format_clean_file(self, tmp_path, capsys):
         import pytest
+
         from pyrift.cli import main
 
         f = tmp_path / "clean.py"
@@ -457,6 +464,7 @@ class TestCliV091DirectCalls:
 
     def test_main_scan_config_wiring_format(self, tmp_path):
         import pytest
+
         from pyrift.cli import main
 
         # Create a pyproject.toml with [tool.pyrift] format = "github"
@@ -471,6 +479,7 @@ class TestCliV091DirectCalls:
 
     def test_main_scan_config_wiring_only_documented(self, tmp_path):
         import pytest
+
         from pyrift.cli import main
 
         (tmp_path / "pyproject.toml").write_text(
