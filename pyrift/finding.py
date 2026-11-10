@@ -156,6 +156,11 @@ _VERSION_RE = re.compile(
     r"^\s*(>=|<=|==|!=|>|<)?\s*(\d+\.\d+(?:\.\d+)?)\s*$"
 )
 
+# PyPy version strings use the form ``">=pypy7.3"``.  Strip the leading
+# ``pypy`` prefix so the numeric ordinal (7.3, 7.3.7, 7.3.11) is
+# matched by ``_VERSION_RE``.  The strip is case-insensitive.
+_PYPY_PREFIX_RE = re.compile(r"(?i)(>=|<=|==|!=|>|<)\s*pypy")
+
 
 def parse_version_range(spec: str) -> tuple[str, str]:
     """Parse a version expression into ``(from, until)`` strings.
@@ -166,9 +171,23 @@ def parse_version_range(spec: str) -> tuple[str, str]:
         "<3.15"            -> ("", "3.15")
         ">=3.10,<3.14"     -> ("3.10", "3.14")
         ">=3.13, <3.16"    -> ("3.13", "3.16")
+        ">=pypy7.3"        -> ("7.3", "")
         ""                 -> ("", "")
 
     ``from`` is inclusive, ``until`` is exclusive.
+
+    **PyPy version strings** (``">=pypy7.3"``) are supported: the
+    ``pypy`` prefix is stripped before matching so the numeric ordinal
+    (7.3, 7.3.7, 7.3.11) is preserved as a comparable version string.
+
+    The ``!=`` operator is accepted but ignored — it cannot be
+    represented as a simple ``(from, until)`` interval.  Rule authors
+    should prefer ``>=`` / ``<`` ranges instead.
+
+    The ``>`` operator (strict greater-than) bumps the minor version by
+    one so that ``>3.13`` produces ``("3.14", "")`` rather than the
+    ambiguous ``("3.13", "")``, matching the behaviour of
+    :func:`pyrift.targets._parse_version_specifier_fallback`.
     """
     if not spec or not spec.strip():
         return ("", "")
@@ -180,13 +199,23 @@ def parse_version_range(spec: str) -> tuple[str, str]:
         part = part.strip()
         if not part:
             continue
+        # Strip any "pypy" prefix so ">=pypy7.3" → ">=7.3".
+        part = _PYPY_PREFIX_RE.sub(r"\1", part)
         m = _VERSION_RE.match(part)
         if m is None:
             continue
         op = m.group(1) or "=="
         ver = m.group(2)
 
-        if op in (">=", ">"):
+        if op == ">=":
+            from_ver = ver
+        elif op == ">":
+            # Strict lower bound: bump the minor version so >3.13 → 3.14,
+            # keeping parity with _parse_version_specifier_fallback and
+            # avoiding an off-by-one in TargetConfig.affects_cpython().
+            parts_v = ver.split(".")
+            if len(parts_v) >= 2:
+                ver = f"{parts_v[0]}.{int(parts_v[1]) + 1}"
             from_ver = ver
         elif op in ("<=", "<"):
             until_ver = ver
@@ -194,9 +223,32 @@ def parse_version_range(spec: str) -> tuple[str, str]:
             from_ver = ver
             until_ver = ver
         elif op == "!=":
-            pass  # excluded version — no range info
+            # Excluded version — cannot be represented as a simple range;
+            # accepted without error but carries no range information.
+            # Rule authors should prefer >=/<  range expressions.
+            pass
 
     return (from_ver, until_ver)
+
+
+# ---------------------------------------------------------------------------
+# RULE_METADATA lazy singleton cache
+# ---------------------------------------------------------------------------
+# Avoids a circular-import at module load time (rule_metadata imports enums
+# from this module) while ensuring the import happens at most once per
+# process rather than on every Finding creation.
+_RULE_METADATA_CACHE: dict | None = None
+
+
+def _get_rule_metadata() -> dict:
+    global _RULE_METADATA_CACHE
+    if _RULE_METADATA_CACHE is None:
+        try:
+            from .rule_metadata import RULE_METADATA as _rm
+            _RULE_METADATA_CACHE = _rm
+        except ImportError:  # pragma: no cover
+            _RULE_METADATA_CACHE = {}
+    return _RULE_METADATA_CACHE
 
 
 @dataclass
@@ -276,12 +328,7 @@ class Finding:
 
     def __post_init__(self) -> None:
         """Attach reviewed rule metadata when available."""
-        try:
-            from .rule_metadata import RULE_METADATA
-        except ImportError:  # pragma: no cover
-            return
-
-        metadata = RULE_METADATA.get(self.rule_id)
+        metadata = _get_rule_metadata().get(self.rule_id)
         if metadata is None:  # pragma: no cover
             return
 

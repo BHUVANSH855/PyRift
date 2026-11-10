@@ -195,20 +195,16 @@ def _is_pypy_check(node: ast.AST) -> bool | None:
             and n.value.lower() == "pypy"
         )
 
-    if (
-        _is_impl_name(left)
-        and _pypy_literal(right)
-        or _is_python_implementation_call(left)
+    if not (
+        (_is_impl_name(left) or _is_python_implementation_call(left))
         and _pypy_literal(right)
     ):
-        matches_pypy = True
-    else:
         return None
 
     if isinstance(op, ast.Eq):
-        return True if matches_pypy else None
+        return True
     if isinstance(op, ast.NotEq):
-        return False if matches_pypy else None
+        return False
     return None
 
 
@@ -466,10 +462,10 @@ def guard_reduces_risk(
     index: GuardIndex,
     line: int,
     *,
-    finding_runtime: str,
+    finding_runtime: str | object,
     affected_from: str,
     affected_until: str,
-    category: str,
+    category: str | object,
 ) -> tuple[bool, str]:
     """Decide whether a finding at *line* is neutralised by a detected
     guard/shim.
@@ -480,7 +476,27 @@ def guard_reduces_risk(
     the ``TYPE_CHECKING`` case, signalled by returning
     ``should_suppress=False`` with a reason) -- callers should check the
     reason string to decide which of the two applies.
+
+    *finding_runtime* and *category* accept either ``Runtime``/
+    ``RuleCategory`` enum members (the preferred form) or plain strings
+    (for backward compatibility).  Enums are normalised to their
+    ``.value`` strings at the top of the function so the rest of the
+    body compares strings throughout.
     """
+    # Normalise enum members to their string values so callers may pass
+    # either Runtime/RuleCategory enum members or plain strings without
+    # needing to serialise them first.
+    _runtime: str = (
+        finding_runtime.value  # type: ignore[union-attr]
+        if hasattr(finding_runtime, "value")
+        else str(finding_runtime)
+    )
+    _category: str = (
+        category.value  # type: ignore[union-attr]
+        if hasattr(category, "value")
+        else str(category)
+    )
+
     # TYPE_CHECKING: code never executes at runtime. Downgrade, don't drop
     # -- this can still matter for users running a type checker on an
     # older interpreter, which is a legitimate (if narrower) concern.
@@ -488,18 +504,18 @@ def guard_reduces_risk(
         return False, "inside `if TYPE_CHECKING:` -- never executes at runtime"
 
     # Implementation guards.
-    if finding_runtime == "cpython" and index.is_pypy_only(line):
+    if _runtime == "cpython" and index.is_pypy_only(line):
         return (
             True,
             "inside a PyPy-only branch (sys.implementation.name == 'pypy'); never runs on CPython",
         )
-    if finding_runtime == "pypy" and index.is_cpython_only(line):
+    if _runtime == "pypy" and index.is_cpython_only(line):
         return True, "inside a CPython-only branch; never runs on PyPy"
 
     # Compatibility shims: only suppress pure API-availability
     # (compatibility) findings -- a shim doesn't neutralise a genuine
     # silent semantic difference, only an ImportError/AttributeError risk.
-    if category == "compatibility" and index.is_import_shim(line):
+    if _category == "compatibility" and index.is_import_shim(line):
         return True, "inside a try/except ImportError compatibility shim"
 
     # Version guards for compatibility (introduced/removed-API) findings.
@@ -513,7 +529,7 @@ def guard_reduces_risk(
     # it *guarantees* the code still runs squarely inside the affected
     # range. Suppression is only correct when the two intervals are
     # disjoint. See VersionGuard/interval reasoning below.
-    if category == "compatibility" and (affected_from or affected_until):
+    if _category == "compatibility" and (affected_from or affected_until):
         guard = index.version_guard_at(line)
         if guard is not None:
             from_tuple = _parse_version(affected_from) if affected_from else None

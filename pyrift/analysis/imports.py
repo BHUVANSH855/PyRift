@@ -26,6 +26,9 @@ class ImportInfo:
     node: ast.AST
     version_guarded: tuple[int, ...] | None = None
     # If not None, this import is inside: if sys.version_info >= version_guarded
+    max_version_guarded: tuple[int, ...] | None = None
+    # If not None, this import is inside: if sys.version_info < max_version_guarded
+    # (i.e. the import only runs on Python versions BELOW this upper bound).
 
 
 @dataclass
@@ -80,22 +83,34 @@ class ImportMap:
         produces ONE entry, not two.
 
         If min_version is given, skip imports that are version-guarded
-        at or above min_version (they are correctly guarded):
+        in a way that makes them irrelevant at or above *min_version*:
+
             if sys.version_info >= (3, 11):
-                import tomllib  # guarded -- skip if min_version=(3,11)
+                import tomllib          # guarded above -- skip if min_version=(3,11)
+
+            if sys.version_info < (3, 11):
+                import tomllib_backport  # guarded below -- skip if min_version=(3,11)
         """
         seen: set[tuple[int, str]] = set()
         result: list[ImportInfo] = []
         for i in self.imports:
             if i.module != module:
                 continue
-            # Skip correctly version-guarded imports
-            if (
-                min_version is not None
-                and i.version_guarded is not None
-                and i.version_guarded >= min_version
-            ):
-                continue
+            if min_version is not None:
+                # Skip imports exclusively available on new-enough versions
+                # (correctly guarded by a >= or > check).
+                if (
+                    i.version_guarded is not None
+                    and i.version_guarded >= min_version
+                ):
+                    continue
+                # Skip imports exclusively available on OLD versions (behind
+                # a < or <= guard) -- they will never run at min_version+.
+                if (
+                    i.max_version_guarded is not None
+                    and i.max_version_guarded <= min_version
+                ):
+                    continue
             key = (id(i.node), i.module)
             if key not in seen:
                 seen.add(key)
@@ -145,6 +160,51 @@ def _extract_version_guard(parent_map: dict[int, ast.AST],
     return None
 
 
+def _extract_max_version_guard(parent_map: dict[int, ast.AST],
+                                n: ast.AST) -> tuple[int, ...] | None:
+    """If *n* is inside an ``if sys.version_info < (x, y):`` block,
+    return ``(x, y)`` as the exclusive upper bound.
+
+    For ``<= (x, y)`` guards, returns ``(x, y + 1)`` so the returned
+    value is always an exclusive upper bound, consistent with the
+    ``affected_until`` / ``finding_hi`` convention used in
+    :mod:`pyrift.analysis.guards`.
+
+    Returns ``None`` for anything else (``>``/``>=``/``==`` guards,
+    non-version tests, ...).
+    """
+    current = parent_map.get(id(n))
+    while current is not None:
+        if isinstance(current, ast.If):
+            test = current.test
+            if (
+                isinstance(test, ast.Compare)
+                and len(test.ops) == 1
+                and isinstance(test.ops[0], (ast.LtE, ast.Lt))
+                and isinstance(test.left, ast.Attribute)
+                and test.left.attr == "version_info"
+                and isinstance(test.left.value, ast.Name)
+                and test.left.value.id == "sys"
+                and len(test.comparators) == 1
+                and isinstance(test.comparators[0], ast.Tuple)
+            ):
+                elts = test.comparators[0].elts
+                if all(
+                    isinstance(e, ast.Constant) and isinstance(e.value, int)
+                    for e in elts
+                ):
+                    from typing import cast as _cast
+                    version = [_cast(ast.Constant, e).value for e in elts]
+                    # ``<= (x, y)`` → exclusive upper bound is ``(x, y+1)``
+                    if isinstance(test.ops[0], ast.LtE) and len(version) >= 2:
+                        last = version[-1]
+                        if isinstance(last, int):
+                            version[-1] = last + 1
+                    return tuple(version)  # type: ignore[return-value]
+        current = parent_map.get(id(current))
+    return None
+
+
 def collect_imports(node: ast.AST) -> ImportMap:
     """
     Walk an AST and collect all import statements.
@@ -165,6 +225,7 @@ def collect_imports(node: ast.AST) -> ImportMap:
     for n in ast.walk(node):
         if isinstance(n, ast.Import):
             guard = _extract_version_guard(parent_map, n)
+            max_guard = _extract_max_version_guard(parent_map, n)
             for alias in n.names:
                 imp_map.imports.append(ImportInfo(
                     module=alias.name,
@@ -174,9 +235,11 @@ def collect_imports(node: ast.AST) -> ImportMap:
                     col=n.col_offset,
                     node=n,
                     version_guarded=guard,
+                    max_version_guarded=max_guard,
                 ))
         elif isinstance(n, ast.ImportFrom) and n.module:
             guard = _extract_version_guard(parent_map, n)
+            max_guard = _extract_max_version_guard(parent_map, n)
             for alias in n.names:
                 imp_map.imports.append(ImportInfo(
                     module=n.module,
@@ -186,6 +249,7 @@ def collect_imports(node: ast.AST) -> ImportMap:
                     col=n.col_offset,
                     node=n,
                     version_guarded=guard,
+                    max_version_guarded=max_guard,
                 ))
 
     return imp_map
@@ -199,6 +263,16 @@ def collect_dynamic_imports(node: ast.AST) -> list[ImportInfo]:
 
     Returns ImportInfo objects for each dynamic import where the
     module name is a string literal (statically determinable).
+
+    **Known gap:** Only the ``importlib.import_module(...)`` attribute-call
+    form is recognised.  The bare-name form after
+    ``from importlib import import_module`` is not::
+
+        importlib.import_module("tomllib")   # detected
+        import_module("tomllib")             # NOT detected
+
+    Rules that rely on this function should document this limitation in
+    their own docstrings so callers are not surprised by the false negative.
     """
     results: list[ImportInfo] = []
 
