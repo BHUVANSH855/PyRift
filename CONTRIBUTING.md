@@ -33,8 +33,8 @@ pyrift --help
 ```text
 pyrift/
 ├── analysis/       calls.py, imports.py, scope.py   (shared AST helpers)
-├── rules/cpython/  CPY001..CPY063   (version compatibility)
-├── rules/pypy/     PPY001..PPY047   (CPython vs PyPy)
+├── rules/cpython/  CPY001..CPY078   (version compatibility)
+├── rules/pypy/     PPY001..PPY053   (CPython vs PyPy)
 ├── base_rule.py, finding.py, scanner.py, targets.py
 ├── rule_metadata.py  (authoritative confidence/evidence)
 ├── baseline.py, fingerprint.py, git.py, reporter.py, cli.py
@@ -72,7 +72,7 @@ differences, and `observed`/`inferred` when intent is not established. See
 
 ## Adding a rule
 
-1. **Pick the next free ID** — `CPY064+` or `PPY048+`; never reuse an ID.
+1. **Pick the next free ID** — `CPY079+` or `PPY054+`; never reuse an ID.
 2. **Create** `pyrift/rules/cpython/cpyXXX_name.py` or `pyrift/rules/pypy/ppyXXX_name.py`, subclassing `BaseRule`:
 
    ```python
@@ -303,7 +303,7 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 - `quality:` — Quality improvements
 
 Examples:
-- `feat: add CPY058 rule for PEP 738`
+- `feat: add CPY079 rule for <topic>`
 - `fix: correct PPY009 false positive on id() as dict key`
 - `test: expand edge cases for CPY001`
 

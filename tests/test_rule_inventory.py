@@ -100,8 +100,13 @@ def test_rule_inventory_has_dedicated_tests() -> None:
     extra = tested - registered
 
     assert not missing, f"Rules without dedicated tests: {sorted(missing)}"
-    # CPY021 superseded by CPY069, PPY048 contradicts PPY013 — test files kept for history
-    known_removed = {"CPY021", "PPY048"}
+    # Tombstone/removed rule IDs that have dedicated test files intentionally:
+    # CPY021 — superseded by CPY069; test kept for history
+    # CPY052 — retired slot (superseded by CPY051); tombstone smoke test
+    # PPY020 — retired slot (unreliable detection); tombstone smoke test
+    # PPY046 — retired slot (too many false positives); tombstone smoke test
+    # PPY048 — contradicts PPY013; test kept for history
+    known_removed = {"CPY021", "CPY052", "CPY056", "PPY020", "PPY043", "PPY046", "PPY048"}
     real_extra = extra - known_removed
     assert not real_extra, f"Tests without registered rules: {sorted(real_extra)}"
 

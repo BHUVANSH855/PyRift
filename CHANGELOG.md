@@ -19,7 +19,24 @@
 - `Finding.confidence_tier` property: stable single-key alias for the aggregate
   confidence (minimum of claim and detection confidence). Added to `to_dict()`,
   `to_text()` output, and SARIF `properties` bag.
-- 1709 tests total
+
+### Fixed (audit/pre-core-dev-fixes)
+- `pyproject.toml`: email typo corrected; development status bumped to Beta;
+  Changelog and Documentation URLs added to `[project.urls]`.
+- `CONTRIBUTING.md`: stale rule ID ranges updated to CPY001..CPY078 and
+  PPY001..PPY053; next-free-ID guidance corrected to CPY079+ / PPY054+.
+- `docs/rules.md`: `scripts/generate_docs.py` now surfaces `affected_versions`,
+  `whatsnew_ref`, `gh_issue`, `contract_status`, and `intent_basis` for every
+  rule; previously these metadata fields were silently ignored.
+- `RULE_METADATA`: tombstone entries added for PPY020, PPY046, PPY048 (all three
+  stub rule files now have permanent slot reservations, consistent with CPY021,
+  CPY052, CPY056); CPY058–CPY061 intentional gap documented inline.
+- `RULE_METADATA`: `affected_versions` backfilled for all 48 PyPy rules
+  (`>=pypy7.3` for 46 rules; `>=pypy7.3.7` for PPY041; `>=pypy7.3.11` for
+  PPY051); `CPY008` corrected to `<3.10`.
+- Tombstone smoke tests added for CPY052, PPY020, PPY046, PPY048; expanded
+  tests for CPY003 (2→6), CPY005 (2→6), PPY048 (3→4).
+- 1730 tests total
 
 ## [0.9.0] - 2026-09-19
 

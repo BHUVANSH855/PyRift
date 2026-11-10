@@ -8,14 +8,14 @@ version = "0.9.1"
 description = "Detect silent Python behaviour differences across CPython versions and CPython vs PyPy"
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "Bhuvansh Kataria", email = "bhuvanshkataria@email.com" }]
+authors = [{ name = "Bhuvansh Kataria", email = "bhuvanshkataria@gmail.com" }]
 requires-python = ">=3.10"
 keywords = [
   "cpython", "pypy", "compatibility", "static-analysis",
   "runtime", "behaviour", "semantic", "python-versions"
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Topic :: Software Development :: Quality Assurance",
   "Topic :: Software Development :: Testing",
@@ -46,6 +46,8 @@ pyrift = "pyrift.cli:main"
 Homepage = "https://github.com/BHUVANSH855/pyrift"
 Repository = "https://github.com/BHUVANSH855/pyrift"
 "Bug Tracker" = "https://github.com/BHUVANSH855/pyrift/issues"
+Changelog = "https://github.com/BHUVANSH855/PyRift/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/BHUVANSH855/PyRift/blob/main/docs/rules.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pyrift"]
