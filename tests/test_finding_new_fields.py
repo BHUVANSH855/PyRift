@@ -7,9 +7,7 @@ Tests for new Finding fields added in v0.9.1:
 """
 from __future__ import annotations
 
-from pyrift.finding import Confidence
-from pyrift.finding import Finding
-from pyrift.finding import IntentBasis
+from pyrift.finding import Confidence, Finding, IntentBasis
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
