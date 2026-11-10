@@ -415,6 +415,7 @@ class TestCliV091DirectCalls:
 
     def test_main_explain_whatsnew_ref_and_gh_issue(self, capsys):
         import pytest
+        from urllib.parse import urlparse
 
         from pyrift.cli import main
 
@@ -423,7 +424,10 @@ class TestCliV091DirectCalls:
             main(["explain", "CPY055"])
         assert exc.value.code == 0
         out = capsys.readouterr().out
-        assert "docs.python.org" in out
+        assert any(
+            urlparse(token).hostname == "docs.python.org"
+            for token in out.split()
+        )
         assert "github.com/cpython" in out
 
     def test_main_explain_bpo_gh_issue(self, capsys):
