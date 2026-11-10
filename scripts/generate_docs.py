@@ -262,29 +262,90 @@ def generate_rules_md() -> None:
     RULES_MD.write_text("\n".join(lines), encoding="utf-8")
 
 
+def _whatsnew_url_from_ref(whatsnew_ref: str) -> str:
+    """Convert a whatsnew_ref string to a full docs URL.
+
+    Replicates the logic from ``Finding.whatsnew_url`` without needing a
+    Finding instance.  Example: ``"3.13#pep-667-locals"`` →
+    ``"https://docs.python.org/3/whatsnew/3.13.html#pep-667-locals"``
+    """
+    if not whatsnew_ref:
+        return ""
+    if "#" in whatsnew_ref:
+        version, anchor = whatsnew_ref.split("#", 1)
+        return f"https://docs.python.org/3/whatsnew/{version}.html#{anchor}"
+    return f"https://docs.python.org/3/whatsnew/{whatsnew_ref}.html"
+
+
 def _format_rule_section(rule, rule_metadata) -> list[str]:
-    """Format a single rule as a rules.md section."""
+    """Format a single rule as a rules.md section.
+
+    Surfaces all authoritative metadata fields so that whatsnew_ref,
+    gh_issue, affected_versions, contract_status, and intent_basis are
+    visible in the public rule reference document.
+    """
     meta = rule_metadata.RULE_METADATA.get(rule.rule_id, {})
 
     confidence = meta.get("confidence", "LOW")
     severity = rule.severity.title()
 
-    affected = ""
-    if hasattr(rule, "affected_from") and rule.affected_from:
-        affected = f" ≥ {rule.affected_from}"
-    if hasattr(rule, "affected_until") and rule.affected_until:
-        affected += f", < {rule.affected_until}"
+    runtime_label = {
+        "cpython": "CPython",
+        "pypy": "PyPy",
+        "both": "CPython & PyPy",
+    }.get(rule.runtime, rule.runtime.title())
 
-    runtime_label = {"cpython": "CPython", "pypy": "PyPy", "both": "CPython & PyPy"}.get(rule.runtime, rule.runtime.title())
-
+    # --- header line -------------------------------------------------------
     lines = [
         f"### {rule.rule_id} — {rule.title}",
         "",
-        f"**Severity:** {severity} | **Confidence:** {confidence.title()} | **Affects:** {runtime_label}{affected}",
+        f"**Severity:** {severity} | **Confidence:** {confidence.title()} | **Runtime:** {runtime_label}",
         "",
     ]
 
-    # Add description from the rule's docstring
+    # --- affected versions (from rule_metadata, not the rule class) --------
+    affected_versions = meta.get("affected_versions", "")
+    if affected_versions:
+        lines.append(f"**Affected versions:** `{affected_versions}`")
+        lines.append("")
+
+    # --- CPython provenance links ------------------------------------------
+    # gh_issue is stored as "cpython/issues/NNNNN"; the full GitHub URL is
+    # https://github.com/python/{gh_issue}.  Display text uses only the
+    # trailing issue number for readability.
+    whatsnew_ref = meta.get("whatsnew_ref", "")
+    gh_issue = meta.get("gh_issue", "")
+    if whatsnew_ref or gh_issue:
+        provenance_parts = []
+        if whatsnew_ref:
+            url = _whatsnew_url_from_ref(whatsnew_ref)
+            version_label = whatsnew_ref.split("#")[0]
+            provenance_parts.append(f"[What's New {version_label}]({url})")
+        if gh_issue:
+            issue_num = gh_issue.rsplit("/", 1)[-1]
+            gh_url = f"https://github.com/python/{gh_issue}"
+            provenance_parts.append(f"[cpython #{issue_num}]({gh_url})")
+        lines.append("**References:** " + " · ".join(provenance_parts))
+        lines.append("")
+
+    # --- contract and intent basis -----------------------------------------
+    # contract_status and intent_basis may be enum instances; use .value when
+    # available so we emit the clean lowercase string, not the repr.
+    def _enum_str(val: object) -> str:
+        return getattr(val, "value", str(val)).replace("_", " ").title()
+
+    contract_status = meta.get("contract_status")
+    intent_basis = meta.get("intent_basis")
+    if contract_status or intent_basis:
+        contract_parts = []
+        if contract_status:
+            contract_parts.append(f"**Contract:** {_enum_str(contract_status)}")
+        if intent_basis:
+            contract_parts.append(f"**Basis:** {_enum_str(intent_basis)}")
+        lines.append(" | ".join(contract_parts))
+        lines.append("")
+
+    # --- description from the rule's docstring -----------------------------
     doc = rule.__class__.__doc__ or ""
     doc_lines = [l.strip() for l in doc.split("\n") if l.strip()]
     if len(doc_lines) > 1:
