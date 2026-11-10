@@ -12,6 +12,7 @@ import subprocess
 import sys
 import textwrap
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 def run_cli(*args: str) -> tuple[int, str, str]:
@@ -53,12 +54,12 @@ class TestFormatGithub:
                 first = list(d.keys())[0]
             """)
         )
-        code, out, _err = run_cli(
+        _code, out, _err = run_cli(
             "scan", str(f), "--format", "github", "--runtime", "cpython"
         )
         # Exit code may be non-zero if findings exist; output should contain ::
         if "::" in out:
-            assert out.startswith("::error") or out.startswith("::warning") or out.startswith("::notice")
+            assert out.startswith(("::error", "::warning", "::notice"))
 
     def test_github_format_is_accepted_by_parser(self, tmp_path):
         """--format github is a valid choice; parser should not reject it."""
@@ -109,15 +110,15 @@ class TestOnlyDocumented:
 
 class TestExplainTombstone:
     def test_explain_tombstone_cpy021_exits_nonzero(self):
-        code, _out, err = run_cli("explain", "CPY021")
+        code, _out, _err = run_cli("explain", "CPY021")
         assert code != 0
 
     def test_explain_tombstone_cpy052_exits_nonzero(self):
-        code, _out, err = run_cli("explain", "CPY052")
+        code, _out, _err = run_cli("explain", "CPY052")
         assert code != 0
 
     def test_explain_tombstone_cpy056_exits_nonzero(self):
-        code, _out, err = run_cli("explain", "CPY056")
+        code, _out, _err = run_cli("explain", "CPY056")
         assert code != 0
 
     def test_explain_tombstone_message_mentions_retired(self):
@@ -134,8 +135,13 @@ class TestExplainWhatsnewRef:
         # CPY022 (bool inversion deprecated 3.12) has whatsnew_ref set
         code, out, _err = run_cli("explain", "CPY022")
         assert code == 0
-        # Either the URL or the ref should appear if set
-        assert "docs.python.org" in out or "What" in out or "CPY022" in out
+        # Either a docs.python.org URL host, or the ref text, should appear if set
+        has_docs_host = any(
+            (urlparse(token).hostname or "").lower() == "docs.python.org"
+            for token in out.split()
+            if "://" in token
+        )
+        assert has_docs_host or "What" in out or "CPY022" in out
 
     def test_explain_cpy055_shows_docs(self):
         code, out, _err = run_cli("explain", "CPY055")

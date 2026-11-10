@@ -7,7 +7,9 @@ Tests for new Finding fields added in v0.9.1:
 """
 from __future__ import annotations
 
-from pyrift.finding import Confidence, Finding, IntentBasis
+from pyrift.finding import Confidence
+from pyrift.finding import Finding
+from pyrift.finding import IntentBasis
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -15,7 +17,7 @@ from pyrift.finding import Confidence, Finding, IntentBasis
 def _finding(**kwargs) -> Finding:
     # Use a rule_id that doesn't exist in RULE_METADATA so __post_init__
     # won't overwrite caller-supplied confidence/intent_basis values.
-    defaults = dict(file="x.py", line=1, rule_id="TST000")
+    defaults = {"file": "x.py", "line": 1, "rule_id": "TST000"}
     defaults.update(kwargs)
     return Finding(**defaults)
 

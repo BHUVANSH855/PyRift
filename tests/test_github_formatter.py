@@ -3,15 +3,11 @@ Tests for pyrift.formatters.github — GitHub Actions annotation formatter.
 """
 from __future__ import annotations
 
-import pytest
-
 from pyrift.finding import Confidence, Finding, IntentBasis, Severity
 from pyrift.formatters import to_github_annotations  # exercises __init__
-from pyrift.formatters.github import (
-    _annotation_level,
-    _escape,
-    to_github_annotations as _direct,
-)
+from pyrift.formatters.github import _annotation_level
+from pyrift.formatters.github import _escape
+from pyrift.formatters.github import to_github_annotations as _direct
 from pyrift.scanner import ScanResult
 
 
