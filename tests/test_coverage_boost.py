@@ -414,8 +414,9 @@ class TestCliV091DirectCalls:
         assert exc.value.code != 0
 
     def test_main_explain_whatsnew_ref_and_gh_issue(self, capsys):
-        import pytest
         from urllib.parse import urlparse
+
+        import pytest
 
         from pyrift.cli import main
 
