@@ -21,7 +21,7 @@ def to_json(result: ScanResult, indent: int = 2) -> str:
             "errors": len(result.errors),
             "warnings": len(result.warnings),
             "baseline_suppressed": result.baseline_suppressed,
-            "score": result.score,
+            "breakdown": result.breakdown(),
             "rule_errors": len(result.rule_errors),
         },
         "findings": [f.to_dict() for f in result.findings],
@@ -42,7 +42,11 @@ def to_markdown(result: ScanResult) -> str:
     lines.append(
         f"| Baseline suppressed   | {result.baseline_suppressed} |"
     )
-    lines.append(f"| Health score          | {result.score} / 100 |")
+    bd = result.breakdown()
+    lines.append(f"| High-confidence       | {bd['high_confidence']} |")
+    lines.append(f"| Medium-confidence     | {bd['medium_confidence']} |")
+    lines.append(f"| Informational         | {bd['informational']} |")
+    lines.append(f"| Analyzer errors       | {bd['analyzer_errors']} |")
     lines.append(
         f"| Rule execution errors | {len(result.rule_errors)} |"
     )
@@ -192,7 +196,10 @@ def to_text(result: ScanResult) -> str:
         f"Scanned {result.files_scanned} file(s). "
         f"Found {len(result.errors)} error(s), "
         f"{len(result.warnings)} warning(s). "
-        f"Score: {result.score}/100"
+        + "{high_confidence} high-confidence, {medium_confidence} medium, "
+          "{informational} informational ({analyzer_errors} analyzer errors)".format(
+              **result.breakdown()
+          )
     )
 
     if result.rule_errors:  # pragma: no branch
@@ -266,7 +273,7 @@ def to_sarif(result: ScanResult) -> str:
             message_text += f" — {finding.description}"
 
         start_line = max(1, finding.line or 1)
-        start_column = max(1, finding.col or 1)
+        start_column = (finding.col or 0) + 1
 
         physical_location = {
             "artifactLocation": {

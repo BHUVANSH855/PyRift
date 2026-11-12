@@ -64,9 +64,11 @@ class TestReporter:
     def test_markdown_contains_header(self, tmp_path):
         assert "# pyrift" in to_markdown(self._result(tmp_path))
 
-    def test_text_output_contains_score(self, tmp_path):
+    def test_text_output_contains_breakdown(self, tmp_path):
         txt = to_text(self._result(tmp_path))
-        assert "Score" in txt or "score" in txt
+        assert "high-confidence" in txt
+        assert "medium" in txt
+        assert "informational" in txt
 
     def test_clean_result_text(self, tmp_path):
         (tmp_path / "c.py").write_text("x = 1\n")

@@ -17,7 +17,7 @@ from pyrift.targets import TargetConfig
 
 class HashRandomisationRule(BaseRule):
     rule_id = "PPY022"
-    title = "PYTHONHASHSEED cannot provide deterministic hashes on PyPy"
+    title = "Hash values for the same input differ between CPython and PyPy"
     runtime = "pypy"
     severity = Severity.WARNING
 
@@ -91,17 +91,20 @@ class HashRandomisationRule(BaseRule):
             rule_id=self.rule_id,
             title=self.title,
             description=(
-                "PYTHONHASHSEED is being read. PyPy's hash "
-                "randomisation behaviour differs from CPython, so "
-                "relying on PYTHONHASHSEED for deterministic hash "
-                "ordering can produce different behaviour on PyPy."
+                "PYTHONHASHSEED is being read. While PYTHONHASHSEED=0 "
+                "does produce deterministic hashes on both CPython and PyPy, "
+                "the actual hash *values* for the same input differ between "
+                "the two implementations. Code that hardcodes a specific "
+                "expected hash value (e.g. in test assertions) will silently "
+                "break when run on PyPy, even with PYTHONHASHSEED=0."
             ),
             severity=Severity.WARNING,
             runtime=Runtime.PYPY,
             suggestion=(
-                "Do not rely on PYTHONHASHSEED for deterministic "
-                "ordering. Use sorted() explicitly when order matters "
-                "in tests or application logic."
+                "Do not assert specific hash values in tests. "
+                "Use sorted() explicitly when order matters. "
+                "If you need a stable hash across implementations, "
+                "use hashlib (e.g. hashlib.md5) instead of hash()."
             ),
             docs_url=(
                 "https://doc.pypy.org/en/latest/cpython_differences.html"

@@ -25,14 +25,25 @@ class UnionTypeSyntaxRule(BaseRule):
         filename: str,
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
-        findings: list[Finding] = []
-
+        # Single O(n) pass: collect node IDs used as 2nd arg of isinstance/issubclass.
+        isinstance_args: set[int] = set()
         for n in ast.walk(node):
-            if not isinstance(n, ast.BinOp):
-                continue
-            if not isinstance(n.op, ast.BitOr):
-                continue
-            if self._in_isinstance(n, node):
+            if (
+                isinstance(n, ast.Call)
+                and isinstance(n.func, ast.Name)
+                and n.func.id in ("isinstance", "issubclass")
+                and len(n.args) >= 2
+            ):
+                isinstance_args.add(id(n.args[1]))
+
+        # Single O(n) pass: flag X | Y BinOp nodes that appear as the 2nd arg.
+        findings: list[Finding] = []
+        for n in ast.walk(node):
+            if (
+                isinstance(n, ast.BinOp)
+                and isinstance(n.op, ast.BitOr)
+                and id(n) in isinstance_args
+            ):
                 findings.append(Finding(
                     file=filename,
                     line=n.lineno,
@@ -56,17 +67,3 @@ class UnionTypeSyntaxRule(BaseRule):
                 ))
 
         return findings
-
-    @staticmethod
-    def _in_isinstance(target: ast.AST, tree: ast.AST) -> bool:
-        for n in ast.walk(tree):
-            if isinstance(n, ast.Call):
-                func = n.func
-                if (
-                    isinstance(func, ast.Name)
-                    and func.id in ("isinstance", "issubclass")
-                    and len(n.args) >= 2
-                    and n.args[1] is target
-                ):
-                    return True
-        return False
