@@ -258,7 +258,7 @@ class Finding:
     # Where
     file: str
     line: int
-    col: int = 0
+    col: int = 0  # 0-based ast.col_offset; reporter adds +1 for 1-based SARIF/editor output
 
     # What
     rule_id: str = ""

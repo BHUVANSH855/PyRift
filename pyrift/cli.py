@@ -531,11 +531,19 @@ def _scan_paths(
     )
     rule_errors.sort()
 
+    import os as _os
+    scan_base = (
+        Path(_os.path.commonpath([str(p) for p in paths]))
+        if len(paths) > 1
+        else paths[0]
+    )
+
     return ScanResult(
         findings,
         files_scanned,
         rule_errors=rule_errors,
         guard_suppressed=guard_suppressed,
+        base_path=scan_base,
     )
 
 
