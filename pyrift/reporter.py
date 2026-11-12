@@ -10,6 +10,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 from .finding import Severity
+from .fingerprint import finding_fingerprint
 from .scanner import ScanResult
 
 
@@ -310,6 +311,9 @@ def to_sarif(result: ScanResult) -> str:
                         "physicalLocation": physical_location,
                     }
                 ],
+                "partialFingerprints": {
+                    "primaryLocationLineHash": finding_fingerprint(finding),
+                },
                 "properties": sarif_properties,
             }
         )

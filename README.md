@@ -616,7 +616,7 @@ Lists the compatibility rules and their documented behavior.
 
 - **Version:** 0.9.1
 - **Rules:** 119 total (71 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1730 passing
+- **Tests:** 1757 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -853,7 +853,7 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | PPY018 | sys.setrecursionlimit() behaviour differs on PyPy | pypy |
 | PPY019 | float('nan') identity differs between CPython and PyPy | pypy |
 | PPY021 | Socket not closed promptly on PyPy — GC timing | pypy |
-| PPY022 | PYTHONHASHSEED cannot provide deterministic hashes on PyPy | pypy |
+| PPY022 | Hash values for the same input differ between CPython and PyPy | pypy |
 | PPY023 | inspect.ismethod() returns different results on PyPy | pypy |
 | PPY024 | timeit reports average not minimum on PyPy | pypy |
 | PPY025 | Set iteration order differs between CPython and PyPy | pypy |

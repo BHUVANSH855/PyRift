@@ -21,57 +21,53 @@ class RemovePrefixRule(BaseRule):
     runtime = "cpython"
     severity = Severity.ERROR
 
-    def _is_version_guarded(self, node: ast.AST, tree: ast.AST) -> bool:
-        """Return True if *node* is inside a sys.version_info >= (3, 9) guard."""
-        if not hasattr(node, 'lineno'):
-            return False
-        for parent in ast.walk(tree):
-            if not isinstance(parent, (ast.If, ast.IfExp)):
-                continue
-            for child in ast.walk(parent.test):
-                if isinstance(child, ast.Compare):
-                    has_version = False
-                    for comp in child.comparators:
-                        if isinstance(comp, ast.Name) and comp.id == "version_info":
-                            has_version = True
-                        if isinstance(comp, ast.Tuple):
-                            for elt in comp.elts:
-                                if (isinstance(elt, ast.Constant)
-                                        and isinstance(elt.value, int)
-                                        and elt.value >= 9):
-                                    has_version = True
-                    if has_version:
-                        return True
-                if (isinstance(child, ast.Attribute) and
-                        child.attr == "version_info"):
-                    return True
-        return False
-
-    def _is_try_except_guarded(self, node: ast.AST, tree: ast.AST) -> bool:
-        """Return True if *node* is inside a try block that catches
-        AttributeError."""
-        if not hasattr(node, 'lineno'):
-            return False
-        for parent in ast.walk(tree):
-            if not isinstance(parent, ast.Try):
-                continue
-            for handler in parent.handlers:
-                if handler.type is None:
-                    return True
-                if isinstance(handler.type, ast.Name) and handler.type.id == "AttributeError":
-                    return True
-                if isinstance(handler.type, ast.Tuple):
-                    for elt in handler.type.elts:
-                        if isinstance(elt, ast.Name) and elt.id == "AttributeError":
-                            return True
-        return False
-
     def check(
         self,
         node: ast.AST,
         filename: str,
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
+        # --- O(n) pass 1: build guard index ---
+        version_guarded_lines: set[int] = set()
+        try_guarded_lines: set[int] = set()
+
+        for parent in ast.walk(node):
+            if isinstance(parent, (ast.If, ast.IfExp)):
+                for child in ast.walk(parent.test):
+                    is_version_guard = False
+                    if isinstance(child, ast.Compare):
+                        for comp in child.comparators:
+                            if isinstance(comp, ast.Name) and comp.id == "version_info":
+                                is_version_guard = True
+                            if isinstance(comp, ast.Tuple):
+                                for elt in comp.elts:
+                                    if (isinstance(elt, ast.Constant)
+                                            and isinstance(elt.value, int)
+                                            and elt.value >= 9):
+                                        is_version_guard = True
+                    elif isinstance(child, ast.Attribute) and child.attr == "version_info":
+                        is_version_guard = True
+                    if is_version_guard:
+                        for n in ast.walk(parent):
+                            if hasattr(n, "lineno"):
+                                version_guarded_lines.add(n.lineno)
+                        break
+
+            elif isinstance(parent, ast.Try):
+                is_attr_guarded = False
+                for handler in parent.handlers:
+                    if handler.type is None or isinstance(handler.type, ast.Name) and handler.type.id == "AttributeError":
+                        is_attr_guarded = True
+                    elif isinstance(handler.type, ast.Tuple):
+                        for elt in handler.type.elts:
+                            if isinstance(elt, ast.Name) and elt.id == "AttributeError":
+                                is_attr_guarded = True
+                if is_attr_guarded:
+                    for n in ast.walk(parent):
+                        if hasattr(n, "lineno"):
+                            try_guarded_lines.add(n.lineno)
+
+        # --- O(n) pass 2: collect findings ---
         findings: list[Finding] = []
         for n in ast.walk(node):
             if not isinstance(n, ast.Call):
@@ -79,10 +75,9 @@ class RemovePrefixRule(BaseRule):
             func = n.func
             if (isinstance(func, ast.Attribute) and
                     func.attr in STR_METHODS_39):
-                # Exclusion: version guard or try/except
-                if self._is_version_guarded(n, node):
+                if n.lineno in version_guarded_lines:
                     continue
-                if self._is_try_except_guarded(n, node):
+                if n.lineno in try_guarded_lines:
                     continue
                 findings.append(Finding(
                     file=filename,
