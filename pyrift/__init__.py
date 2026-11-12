@@ -7,7 +7,7 @@ from .finding import (
     IntentBasis,
 )
 from .reporter import to_json
-from .scanner import ALL_RULES, ScanResult, scan
+from .scanner import ALL_RULES, ScanResult, scan, scan_source
 
 __version__ = "0.9.1"
 
@@ -20,5 +20,6 @@ __all__ = [
     "ScanResult",
     "__version__",
     "scan",
+    "scan_source",
     "to_json",
 ]

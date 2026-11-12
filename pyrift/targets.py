@@ -565,7 +565,39 @@ def load_project_targets(project_path: str | Path) -> TargetConfig | None:
         return None
 
 
-@dataclass(frozen=True)
+@dataclass
+class PerPathConfig:
+    """A per-directory rule override read from ``[[tool.pyrift.per-path]]``.
+
+    Example ``pyproject.toml``::
+
+        [[tool.pyrift.per-path]]
+        path = "tests/**"
+        ignore = ["CPY001", "CPY002"]
+
+        [[tool.pyrift.per-path]]
+        path = "src/legacy/**"
+        select = ["CPY033"]
+
+    ``path`` is a glob relative to the project root (forward slashes on all
+    platforms).  ``select`` and ``ignore`` are mutually exclusive within one
+    entry.
+    """
+
+    path: str
+    select: tuple[str, ...] | None = None
+    ignore: tuple[str, ...] | None = None
+
+    def matches(self, filepath: str | Path) -> bool:
+        """Return True when *filepath* matches this entry's glob pattern."""
+        from fnmatch import fnmatch
+
+        fp = str(filepath).replace("\\", "/")
+        # Support both "tests/**" and "tests/*" style patterns
+        return fnmatch(fp, self.path) or fnmatch(fp, f"*/{self.path}")
+
+
+@dataclass
 class PyriftConfig:
     """
     Project-wide PyRift settings read from a ``[tool.pyrift]`` table in
@@ -580,7 +612,12 @@ class PyriftConfig:
         fail_on_findings = true           # exit 1 when any finding is produced
         only_documented = true            # filter to documented/deprecated changes
 
-    ``select`` and ``ignore`` are mutually exclusive.
+        [[tool.pyrift.per-path]]
+        path = "tests/**"
+        ignore = ["CPY001"]
+
+    ``select`` and ``ignore`` are mutually exclusive at the top level and
+    within each ``[[tool.pyrift.per-path]]`` entry.
     """
 
     select: tuple[str, ...] | None = None
@@ -588,6 +625,7 @@ class PyriftConfig:
     format: str = ""          # empty string means "do not override CLI default"
     fail_on_findings: bool = False
     only_documented: bool = False
+    per_path: tuple[PerPathConfig, ...] = ()
 
 
 def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
@@ -642,6 +680,7 @@ def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
         )
         fail_on_findings = bool(pyrift_table.get("fail_on_findings", False))
         only_documented = bool(pyrift_table.get("only_documented", False))
+        per_path = _read_per_path(pyrift_table.get("per-path", []))
     else:
         fallback_select, fallback_ignore = (
             _load_pyrift_config_without_tomllib(pyproject)
@@ -662,6 +701,7 @@ def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
         fmt = ""
         fail_on_findings = False
         only_documented = False
+        per_path = ()
 
     if select is not None and ignore is not None:
         raise ValueError(
@@ -674,6 +714,7 @@ def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
         and not fmt
         and not fail_on_findings
         and not only_documented
+        and not per_path
     ):
         return None
 
@@ -683,7 +724,46 @@ def load_pyrift_config(project_path: str | Path) -> PyriftConfig | None:
         format=fmt,
         fail_on_findings=fail_on_findings,
         only_documented=only_documented,
+        per_path=per_path,
     )
+
+
+
+def _read_per_path(value: object) -> tuple[PerPathConfig, ...]:
+    """Parse a ``[[tool.pyrift.per-path]]`` array into ``PerPathConfig`` objects.
+
+    Each entry must be a table with a ``path`` string and at most one of
+    ``select`` or ``ignore``.  Returns an empty tuple when *value* is an
+    empty list or not present.
+    """
+    if not value:
+        return ()
+
+    if not isinstance(value, list):
+        raise TypeError(
+            "[tool.pyrift] 'per-path' must be an array of tables"
+        )
+
+    result: list[PerPathConfig] = []
+    for i, entry in enumerate(value):
+        if not isinstance(entry, dict):
+            raise TypeError(
+                f"[tool.pyrift.per-path] entry {i}: must be a table"
+            )
+        path = entry.get("path")
+        if not isinstance(path, str) or not path:
+            raise ValueError(
+                f"[tool.pyrift.per-path] entry {i}: 'path' must be a non-empty string"
+            )
+        sel = _read_string_list(entry.get("select"), key=f"per-path[{i}].select")
+        ign = _read_string_list(entry.get("ignore"), key=f"per-path[{i}].ignore")
+        if sel is not None and ign is not None:
+            raise ValueError(
+                f"[tool.pyrift.per-path] entry {i} (path={path!r}): "
+                "cannot set both 'select' and 'ignore'"
+            )
+        result.append(PerPathConfig(path=path, select=sel, ignore=ign))
+    return tuple(result)
 
 
 def _read_string_list(

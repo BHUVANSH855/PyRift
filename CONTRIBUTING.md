@@ -70,7 +70,218 @@ differences, and `observed`/`inferred` when intent is not established. See
 
 ---
 
-## Adding a rule
+## Adding a rule — worked example
+
+The following is a complete, end-to-end walkthrough of adding a new CPython rule.
+We will add a hypothetical **CPY079** that detects use of `str.removeprefix()` /
+`str.removesuffix()`, which were added in Python 3.9.
+
+### Step 1 — Verify the behaviour
+
+Before writing any code, confirm the version bound is real:
+
+```bash
+# In a Python 3.8 interpreter:
+>>> "hello-world".removeprefix("hello-")
+AttributeError: 'str' object has no attribute 'removeprefix'
+```
+
+The official reference: [What's New 3.9 — str.removeprefix / removesuffix](https://docs.python.org/3/whatsnew/3.9.html#str-removeprefix-str-removesuffix)
+
+### Step 2 — Create the rule file
+
+```python
+# pyrift/rules/cpython/cpy079_str_removeprefix.py
+from __future__ import annotations
+
+import ast
+from typing import TYPE_CHECKING
+
+from pyrift.base_rule import BaseRule
+from pyrift.finding import Finding, Runtime, Severity
+
+if TYPE_CHECKING:
+    from pyrift.targets import TargetConfig
+
+
+_METHODS = frozenset({"removeprefix", "removesuffix"})
+
+
+class StrRemoveprefixRule(BaseRule):
+    """str.removeprefix() / str.removesuffix() require Python 3.9+.
+
+    Use a compatibility shim or guard with sys.version_info for older targets:
+
+        # Python < 3.9 compatible:
+        s.removeprefix("x") → s[len("x"):] if s.startswith("x") else s
+    """
+
+    rule_id = "CPY079"
+    title = "str.removeprefix() / str.removesuffix() require Python 3.9+"
+    runtime = "cpython"
+    severity = Severity.ERROR
+
+    def check(
+        self,
+        tree: ast.AST,
+        filename: str,
+        target_config: TargetConfig | None = None,
+    ) -> list[Finding]:
+        findings: list[Finding] = []
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in _METHODS
+            ):
+                findings.append(
+                    Finding(
+                        file=filename,
+                        line=node.lineno,
+                        col=node.col_offset,
+                        rule_id=self.rule_id,
+                        title=self.title,
+                        description=(
+                            f"`str.{node.func.attr}()` was added in Python 3.9. "
+                            "Code using it will raise `AttributeError` on 3.8 and earlier."
+                        ),
+                        severity=self.severity,
+                        runtime=Runtime.CPYTHON,
+                        affected_from="3.9",
+                        suggestion=(
+                            "Use `s[len(prefix):]` / `s[:-len(suffix)]` with a "
+                            "`startswith`/`endswith` guard, or require Python >= 3.9."
+                        ),
+                        docs_url="https://docs.python.org/3/whatsnew/3.9.html#str-removeprefix-str-removesuffix",
+                    )
+                )
+        return findings
+```
+
+### Step 3 — Register in `pyrift/scanner.py`
+
+```python
+# In pyrift/scanner.py, add to ALL_RULES:
+from .rules.cpython.cpy079_str_removeprefix import StrRemoveprefixRule
+
+ALL_RULES: list[BaseRule] = [
+    # ... existing rules ...
+    StrRemoveprefixRule(),
+]
+```
+
+Confirm the inventory test passes:
+
+```bash
+python -m pytest tests/test_rule_inventory.py -q
+```
+
+### Step 4 — Add tests
+
+```python
+# tests/cpython/test_cpy079.py
+from __future__ import annotations
+
+import ast
+import textwrap
+
+import pytest
+
+from pyrift.rules.cpython.cpy079_str_removeprefix import StrRemoveprefixRule
+
+rule = StrRemoveprefixRule()
+
+
+def parse(src: str) -> ast.Module:
+    return ast.parse(textwrap.dedent(src))
+
+
+def run(src: str):
+    return rule.check(parse(src), "<test>")
+
+
+class TestCPY079:
+    def test_removeprefix_fires(self):
+        findings = run('s.removeprefix("x")')
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY079"
+
+    def test_removesuffix_fires(self):
+        findings = run('s.removesuffix("y")')
+        assert len(findings) == 1
+
+    def test_other_method_does_not_fire(self):
+        assert run('s.strip("x")') == []
+
+    def test_unrelated_call_does_not_fire(self):
+        assert run("print('hello')") == []
+
+    def test_chained_call_fires(self):
+        findings = run('s.upper().removeprefix("X")')
+        assert len(findings) == 1
+
+    def test_nested_call_fires(self):
+        findings = run('f(s.removeprefix("x"))')
+        assert len(findings) == 1
+```
+
+Run the tests:
+
+```bash
+python -m pytest tests/cpython/test_cpy079.py -v
+```
+
+### Step 5 — Add metadata
+
+```python
+# In pyrift/rule_metadata.py, add:
+"CPY079": _cpy(
+    confidence="high",
+    evidence="official_docs",
+    contract_status=ContractStatus.DOCUMENTED,
+    intent_basis=IntentBasis.DOCUMENTED,
+    affected_versions=">=3.9",
+    whatsnew_ref="3.9#str-removeprefix-str-removesuffix",
+    gh_issue="cpython/issues/39502",
+),
+```
+
+### Step 6 — Add a benchmark contract
+
+```python
+# In benchmark/expected.json, add under "cpython":
+{
+  "rule_id": "CPY079",
+  "title": "str.removeprefix() / str.removesuffix() require Python 3.9+",
+  "count": 0
+}
+```
+
+```bash
+python benchmark/run_benchmark.py   # all rules must stay passing
+```
+
+### Step 7 — Regenerate docs
+
+```bash
+python scripts/generate_docs.py
+python scripts/check_docs.py
+```
+
+This updates `docs/rules.md` and validates that all test counts are in sync.
+
+### Step 8 — Run the full validation
+
+```bash
+python -m ruff check .
+python -m mypy pyrift --ignore-missing-imports
+python -m pytest tests/ --tb=short -q
+python benchmark/self_scan.py      # 0 findings on the project itself
+```
+
+---
+
+## Adding a rule (reference steps)
 
 1. **Pick the next free ID** — `CPY079+` or `PPY054+`; never reuse an ID.
 2. **Create** `pyrift/rules/cpython/cpyXXX_name.py` or `pyrift/rules/pypy/ppyXXX_name.py`, subclassing `BaseRule`:

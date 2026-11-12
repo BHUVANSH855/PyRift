@@ -8,9 +8,15 @@ from __future__ import annotations
 
 import ast
 
+from pyrift.analysis.constraints import eval_condition
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 from pyrift.targets import TargetConfig
+from pyrift.versions import Interval, Ver, VersionFacts
+
+# The rule is irrelevant when the entire supported version range is
+# already >= 3.9, expressed as a reusable constraint condition.
+_REQUIRES_39: dict = {"type": "version_gte", "ver": Ver(3, 9)}
 
 
 class IsRelativeToRule(BaseRule):
@@ -25,6 +31,20 @@ class IsRelativeToRule(BaseRule):
         filename: str,
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
+        # Early-exit: if the project's minimum supported version is already
+        # >= 3.9, is_relative_to() is always available and this rule cannot
+        # fire.  We express this via eval_condition so the constraint logic
+        # is centralised and testable independently of the rule.
+        if target_config is not None and target_config.minimum is not None:
+            facts = VersionFacts(
+                runtime="cpython",
+                interval=Interval(
+                    lo=Ver(target_config.minimum.major, target_config.minimum.minor)
+                ),
+            )
+            if eval_condition(_REQUIRES_39, facts):
+                return []
+
         # --- O(n) pass 1: build guard index ---
         version_guarded_lines: set[int] = set()
         try_guarded_lines: set[int] = set()

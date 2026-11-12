@@ -2,15 +2,27 @@
 
 Complete documentation for all 119 pyrift rules.
 
-## Confidence levels
+---
 
-Each finding carries two independent fields:
+## How to read a finding
 
-| Severity | Meaning |
-|---|---|
-| `ERROR` | Silent wrong behaviour — crash or data corruption |
-| `WARNING` | Different behaviour — may or may not matter |
-| `INFO` | Worth knowing — low urgency |
+A pyrift finding tells you:
+
+1. **What triggered it** — the rule ID and title (e.g. `CPY033 pathlib.Path.is_relative_to() requires Python 3.9+`)
+2. **How serious it is** — the severity level
+3. **How confident pyrift is** — the confidence level
+4. **Which runtimes are affected** — CPython, PyPy, or both
+5. **Which version range is affected** — the `Affected versions` field
+
+### Severity levels
+
+| Severity | Meaning | Recommended action |
+|---|---|---|
+| `ERROR` | Silent wrong behaviour — crash or data corruption on the affected version | Fix before shipping |
+| `WARNING` | Different behaviour — may or may not matter depending on your use case | Review and decide |
+| `INFO` | Worth knowing — low urgency, cosmetic or future-proofing concern | Fix when convenient |
+
+### Confidence levels
 
 | Confidence | Meaning |
 |---|---|
@@ -20,6 +32,71 @@ Each finding carries two independent fields:
 
 Rules with `LOW` confidence are still included because the behaviour is real,
 but you should verify independently before acting on them.
+
+---
+
+## What to do with a finding
+
+The general pattern for fixing a pyrift finding is:
+
+1. **Understand the version range** — check `Affected versions`. If your project's minimum supported Python
+   version is already higher than the affected range, the finding does not apply; add the version floor to
+   your `pyproject.toml` so pyrift can skip it automatically:
+
+   ```toml
+   [tool.pyrift]
+   minimum-python = "3.11"
+   ```
+
+2. **Apply the suggested fix** — each finding includes a `suggestion` field in the scan output. The fix is
+   almost always one of:
+   - Use a newer API that exists on all supported versions
+   - Guard the call with a `sys.version_info` check
+   - Add a compatibility shim (e.g. `tomli` for `tomllib`, `importlib_resources` for `importlib.resources`)
+
+3. **Suppress if intentional** — if you have deliberately decided to accept the incompatibility, add an
+   inline suppression so the finding does not recur:
+
+   ```python
+   result = path.is_relative_to(base)  # pyrift: ignore[CPY033]
+   ```
+
+   Or suppress all rules on a line:
+
+   ```python
+   some_code()  # pyrift: ignore
+   ```
+
+4. **Per-directory overrides** — for test directories or vendored code where different rules apply, use
+   `[[tool.pyrift.per-path]]` in `pyproject.toml`:
+
+   ```toml
+   [[tool.pyrift.per-path]]
+   path = "tests/**/*.py"
+   ignore = ["CPY033", "CPY034"]
+   ```
+
+---
+
+## Programmatic access
+
+```python
+import pyrift
+
+# Scan a directory
+result = pyrift.scan(".")
+print(result.breakdown())
+# {"high_confidence": 2, "medium_confidence": 0, "informational": 0, "analyzer_errors": 0}
+
+# Scan a source string
+findings = pyrift.scan_source("""
+import pathlib
+p = pathlib.Path("/a")
+p.is_relative_to("/b")
+""")
+for f in findings:
+    print(f.rule_id, f.line, f.title)
+```
 
 ---
 
