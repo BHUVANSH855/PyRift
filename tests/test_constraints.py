@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pytest
+
 from pyrift.analysis.constraints import eval_condition
 from pyrift.versions import Interval, Ver, VersionFacts
 
