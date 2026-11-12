@@ -982,7 +982,7 @@ These rules detect code that behaves differently on PyPy vs CPython.
 **Contract:** Implementation Defined | **Basis:** Documented
 
 ---
-### PPY022 — PYTHONHASHSEED cannot provide deterministic hashes on PyPy
+### PPY022 — Hash values for the same input differ between CPython and PyPy
 
 **Severity:** Warning | **Confidence:** High | **Runtime:** PyPy
 

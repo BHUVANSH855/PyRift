@@ -36,7 +36,7 @@
   PPY051); `CPY008` corrected to `<3.10`.
 - Tombstone smoke tests added for CPY052, PPY020, PPY046, PPY048; expanded
   tests for CPY003 (2→6), CPY005 (2→6), PPY048 (3→4).
-- 1730 tests total
+- 1757 tests total
 
 ## [0.9.0] - 2026-09-19
 
