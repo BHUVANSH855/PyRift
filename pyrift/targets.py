@@ -589,12 +589,26 @@ class PerPathConfig:
     ignore: tuple[str, ...] | None = None
 
     def matches(self, filepath: str | Path) -> bool:
-        """Return True when *filepath* matches this entry's glob pattern."""
+        """Return True when *filepath* matches this entry's glob pattern.
+
+        Supports both relative paths (``tests/foo.py``) and absolute paths
+        (``/home/user/project/tests/foo.py``).  The pattern is matched against
+        every trailing sub-path of *filepath* so that ``tests/**`` matches
+        regardless of the absolute prefix.
+        """
         from fnmatch import fnmatch
+        from pathlib import PurePosixPath
 
         fp = str(filepath).replace("\\", "/")
-        # Support both "tests/**" and "tests/*" style patterns
-        return fnmatch(fp, self.path) or fnmatch(fp, f"*/{self.path}")
+        parts = PurePosixPath(fp).parts
+
+        # Try the full path and every trailing sub-path so that an absolute
+        # path like /tmp/x/tests/foo.py still matches the pattern "tests/**".
+        for i in range(len(parts)):
+            candidate = "/".join(parts[i:])
+            if fnmatch(candidate, self.path):
+                return True
+        return False
 
 
 @dataclass
