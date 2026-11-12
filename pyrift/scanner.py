@@ -358,10 +358,13 @@ class ScanResult:
         }
 
     def __repr__(self) -> str:
+        bd = self.breakdown()
         base = (
             f"ScanResult(files={self.files_scanned}, "
             f"errors={len(self.errors)}, warnings={len(self.warnings)}, "
-            f"rule_errors={len(self.rule_errors)}, score={self.score})"
+            f"rule_errors={len(self.rule_errors)}, "
+            f"high={bd['high_confidence']}, med={bd['medium_confidence']}, "
+            f"info={bd['informational']})"
         )
         if self.baseline_suppressed:
             base += f" [baseline suppressed: {self.baseline_suppressed}]"
