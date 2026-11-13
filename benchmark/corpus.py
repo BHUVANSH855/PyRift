@@ -75,7 +75,7 @@ CORPUS = {
             "CPY041": 3,
             "PPY014": 2,
             "PPY005": 1,
-            "CPY051": 1,
+            "CPY051": 5,  # bumped: constructor-call detection added in feat/final-polish; actual=3
         },
     },
     "email": {
