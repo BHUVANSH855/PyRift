@@ -108,7 +108,7 @@ def test_scan_per_path_ignore(tmp_path):
         'ignore = ["CPY002"]\n'
     )
 
-    from pyrift.targets import load_pyrift_config, PerPathConfig
+    from pyrift.targets import load_pyrift_config
     _cfg = load_pyrift_config(tmp_path)
     assert _cfg is not None, f"load_pyrift_config returned None for {tmp_path}"
     assert len(_cfg.per_path) == 1, f"expected 1 per-path entry, got {_cfg.per_path}"
