@@ -413,7 +413,8 @@ GOLDEN = {
         ("sys.getrecursionlimit()", False, "get ok"),
     ],
     "PPY019": [
-        ("x = float('nan')", True, "nan identity"),
+        ("x is float('nan')", True, "nan identity comparison"),
+        ("x = float('nan')", False, "creation without comparison"),
         ("x = float('inf')", False, "inf ok"),
     ],
     "PPY025": [
