@@ -70,3 +70,47 @@ class TestCPY033:
                 pass
         """)
         assert len(findings) == 0
+
+
+
+class TestCPY033EvalCondition:
+    """Tests for the eval_condition-based early-exit in CPY033."""
+
+    rule = IsRelativeToRule()
+
+    def test_skips_when_min_version_gte_39(self):
+        """When project minimum is 3.9+, CPY033 must return no findings."""
+        from pyrift.targets import PythonVersion, TargetConfig
+
+        cfg = TargetConfig(minimum=PythonVersion(3, 9))
+        findings = self.rule.check(parse("p.is_relative_to('/x')"), "<test>", cfg)
+        assert findings == []
+
+    def test_skips_when_min_version_310(self):
+        """3.10 minimum also satisfies >= 3.9."""
+        from pyrift.targets import PythonVersion, TargetConfig
+
+        cfg = TargetConfig(minimum=PythonVersion(3, 10))
+        findings = self.rule.check(parse("p.is_relative_to('/x')"), "<test>", cfg)
+        assert findings == []
+
+    def test_fires_when_min_version_38(self):
+        """3.8 minimum means 3.8 users are affected; rule must fire."""
+        from pyrift.targets import PythonVersion, TargetConfig
+
+        cfg = TargetConfig(minimum=PythonVersion(3, 8))
+        findings = self.rule.check(parse("p.is_relative_to('/x')"), "<test>", cfg)
+        assert len(findings) == 1
+
+    def test_fires_without_target_config(self):
+        """No TargetConfig means scan everything; rule must fire."""
+        findings = self.rule.check(parse("p.is_relative_to('/x')"), "<test>", None)
+        assert len(findings) == 1
+
+    def test_fires_without_minimum(self):
+        """TargetConfig with no minimum bound must still fire."""
+        from pyrift.targets import TargetConfig
+
+        cfg = TargetConfig(minimum=None)
+        findings = self.rule.check(parse("p.is_relative_to('/x')"), "<test>", cfg)
+        assert len(findings) == 1

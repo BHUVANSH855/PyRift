@@ -9,6 +9,7 @@ from __future__ import annotations
 import ast
 import logging
 import os
+import re
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -144,7 +145,7 @@ from .rules.pypy.ppy049_gc_behavior import GcBehaviorRule
 from .rules.pypy.ppy051_co_lnotab import CoLnotabPyPyRule
 from .rules.pypy.ppy052_importlib_abc import ImportlibAbcPyPyRule
 from .rules.pypy.ppy053_lru_cache_thread_safety import LruCacheThreadSafetyRule
-from .targets import TargetConfig, load_project_targets
+from .targets import PerPathConfig, TargetConfig, load_project_targets
 
 logger = logging.getLogger(__name__)
 
@@ -315,25 +316,6 @@ class ScanResult:
         from .finding import Severity
         return [f for f in self.findings if f.severity == Severity.WARNING]
 
-    @property
-    def score(self) -> int:
-        """Deprecated. ``100 - errors*10 - warnings*3`` is not a
-        scientifically meaningful measure (2026-09 review, point 86): a
-        single high-confidence compatibility bug and twenty informational
-        performance observations should not collapse to a comparable
-        number. Kept only for backward compatibility with existing
-        callers/dashboards. Prefer :meth:`breakdown`.
-        """
-        import warnings
-        warnings.warn(
-            "ScanResult.score is deprecated and will be removed in a future "
-            "release; use ScanResult.breakdown() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        deductions = len(self.errors) * 10 + len(self.warnings) * 3
-        return max(0, 100 - deductions)
-
     def breakdown(self) -> dict[str, int]:
         """Findings grouped by confidence, the way the review recommends
         presenting results instead of a single opaque score::
@@ -417,6 +399,88 @@ def _filter_rules_for_target(
             selected.append(rule)
 
     return selected
+
+
+# Matches:  # pyrift: ignore[CPY033]
+#           # pyrift: ignore[CPY033, PPY001]
+#           # pyrift: ignore (bare — suppresses all rules on the line)
+_INLINE_IGNORE_RE = re.compile(
+    r"#\s*pyrift\s*:\s*ignore(?:\[([^\]]*)\])?", re.IGNORECASE
+)
+
+
+def _parse_inline_ignores(source: str) -> dict[int, set[str] | None]:
+    """Return a mapping of {1-based line number → set of rule IDs to suppress}.
+
+    A value of ``None`` means "suppress everything on this line" (bare
+    ``# pyrift: ignore`` with no brackets). A non-None set lists the
+    specific rule IDs to suppress.
+    """
+    ignores: dict[int, set[str] | None] = {}
+    for lineno, line in enumerate(source.splitlines(), start=1):
+        m = _INLINE_IGNORE_RE.search(line)
+        if m is None:
+            continue
+        ids_str = m.group(1)
+        if ids_str is None:
+            # Bare ignore — suppress everything
+            ignores[lineno] = None
+        else:
+            ids = {s.strip().upper() for s in ids_str.split(",") if s.strip()}
+            if ids:
+                ignores[lineno] = ids
+    return ignores
+
+
+def _apply_per_path_overrides(
+    rules: list[BaseRule],
+    filepath: str | Path,
+    per_path: tuple[PerPathConfig, ...],
+) -> list[BaseRule]:
+    """Apply ``[[tool.pyrift.per-path]]`` overrides to a rule list.
+
+    Entries are evaluated in order; the **first** matching entry wins.
+    If no entry matches, the original *rules* list is returned unchanged.
+    """
+    if not per_path:
+        return rules
+
+    fp = str(filepath)
+    for entry in per_path:
+        if entry.matches(fp):
+            if entry.select is not None:
+                allowed = {r.upper() for r in entry.select}
+                return [r for r in rules if r.rule_id.upper() in allowed]
+            if entry.ignore is not None:
+                blocked = {r.upper() for r in entry.ignore}
+                return [r for r in rules if r.rule_id.upper() not in blocked]
+    return rules
+
+
+def _apply_inline_suppressions(
+    findings: list[Finding], source: str
+) -> tuple[list[Finding], int]:
+    """Remove findings that have a matching ``# pyrift: ignore[...]`` comment
+    on the same source line.
+
+    Returns ``(kept_findings, suppressed_count)``.
+    """
+    ignores = _parse_inline_ignores(source)
+    if not ignores:
+        return findings, 0
+
+    kept: list[Finding] = []
+    suppressed = 0
+    for f in findings:
+        rule_set = ignores.get(f.line)
+        if rule_set is None and f.line in ignores:
+            # Bare ignore — suppress everything on this line
+            suppressed += 1
+        elif rule_set is not None and f.rule_id.upper() in rule_set:
+            suppressed += 1
+        else:
+            kept.append(f)
+    return kept, suppressed
 
 
 def _apply_guards(findings: list[Finding], tree: ast.AST) -> tuple[list[Finding], int]:
@@ -554,7 +618,8 @@ def _scan_source_detailed(
             )
 
     findings, guard_suppressed = _apply_guards(findings, tree)
-    return findings, rule_errors, guard_suppressed
+    findings, inline_suppressed = _apply_inline_suppressions(findings, source)
+    return findings, rule_errors, guard_suppressed + inline_suppressed
 
 
 def _scan_file_detailed(
@@ -663,6 +728,25 @@ def scan_file(
     return findings
 
 
+def scan_source(
+    source: str,
+    filename: str = "<string>",
+    rules: list[BaseRule] | None = None,
+    target_config: TargetConfig | None = None,
+) -> list[Finding]:
+    """Scan Python source code given as a string.
+
+    Useful for testing or programmatic use where the source is already in
+    memory. Inline ``# pyrift: ignore[...]`` comments are honoured the same
+    as when scanning a file.
+
+    Rule execution failures are intentionally not surfaced here; use
+    :func:`scan` for access to ``ScanResult.rule_errors``.
+    """
+    findings, _, _ = _scan_source_detailed(source, filename, rules, target_config)
+    return findings
+
+
 def scan(
     path: str | Path,
     rules: list[BaseRule] | None = None,
@@ -699,10 +783,23 @@ def scan(
     files_scanned = 0
     guard_suppressed_total = 0
 
+    # Load per-path overrides from [tool.pyrift] once for the whole scan.
+    _per_path: tuple[PerPathConfig, ...] = ()
+    if use_project_config:
+        from .targets import load_pyrift_config as _load_cfg
+
+        try:
+            _cfg = _load_cfg(path)
+            if _cfg is not None:
+                _per_path = _cfg.per_path
+        except (ValueError, OSError):
+            pass
+
     for py_file in _python_files(path):
+        file_rules = _apply_per_path_overrides(rules or ALL_RULES, py_file, _per_path)
         findings, file_rule_errors, guard_suppressed = _scan_file_detailed(
             py_file,
-            rules,
+            file_rules,
             target_config,
         )
         rule_errors.extend(file_rule_errors)

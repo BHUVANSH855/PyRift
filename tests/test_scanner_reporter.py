@@ -27,15 +27,20 @@ class TestScanner:
         assert isinstance(result, ScanResult)
         assert result.files_scanned == 2
 
-    def test_score_is_100_for_clean_code(self, tmp_path):
+    def test_breakdown_zero_for_clean_code(self, tmp_path):
         (tmp_path / "clean.py").write_text("x = 1 + 1\n")
         result = scan(tmp_path)
-        assert result.score == 100
+        bd = result.breakdown()
+        assert bd["high_confidence"] == 0
+        assert bd["medium_confidence"] == 0
+        assert bd["analyzer_errors"] == 0
 
-    def test_score_decreases_with_errors(self, tmp_path):
+    def test_breakdown_nonzero_with_findings(self, tmp_path):
         (tmp_path / "bad.py").write_text("e.add_note('x')\n")
         result = scan(tmp_path)
-        assert result.score < 100
+        bd = result.breakdown()
+        total = bd["high_confidence"] + bd["medium_confidence"] + bd["informational"]
+        assert total > 0
 
     def test_skips_venv_dirs(self, tmp_path):
         venv = tmp_path / ".venv"
@@ -322,7 +327,7 @@ class TestScanResultRepr:
         assert "baseline suppressed" in r
         assert "2" in r
 
-    def test_score_with_findings(self):
+    def test_breakdown_with_findings(self):
         from pyrift.finding import Severity
 
         errors = [
@@ -339,9 +344,13 @@ class TestScanResultRepr:
             for _ in range(3)
         ]
         result = ScanResult(findings=errors, files_scanned=10)
-        assert result.score == max(0, 100 - 3 * 10 - 0 * 3)
+        bd = result.breakdown()
+        assert bd["analyzer_errors"] == 0
+        # 3 ERROR-severity findings must appear somewhere in the breakdown
+        total = bd["high_confidence"] + bd["medium_confidence"] + bd["informational"]
+        assert total == 3
 
-    def test_score_zero_floor(self):
+    def test_breakdown_many_findings(self):
         from pyrift.finding import Severity
 
         errors = [
@@ -358,7 +367,9 @@ class TestScanResultRepr:
             for _ in range(20)
         ]
         result = ScanResult(findings=errors, files_scanned=10)
-        assert result.score == 0
+        bd = result.breakdown()
+        total = bd["high_confidence"] + bd["medium_confidence"] + bd["informational"]
+        assert total == 20
 
     def test_scan_single_py_file(self, tmp_path):
         """Scanner accepts a single .py file, not just directories."""
