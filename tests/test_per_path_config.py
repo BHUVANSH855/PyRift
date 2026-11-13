@@ -108,6 +108,15 @@ def test_scan_per_path_ignore(tmp_path):
         'ignore = ["CPY002"]\n'
     )
 
+    from pyrift.targets import load_pyrift_config, PerPathConfig
+    _cfg = load_pyrift_config(tmp_path)
+    assert _cfg is not None, f"load_pyrift_config returned None for {tmp_path}"
+    assert len(_cfg.per_path) == 1, f"expected 1 per-path entry, got {_cfg.per_path}"
+    _pc = _cfg.per_path[0]
+    assert _pc.matches(str(tests_dir / "test_foo.py")), (
+        f"matches() returned False for {tests_dir / 'test_foo.py'!r} against {_pc.path!r}"
+    )
+
     result = scan(tmp_path)
 
     src_findings = [f for f in result.findings if "src" in f.file and f.rule_id == "CPY002"]
@@ -131,6 +140,15 @@ def test_scan_per_path_select(tmp_path):
         "[[tool.pyrift.per-path]]\n"
         'path = "legacy/**"\n'
         'select = ["CPY007"]\n'
+    )
+
+    from pyrift.targets import load_pyrift_config
+    _cfg = load_pyrift_config(tmp_path)
+    assert _cfg is not None, f"load_pyrift_config returned None for {tmp_path}"
+    assert len(_cfg.per_path) == 1, f"expected 1 per-path entry, got {_cfg.per_path}"
+    _pc = _cfg.per_path[0]
+    assert _pc.matches(str(legacy_dir / "old.py")), (
+        f"matches() returned False for {legacy_dir / 'old.py'!r} against {_pc.path!r}"
     )
 
     result = scan(tmp_path)
