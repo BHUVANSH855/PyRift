@@ -22,6 +22,7 @@ import ast
 
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
+from pyrift.targets import TargetConfig
 
 
 class TypingNamedTupleKeywordRule(BaseRule):
@@ -30,7 +31,7 @@ class TypingNamedTupleKeywordRule(BaseRule):
     runtime = "cpython"
     severity = Severity.ERROR
 
-    def check(self, node: ast.AST, filename: str, target_config=None) -> list[Finding]:
+    def check(self, node: ast.AST, filename: str, target_config: TargetConfig | None = None) -> list[Finding]:
         findings: list[Finding] = []
 
         for n in ast.walk(node):

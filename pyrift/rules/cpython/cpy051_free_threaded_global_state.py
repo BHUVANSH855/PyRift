@@ -117,10 +117,13 @@ def _mutation_name(node: ast.AST) -> str | None:
 
 # ── Lock-aware traversal ───────────────────────────────────────────────────
 
+from collections.abc import Callable
+
+
 def _walk_with(
     statement: ast.With | ast.AsyncWith,
     protected: set[tuple[str, ...]],
-    walk_fn,
+    walk_fn: Callable[..., None],
 ) -> None:
     """Walk a ``with`` block while holding its recognized locks."""
     nested = set(protected)
@@ -139,8 +142,8 @@ def _walk_with(
 def _walk_try(
     statement: ast.Try,
     protected: set[tuple[str, ...]],
-    walk_fn,
-    walk_block_fn,
+    walk_fn: Callable[..., None],
+    walk_block_fn: Callable[..., None],
 ) -> None:
     """Walk a try statement preserving lock state through all clauses."""
     walk_block_fn(statement.body, protected)
@@ -153,7 +156,7 @@ def _walk_try(
 def _walk_block(
     statements: list[ast.stmt],
     protected: set[tuple[str, ...]],
-    walk_fn,
+    walk_fn: Callable[..., None],
 ) -> None:
     """Walk statements in execution order."""
     for stmt in statements:
