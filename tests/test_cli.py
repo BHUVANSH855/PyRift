@@ -385,3 +385,30 @@ class TestExplainCommand:
         assert code == 0
         assert "CPY007" in out
         assert "compatibility" in out.lower()
+
+    def test_explain_intentional_gap_cpy058(self):
+        code, _out, err = run_cli("explain", "CPY058")
+        assert code != 0
+        assert "intentional gap" in err.lower()
+        assert "CPY058" in err
+
+    def test_explain_intentional_gap_cpy059(self):
+        code, _out, err = run_cli("explain", "CPY059")
+        assert code != 0
+        assert "intentional gap" in err.lower()
+
+    def test_explain_intentional_gap_cpy060(self):
+        code, _out, err = run_cli("explain", "CPY060")
+        assert code != 0
+        assert "intentional gap" in err.lower()
+
+    def test_explain_intentional_gap_cpy061(self):
+        code, _out, err = run_cli("explain", "CPY061")
+        assert code != 0
+        assert "intentional gap" in err.lower()
+
+    def test_explain_tombstone_gives_retired_message(self):
+        # CPY052 is a tombstone (superseded by CPY051)
+        code, _out, err = run_cli("explain", "CPY052")
+        assert code != 0
+        assert "retired" in err.lower() or "reserved" in err.lower()
