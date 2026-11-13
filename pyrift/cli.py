@@ -817,10 +817,34 @@ def _run_explain(args: argparse.Namespace) -> None:
     )
 
     if rule is None:
-        print(
-            f"pyrift: unknown rule ID: {rule_id}",
-            file=sys.stderr,
-        )
+        # Detect numeric slots that were intentionally never assigned —
+        # currently CPY058–CPY061. These are neither active rules nor
+        # tombstones in RULE_METADATA; they are gaps in the numbering
+        # sequence that were skipped during development.
+        import re as _re
+        _gap_ranges: list[tuple[str, range]] = [
+            ("CPY", range(58, 62)),   # CPY058–CPY061 never assigned
+        ]
+        is_intentional_gap = False
+        for prefix, gap in _gap_ranges:
+            m = _re.fullmatch(r"[A-Z]+(\d+)", rule_id)
+            if m and rule_id.startswith(prefix) and int(m.group(1)) in gap:
+                is_intentional_gap = True
+                break
+
+        if is_intentional_gap:
+            print(
+                f"pyrift: {rule_id} is an intentional gap in the rule numbering.\n"
+                f"This numeric slot was never assigned to any rule. "
+                f"The ID is permanently reserved to prevent future reuse.\n"
+                f"Use 'pyrift explain CPY062' or later for the next active CPython rule.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"pyrift: unknown rule ID: {rule_id}",
+                file=sys.stderr,
+            )
         sys.exit(2)
 
     lines = [

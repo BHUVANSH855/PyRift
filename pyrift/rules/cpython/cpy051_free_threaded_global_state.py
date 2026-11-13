@@ -165,6 +165,31 @@ def _walk_block(
 
 # ── Module-level state collector ───────────────────────────────────────────
 
+_MUTABLE_CONSTRUCTORS = {
+    "list", "dict", "set", "bytearray",
+    "collections.deque", "collections.defaultdict",
+    "collections.OrderedDict", "collections.Counter",
+    "collections.ChainMap",
+}
+
+_MUTABLE_CONSTRUCTOR_NAMES = {
+    name.split(".")[-1] for name in _MUTABLE_CONSTRUCTORS
+}
+
+
+def _is_mutable_constructor(call: ast.Call) -> bool:
+    """Return True when *call* constructs a well-known mutable container."""
+    func = call.func
+    if isinstance(func, ast.Name):
+        return func.id in _MUTABLE_CONSTRUCTOR_NAMES
+    if isinstance(func, ast.Attribute):
+        return (
+            isinstance(func.value, ast.Name)
+            and f"{func.value.id}.{func.attr}" in _MUTABLE_CONSTRUCTORS
+        )
+    return False
+
+
 def _collect_module_mutable(
     module: ast.Module,
 ) -> tuple[set[str], dict[str, ast.stmt]]:
@@ -174,7 +199,13 @@ def _collect_module_mutable(
     for stmt in module.body:
         if not isinstance(stmt, (ast.Assign, ast.AnnAssign)):
             continue
-        if not isinstance(stmt.value, (ast.List, ast.Dict, ast.Set)):
+        value = stmt.value
+        if value is None:
+            continue
+        is_mutable = isinstance(value, (ast.List, ast.Dict, ast.Set)) or (
+            isinstance(value, ast.Call) and _is_mutable_constructor(value)
+        )
+        if not is_mutable:
             continue
         targets = stmt.targets if isinstance(stmt, ast.Assign) else [stmt.target]
         for target in targets:

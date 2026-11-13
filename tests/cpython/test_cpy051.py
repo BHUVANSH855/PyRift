@@ -62,6 +62,70 @@ class TestCPY051:
     def test_set_constructor_is_not_flagged_without_mutation(self):
         assert run(self.rule, "_seen = set()") == []
 
+    def test_detects_list_constructor_with_mutation(self):
+        findings = run(
+            self.rule,
+            """
+            _cache = list()
+
+            def update():
+                _cache.append(1)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_detects_dict_constructor_with_mutation(self):
+        findings = run(
+            self.rule,
+            """
+            _registry = dict()
+
+            def register():
+                _registry["x"] = 1
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_detects_set_constructor_with_mutation(self):
+        findings = run(
+            self.rule,
+            """
+            _seen = set()
+
+            def remember():
+                _seen.add(3)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_detects_collections_deque_with_mutation(self):
+        findings = run(
+            self.rule,
+            """
+            import collections
+
+            _queue = collections.deque()
+
+            def enqueue(item):
+                _queue.append(item)
+            """,
+        )
+        assert len(findings) == 1
+        assert findings[0].rule_id == "CPY051"
+
+    def test_constructor_no_mutation_is_clean(self):
+        """A constructor call with no runtime mutation should not fire."""
+        findings = run(
+            self.rule,
+            """
+            _registry = dict()
+            """,
+        )
+        assert findings == []
+
     def test_immutable_module_level_value_is_clean(self):
         assert run(self.rule, "VERSION = '1.0'") == []
 
