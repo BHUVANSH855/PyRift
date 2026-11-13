@@ -164,6 +164,81 @@ pyrift scan . --exit-zero
 
 ---
 
+## Programmatic API
+
+PyRift exposes a Python API for use in scripts, CI tooling, and editor integrations.
+
+### Scan a directory
+
+```python
+import pyrift
+
+result = pyrift.scan("./myproject")
+
+for finding in result.findings:
+    print(f"{finding.file}:{finding.line} [{finding.rule_id}] {finding.title}")
+```
+
+### Scan a source string
+
+```python
+import pyrift
+
+source = """
+import cgi  # removed in Python 3.13
+"""
+
+findings = pyrift.scan_source(source, filename="example.py")
+for finding in findings:
+    print(finding)
+```
+
+### Confidence breakdown
+
+`ScanResult.breakdown()` returns a summary of findings by confidence tier — use it
+instead of a raw count to understand signal quality:
+
+```python
+result = pyrift.scan("./myproject")
+b = result.breakdown()
+# {"high_confidence": 4, "medium_confidence": 11, "informational": 2, "analyzer_errors": 0}
+print(b)
+```
+
+### Inline suppression
+
+Suppress a specific rule on a single line:
+
+```python
+path.is_relative_to(base)  # pyrift: ignore[CPY033]
+```
+
+Suppress all rules on a line:
+
+```python
+some_pattern()  # pyrift: ignore
+```
+
+### Per-path configuration
+
+Apply different rules to different directories in `pyproject.toml`:
+
+```toml
+# Ignore CPY002 in test files (add_note is fine there)
+[[tool.pyrift.per-path]]
+path = "tests/**"
+ignore = ["CPY002"]
+
+# Only check legacy/ for removed modules
+[[tool.pyrift.per-path]]
+path = "legacy/**"
+select = ["CPY007"]
+```
+
+Per-path configuration requires Python 3.11+ (uses `tomllib`).
+
+---
+
 ## pre-commit
 
 PyRift ships a [pre-commit](https://pre-commit.com) hook definition so you
