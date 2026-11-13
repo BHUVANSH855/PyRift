@@ -1,9 +1,16 @@
 """Tests for [[tool.pyrift.per-path]] per-directory configuration overrides."""
 from __future__ import annotations
 
+import sys
+
 import pytest
 
 from pyrift.targets import PerPathConfig, _read_per_path
+
+_requires_tomllib = pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="per-path config requires tomllib (Python >= 3.11); not tested on older versions",
+)
 
 # ---------------------------------------------------------------------------
 # Unit tests for PerPathConfig.matches
@@ -88,6 +95,7 @@ def test_read_per_path_missing_path_raises():
 # ---------------------------------------------------------------------------
 
 
+@_requires_tomllib
 def test_scan_per_path_ignore(tmp_path):
     """Files matching per-path ignore pattern must not produce those findings."""
     from pyrift.scanner import scan
@@ -126,6 +134,7 @@ def test_scan_per_path_ignore(tmp_path):
     assert len(test_findings) == 0, "CPY002 must be suppressed in tests/"
 
 
+@_requires_tomllib
 def test_scan_per_path_select(tmp_path):
     """Files matching per-path select must only produce those rule findings."""
     from pyrift.scanner import scan
