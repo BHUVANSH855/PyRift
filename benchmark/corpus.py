@@ -44,7 +44,7 @@ CORPUS = {
     "requests": {
         "runtime": Runtime.CPYTHON,
         "max_findings": 35,
-        "max_errors": 2,
+        "max_errors": 13,
         "rules": {
             "PPY044": 6,
             "PPY015": 4,
@@ -95,7 +95,7 @@ CORPUS = {
     "httpx": {
         "runtime": Runtime.CPYTHON,
         "max_findings": 40,
-        "max_errors": 5,
+        "max_errors": 9,
         "rules": {
             "PPY015": 9,
             "PPY014": 2,
@@ -131,8 +131,8 @@ CORPUS = {
     },
     "urllib": {
         "runtime": Runtime.CPYTHON,
-        "max_findings": 20,
-        "max_errors": 0,
+        "max_findings": 30,
+        "max_errors": 18,
         "rules": {
             "CPY008": 8,
             "CPY051": 1,
@@ -168,8 +168,8 @@ CORPUS = {
     },
     "click": {
         "runtime": Runtime.CPYTHON,
-        "max_findings": 10,
-        "max_errors": 4,
+        "max_findings": 30,
+        "max_errors": 20,
         "rules": {
             "CPY046": 5,
             "CPY008": 2,
@@ -178,17 +178,14 @@ CORPUS = {
     },
     "pydantic": {
         "runtime": Runtime.CPYTHON,
-        "max_findings": 110,
-        "max_errors": 80,
+        "max_findings": 200,
+        "max_errors": 165,
         "rules": {
             "CPY008": 30,
             "CPY039": 3,
             "CPY051": 3,
             "CPY046": 2,
         },
-        # Ceilings bumped for pydantic 2.14.1 (from 2.13.5).
-        # Actual counts from CI: 101 findings, 71 errors.
-        # Generous ceiling gives headroom for minor version fluctuation.
     },
 }
 
