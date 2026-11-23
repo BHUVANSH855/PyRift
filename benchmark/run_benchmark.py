@@ -802,6 +802,82 @@ GOLDEN = {
         ),
     ],
 
+    "CPY079": [
+        ("from typing import ByteString", True, "typing ByteString deprecated"),
+        ("from collections.abc import ByteString", True, "collections.abc ByteString deprecated"),
+        ("from typing import Sequence", False, "Sequence ok"),
+    ],
+    "CPY080": [
+        ("import shutil\nshutil.rmtree('/tmp', onerror=print)", True, "onerror kwarg removed"),
+        ("import shutil\nshutil.rmtree('/tmp', ignore_errors=True)", False, "ignore_errors ok"),
+        ("import shutil\nshutil.rmtree('/tmp', onexc=print)", False, "onexc ok"),
+    ],
+    "CPY081": [
+        ("import sys\nsys.last_type", True, "last_type deprecated"),
+        ("import sys\nsys.last_value", True, "last_value deprecated"),
+        ("import sys\nsys.last_traceback", True, "last_traceback deprecated"),
+        ("import sys\nsys.last_exc", False, "last_exc ok"),
+    ],
+    "CPY082": [
+        ("import tarfile\ntf.extractall('/tmp')", True, "extractall no filter"),
+        ("import tarfile\ntf.extract('f.txt')", True, "extract no filter"),
+        ("import tarfile\ntf.extractall('/tmp', filter='data')", False, "extractall with filter ok"),
+    ],
+    "CPY083": [
+        ("import array\narray.array('u', 'hello')", True, "array u typecode deprecated"),
+        ("import array\narray.array('b', [1])", False, "array b ok"),
+    ],
+    "CPY084": [
+        ("from urllib.request import URLopener", True, "URLopener removed"),
+        ("from urllib.request import FancyURLopener", True, "FancyURLopener removed"),
+        ("from urllib.request import urlopen", False, "urlopen ok"),
+    ],
+    "CPY085": [
+        ("import codecs\ncodecs.open('f.txt', 'r', 'utf-8')", True, "codecs.open deprecated"),
+        ("open('f.txt', 'r', encoding='utf-8')", False, "builtin open ok"),
+    ],
+    "CPY086": [
+        ("import os\nos.popen('ls')", True, "os.popen deprecated"),
+        ("import os\nos.spawnl(os.P_WAIT, 'ls', 'ls')", True, "os.spawnl deprecated"),
+        ("import subprocess\nsubprocess.Popen(['ls'])", False, "subprocess.Popen ok"),
+    ],
+    "CPY087": [
+        ("import ssl\nssl.PROTOCOL_TLS", True, "PROTOCOL_TLS deprecated"),
+        ("import ssl\nssl.PROTOCOL_TLSv1_1", True, "PROTOCOL_TLSv1_1 deprecated"),
+        ("import ssl\nssl.OP_NO_TLSv1", True, "OP_NO_TLSv1 deprecated"),
+        ("import ssl\nssl.CERT_REQUIRED", False, "CERT_REQUIRED ok"),
+    ],
+    "CPY088": [
+        ("import sre_compile", True, "sre_compile removed"),
+        ("import sre_constants", True, "sre_constants removed"),
+        ("import sre_parse", True, "sre_parse removed"),
+        ("import re", False, "re ok"),
+    ],
+    "CPY089": [
+        ("import platform\nplatform.java_ver()", True, "java_ver removed"),
+        ("import platform\nplatform.python_version()", False, "python_version ok"),
+    ],
+    "CPY090": [
+        ("import profile", True, "profile deprecated"),
+        ("from profile import Profile", True, "from profile import deprecated"),
+        ("import cProfile", False, "cProfile ok"),
+    ],
+    "CPY091": [
+        ("gen.throw(ValueError, 'msg')", True, "2-arg throw deprecated"),
+        ("gen.throw(ValueError, exc, tb)", True, "3-arg throw deprecated"),
+        ("gen.throw(ValueError('msg'))", False, "1-arg throw ok"),
+    ],
+    "CPY092": [
+        ("import logging\nlogging.warn('msg')", True, "logging.warn removed"),
+        ("import logging\nlogger = logging.getLogger()\nlogger.warn('msg')", True, "logger.warn removed"),
+        ("import logging\nlogging.warning('msg')", False, "logging.warning ok"),
+    ],
+    "CPY093": [
+        ("import glob\nglob.glob0('/tmp', '*.py')", True, "glob0 removed"),
+        ("import glob\nglob.glob1('/tmp', '*.py')", True, "glob1 removed"),
+        ("import glob\nglob.glob('/tmp/*.py')", False, "glob.glob ok"),
+    ],
+
     "PPY049": [
         ("import gc\ngc.collect()", True, "gc.collect"),
         ("import gc\ngc.get_threshold()", False, "get_threshold ok"),
