@@ -1,6 +1,6 @@
 # pyrift — Rule Reference
 
-Complete documentation for all 119 pyrift rules.
+Complete documentation for all 134 pyrift rules.
 
 ---
 
@@ -879,6 +879,171 @@ These rules detect code that behaves differently across CPython versions.
 **References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#new-deprecations) · [cpython #121676](https://github.com/python/cpython/issues/121676)
 
 **Contract:** Deprecated | **Basis:** Documented
+
+---
+### CPY079 — typing.ByteString / collections.abc.ByteString deprecated (3.12), removed (3.15)
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.12,<3.15`
+
+**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#deprecated) · [cpython #91896](https://github.com/python/cpython/issues/91896)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY080 — shutil.rmtree(onerror=...) removed in 3.14, use onexc=
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.12,<3.14`
+
+**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#shutil) · [cpython #102828](https://github.com/python/cpython/issues/102828)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY081 — sys.last_type/value/traceback deprecated (3.12), use sys.last_exc
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.12`
+
+**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#deprecated) · [cpython #102093](https://github.com/python/cpython/issues/102093)
+
+**Contract:** Deprecated | **Basis:** Documented
+
+---
+### CPY082 — tarfile extraction without filter= is a security risk (deprecated 3.12)
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.12`
+
+**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#tarfile-extraction-filter) · [cpython #59999](https://github.com/python/cpython/issues/59999)
+
+**Contract:** Documented | **Basis:** Documented
+
+---
+### CPY083 — array.array('u', ...) type code deprecated (3.13), use 'w'
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.13,<3.16`
+
+**References:** [What's New 3.13](https://docs.python.org/3/whatsnew/3.13.html#deprecated) · [cpython #80480](https://github.com/python/cpython/issues/80480)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY084 — urllib.request.URLopener / FancyURLopener removed in Python 3.14
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.14`
+
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#removed) · [cpython #85993](https://github.com/python/cpython/issues/85993)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY085 — codecs.open() deprecated in Python 3.14, use open() with encoding=
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.14`
+
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#deprecated) · [cpython #82837](https://github.com/python/cpython/issues/82837)
+
+**Contract:** Deprecated | **Basis:** Documented
+
+---
+### CPY086 — os.popen() and os.spawn*() soft-deprecated in Python 3.14
+
+**Severity:** Warning | **Confidence:** Medium | **Runtime:** CPython
+
+**Affected versions:** `>=3.14`
+
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#deprecated) · [cpython #120804](https://github.com/python/cpython/issues/120804)
+
+**Contract:** Deprecated | **Basis:** Documented
+
+---
+### CPY087 — ssl deprecated protocol constants pending removal
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.10`
+
+**References:** [What's New 3.10](https://docs.python.org/3/whatsnew/3.10.html#ssl) · [cpython #83089](https://github.com/python/cpython/issues/83089)
+
+**Contract:** Deprecated | **Basis:** Documented
+
+---
+### CPY088 — sre_compile / sre_constants / sre_parse removed in Python 3.15
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.15`
+
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #101674](https://github.com/python/cpython/issues/101674)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY089 — platform.java_ver() removed in Python 3.15
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.15`
+
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #116765](https://github.com/python/cpython/issues/116765)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY090 — profile module deprecated in Python 3.15 — use cProfile
+
+**Severity:** Warning | **Confidence:** Medium | **Runtime:** CPython
+
+**Affected versions:** `>=3.15`
+
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#deprecated) · [cpython #104584](https://github.com/python/cpython/issues/104584)
+
+**Contract:** Deprecated | **Basis:** Documented
+
+---
+### CPY091 — generator.throw() 3-argument form deprecated in Python 3.12
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.12`
+
+**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#deprecated) · [cpython #89247](https://github.com/python/cpython/issues/89247)
+
+**Contract:** Deprecated | **Basis:** Documented
+
+---
+### CPY092 — logging.warn() removed in Python 3.13 — use logging.warning()
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.12,<3.13`
+
+**References:** [What's New 3.13](https://docs.python.org/3/whatsnew/3.13.html#removed) · [cpython #85364](https://github.com/python/cpython/issues/85364)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY093 — glob.glob0() / glob.glob1() removed in Python 3.15
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.15`
+
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #116774](https://github.com/python/cpython/issues/116774)
+
+**Contract:** Removed | **Basis:** Documented
 
 ---
 

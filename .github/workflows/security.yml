@@ -50,34 +50,13 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: python -m pip install -r benchmark/requirements.txt
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip install -r benchmark/requirements.txt
+          python -m pip install "filelock>=4.2.1"
 
       - name: Install pip-audit
         run: python -m pip install pip-audit
 
       - name: Run pip-audit
         run: python -m pip_audit --strict --desc
-
-  safety:
-    name: Safety Check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install -e ".[dev]"
-          python -m pip install -r benchmark/requirements.txt
-
-      - name: Install safety
-        run: python -m pip install safety
-
-      - name: Run safety check
-        run: python -m safety check --full-report

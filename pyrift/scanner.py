@@ -97,6 +97,21 @@ from .rules.cpython.cpy077_typing_typeddict_functional import (
 from .rules.cpython.cpy078_functools_reduce_kwargs import (
     FunctoolsReduceKeywordArgsRule,
 )
+from .rules.cpython.cpy079_bytestring_deprecated import ByteStringDeprecatedRule
+from .rules.cpython.cpy080_shutil_rmtree_onerror import ShutilRmtreeOnErrorRule
+from .rules.cpython.cpy081_sys_last_exc import SysLastExcRule
+from .rules.cpython.cpy082_tarfile_extraction_filter import TarfileExtractionFilterRule
+from .rules.cpython.cpy083_array_u_typecode import ArrayUTypecodeRule
+from .rules.cpython.cpy084_urllib_urlopen_deprecated import UrllibUrlopenDeprecatedRule
+from .rules.cpython.cpy085_codecs_open import CodecsOpenRule
+from .rules.cpython.cpy086_os_popen_spawn import OsPopenSpawnRule
+from .rules.cpython.cpy087_ssl_deprecated_protocols import SslDeprecatedProtocolsRule
+from .rules.cpython.cpy088_sre_modules_removed import SreModulesRemovedRule
+from .rules.cpython.cpy089_platform_java_ver import PlatformJavaVerRule
+from .rules.cpython.cpy090_profile_deprecated import ProfileDeprecatedRule
+from .rules.cpython.cpy091_generator_throw_args import GeneratorThrowArgsRule
+from .rules.cpython.cpy092_logging_warn import LoggingWarnRule
+from .rules.cpython.cpy093_glob_removed import GlobRemovedRule
 from .rules.pypy.ppy001_gc_finalizer import GcFinalizerRule
 from .rules.pypy.ppy002_ctypes import CtypesRule
 from .rules.pypy.ppy003_getrefcount import GetRefcountRule
@@ -222,6 +237,21 @@ ALL_RULES: list[BaseRule] = [
     SslWrapSocketRule(),
     TypingTypedDictFunctionalRule(),
     FunctoolsReduceKeywordArgsRule(),
+    ByteStringDeprecatedRule(),
+    ShutilRmtreeOnErrorRule(),
+    SysLastExcRule(),
+    TarfileExtractionFilterRule(),
+    ArrayUTypecodeRule(),
+    UrllibUrlopenDeprecatedRule(),
+    CodecsOpenRule(),
+    OsPopenSpawnRule(),
+    SslDeprecatedProtocolsRule(),
+    SreModulesRemovedRule(),
+    PlatformJavaVerRule(),
+    ProfileDeprecatedRule(),
+    GeneratorThrowArgsRule(),
+    LoggingWarnRule(),
+    GlobRemovedRule(),
     # PyPy rules (sorted by rule ID)
     GcFinalizerRule(),
     CtypesRule(),

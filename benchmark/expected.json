@@ -428,6 +428,96 @@
       "confidence": "high",
       "evidence": "official_docs"
     },
+    "CPY079": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY080": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY081": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY082": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY083": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY084": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY085": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY086": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "medium",
+      "evidence": "official_docs"
+    },
+    "CPY087": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY088": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY089": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY090": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "medium",
+      "evidence": "official_docs"
+    },
+    "CPY091": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY092": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY093": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
     "PPY001": {
       "min_true_positives": 1,
       "max_false_positives": 0,

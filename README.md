@@ -690,8 +690,8 @@ Lists the compatibility rules and their documented behavior.
 ### Project status
 
 - **Version:** 0.9.1
-- **Rules:** 119 total (71 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1811 passing
+- **Rules:** 134 total (86 CPython + 47 PyPy + 1 cross-runtime)
+- **Tests:** 1948 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -908,6 +908,21 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | CPY076 | ssl.wrap_socket() removed in Python 3.12 | cpython |
 | CPY077 | typing.TypedDict zero-field syntax removed in Python 3.15 | cpython |
 | CPY078 | functools.reduce() keyword arguments deprecated, removal scheduled for 3.16 | cpython |
+| CPY079 | typing.ByteString / collections.abc.ByteString deprecated (3.12), removed (3.15) | cpython |
+| CPY080 | shutil.rmtree(onerror=...) removed in 3.14, use onexc= | cpython |
+| CPY081 | sys.last_type/value/traceback deprecated (3.12), use sys.last_exc | cpython |
+| CPY082 | tarfile extraction without filter= is a security risk (deprecated 3.12) | cpython |
+| CPY083 | array.array('u', ...) type code deprecated (3.13), use 'w' | cpython |
+| CPY084 | urllib.request.URLopener / FancyURLopener removed in Python 3.14 | cpython |
+| CPY085 | codecs.open() deprecated in Python 3.14, use open() with encoding= | cpython |
+| CPY086 | os.popen() and os.spawn*() soft-deprecated in Python 3.14 | cpython |
+| CPY087 | ssl deprecated protocol constants pending removal | cpython |
+| CPY088 | sre_compile / sre_constants / sre_parse removed in Python 3.15 | cpython |
+| CPY089 | platform.java_ver() removed in Python 3.15 | cpython |
+| CPY090 | profile module deprecated in Python 3.15 — use cProfile | cpython |
+| CPY091 | generator.throw() 3-argument form deprecated in Python 3.12 | cpython |
+| CPY092 | logging.warn() removed in Python 3.13 — use logging.warning() | cpython |
+| CPY093 | glob.glob0() / glob.glob1() removed in Python 3.15 | cpython |
 | PPY001 | Relying on __del__ for resource cleanup breaks on PyPy | pypy |
 | PPY002 | ctypes usage may differ on PyPy | pypy |
 | PPY003 | sys.getrefcount() is meaningless on PyPy | pypy |
