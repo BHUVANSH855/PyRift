@@ -164,7 +164,7 @@ from .targets import PerPathConfig, TargetConfig, load_project_targets
 
 logger = logging.getLogger(__name__)
 
-ALL_RULES: list[BaseRule] = [
+_BUILTIN_RULES: list[BaseRule] = [
     # CPython rules (sorted by rule ID)
     DictOrderingRule(),
     ExceptionNotesRule(),
@@ -302,6 +302,50 @@ ALL_RULES: list[BaseRule] = [
     ImportlibAbcPyPyRule(),
     LruCacheThreadSafetyRule(),
 ]
+
+
+def _load_plugin_rules() -> list[BaseRule]:
+    """Discover and load rules from installed pyrift plugins.
+
+    Plugins register rules via the ``pyrift.rules`` entry-point group::
+
+        [project.entry-points."pyrift.rules"]
+        myplugin = "myplugin.rules:get_rules"
+
+    The callable must return a list of :class:`~pyrift.base_rule.BaseRule`
+    instances.  A plugin that raises or returns invalid objects is skipped
+    with a warning so a broken plugin never crashes a scan.
+    """
+    from importlib.metadata import entry_points
+
+    plugin_rules: list[BaseRule] = []
+    for ep in entry_points(group="pyrift.rules"):
+        try:
+            get_rules = ep.load()
+            rules = get_rules()
+            if not isinstance(rules, list):
+                raise TypeError(
+                    f"expected list[BaseRule], got {type(rules).__name__}"
+                )
+            for rule in rules:
+                if not isinstance(rule, BaseRule):
+                    raise TypeError(
+                        f"expected BaseRule instance, got {type(rule).__name__}"
+                    )
+            plugin_rules.extend(rules)
+            logger.debug(
+                "pyrift plugin %r loaded %d rule(s)", ep.name, len(rules)
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "pyrift plugin %r failed to load and will be skipped: %s",
+                ep.name,
+                exc,
+            )
+    return plugin_rules
+
+
+ALL_RULES: list[BaseRule] = [*_BUILTIN_RULES, *_load_plugin_rules()]
 
 # All rules now accept target_config (default=None). Cache on rule identity
 # rather than bound method id (which changes per call).
