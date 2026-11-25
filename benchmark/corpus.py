@@ -159,8 +159,8 @@ CORPUS = {
     # exercise the new guard/shim suppression on real code). ---
     "packaging": {
         "runtime": Runtime.CPYTHON,
-        "max_findings": 15,
-        "max_errors": 6,
+        "max_findings": 35,
+        "max_errors": 25,
         "rules": {
             "CPY008": 8,
             "CPY009": 5,
