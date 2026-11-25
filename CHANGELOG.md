@@ -1,3 +1,16 @@
+## [0.9.2] - 2026-11-26
+
+### Added
+- Plugin system: third-party packages can now ship PyRift rule sets via the
+  `pyrift.rules` entry-point group (`importlib.metadata`, zero new dependencies).
+  A broken plugin logs a warning and is skipped — it never crashes a scan.
+- `BaseRule` and `Severity` are now part of the public API, exported directly
+  from `pyrift` for plugin authors.
+- `docs/plugins.md`: plugin authoring guide with quick-start and full
+  `BaseRule` interface reference.
+
+### Verification
+- 1960 tests total
 ## [0.9.1] - 2026-11-09
 
 ### Added

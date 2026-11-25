@@ -11,7 +11,7 @@ from .finding import (
 from .reporter import to_json
 from .scanner import ALL_RULES, ScanResult, scan, scan_source
 
-__version__ = "0.9.1"
+__version__ = "0.9.2"
 
 __all__ = [
     "ALL_RULES",

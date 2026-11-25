@@ -257,7 +257,7 @@ Add a `.pre-commit-config.yaml` to your project root:
 ```yaml
 repos:
   - repo: https://github.com/BHUVANSH855/PyRift
-    rev: v0.9.1          # pin to a release tag
+    rev: v0.9.2          # pin to a release tag
     hooks:
       - id: pyrift
 ```
@@ -284,7 +284,7 @@ Pass extra arguments via `args` in your config:
 ```yaml
 repos:
   - repo: https://github.com/BHUVANSH855/PyRift
-    rev: v0.9.1
+    rev: v0.9.2
     hooks:
       - id: pyrift
         args: [--only-documented]   # restrict to documented CPython changes
@@ -689,7 +689,7 @@ Lists the compatibility rules and their documented behavior.
 
 ### Project status
 
-- **Version:** 0.9.1
+- **Version:** 0.9.2
 - **Rules:** 134 total (86 CPython + 47 PyPy + 1 cross-runtime)
 - **Tests:** 1960 passing
 - **Dependencies:** zero
