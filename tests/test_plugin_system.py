@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast
-import sys
 from importlib.metadata import EntryPoint
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -14,7 +13,6 @@ import pyrift
 from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Severity
 from pyrift.scanner import _BUILTIN_RULES, _load_plugin_rules
-
 
 # ---------------------------------------------------------------------------
 # Minimal valid plugin rule for use in tests
@@ -90,9 +88,8 @@ def test_broken_plugin_is_skipped(caplog: pytest.LogCaptureFixture):
     ep.name = "broken-plugin"
     ep.load.side_effect = ImportError("missing dependency")
 
-    with patch("importlib.metadata.entry_points", return_value=[ep]):
-        with caplog.at_level(logging.WARNING, logger="pyrift.scanner"):
-            result = _load_plugin_rules()
+    with patch("importlib.metadata.entry_points", return_value=[ep]), caplog.at_level(logging.WARNING, logger="pyrift.scanner"):
+        result = _load_plugin_rules()
 
     assert result == []
     assert "broken-plugin" in caplog.text
@@ -107,9 +104,8 @@ def test_plugin_returning_wrong_type_is_skipped(caplog: pytest.LogCaptureFixture
     ep.name = "bad-return-plugin"
     ep.load.return_value = lambda: "not a list"
 
-    with patch("importlib.metadata.entry_points", return_value=[ep]):
-        with caplog.at_level(logging.WARNING, logger="pyrift.scanner"):
-            result = _load_plugin_rules()
+    with patch("importlib.metadata.entry_points", return_value=[ep]), caplog.at_level(logging.WARNING, logger="pyrift.scanner"):
+        result = _load_plugin_rules()
 
     assert result == []
     assert "bad-return-plugin" in caplog.text
@@ -123,9 +119,8 @@ def test_plugin_returning_non_rule_items_is_skipped(caplog: pytest.LogCaptureFix
     ep.name = "bad-items-plugin"
     ep.load.return_value = lambda: [object()]
 
-    with patch("importlib.metadata.entry_points", return_value=[ep]):
-        with caplog.at_level(logging.WARNING, logger="pyrift.scanner"):
-            result = _load_plugin_rules()
+    with patch("importlib.metadata.entry_points", return_value=[ep]), caplog.at_level(logging.WARNING, logger="pyrift.scanner"):
+        result = _load_plugin_rules()
 
     assert result == []
     assert "bad-items-plugin" in caplog.text
