@@ -1,6 +1,6 @@
 # pyrift — Rule Reference
 
-Complete documentation for all 134 pyrift rules.
+Complete documentation for all 144 pyrift rules.
 
 ---
 
@@ -1046,6 +1046,61 @@ These rules detect code that behaves differently across CPython versions.
 **Contract:** Removed | **Basis:** Documented
 
 ---
+### CPY094 — abc.abstractclassmethod / abstractstaticmethod / abstractproperty deprecated in 3.14
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.14`
+
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#deprecated) · [cpython #105268](https://github.com/python/cpython/issues/105268)
+
+**Contract:** Deprecated | **Basis:** Documented
+
+---
+### CPY095 — argparse.BooleanOptionalAction: type/choices/metavar removed in Python 3.14
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.14`
+
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#removed) · [cpython #118805](https://github.com/python/cpython/issues/118805)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY096 — threading.RLock() with arguments raises TypeError in Python 3.15
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.15`
+
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #threading-rlock-args](https://github.com/python/cpython/issues/threading-rlock-args)
+
+**Contract:** Documented | **Basis:** Documented
+
+---
+### CPY097 — wave mark methods (getmark/setmark/getmarkers) removed in Python 3.15
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.15`
+
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #wave-mark-removed](https://github.com/python/cpython/issues/wave-mark-removed)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY098 — calendar.January / calendar.February deprecated in Python 3.13
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.13`
+
+**References:** [What's New 3.13](https://docs.python.org/3/whatsnew/3.13.html#deprecated) · [cpython #105829](https://github.com/python/cpython/issues/105829)
+
+**Contract:** Deprecated | **Basis:** Deprecation
+
+---
 
 ---
 
@@ -1474,6 +1529,51 @@ These rules detect code that behaves differently on PyPy vs CPython.
 **Affected versions:** `>=pypy7.3`
 
 **Contract:** Implementation Defined | **Basis:** Observed
+
+---
+### PPY054 — memoryview over bytearray/BytesIO resize behaviour differs on PyPy
+
+**Severity:** Warning | **Confidence:** Medium | **Runtime:** PyPy
+
+**Affected versions:** `>=pypy7.3`
+
+**Contract:** Implementation Defined | **Basis:** Documented
+
+---
+### PPY055 — sys.setprofile() / sys.getprofile() not reliably supported on PyPy
+
+**Severity:** Warning | **Confidence:** High | **Runtime:** PyPy
+
+**Affected versions:** `>=pypy7.3`
+
+**Contract:** Implementation Defined | **Basis:** Documented
+
+---
+### PPY056 — __slots__ class missing '__weakref__' slot: weakref failure timing differs on PyPy
+
+**Severity:** Warning | **Confidence:** Medium | **Runtime:** PyPy
+
+**Affected versions:** `>=pypy7.3`
+
+**Contract:** Implementation Defined | **Basis:** Documented
+
+---
+### PPY057 — copyreg.dispatch_table / pickle.dispatch_table mutation differs on PyPy
+
+**Severity:** Warning | **Confidence:** Medium | **Runtime:** PyPy
+
+**Affected versions:** `>=pypy7.3`
+
+**Contract:** Implementation Defined | **Basis:** Observed
+
+---
+### PPY058 — type.__mro__ / type.mro() order may differ for C-extension bases on PyPy
+
+**Severity:** Info | **Confidence:** Low | **Runtime:** PyPy
+
+**Affected versions:** `>=pypy7.3`
+
+**Contract:** Implementation Defined | **Basis:** Documented
 
 ---
 

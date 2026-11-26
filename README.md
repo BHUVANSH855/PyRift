@@ -690,8 +690,8 @@ Lists the compatibility rules and their documented behavior.
 ### Project status
 
 - **Version:** 0.9.2
-- **Rules:** 134 total (86 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1960 passing
+- **Rules:** 144 total (91 CPython + 52 PyPy + 1 cross-runtime)
+- **Tests:** 2049 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -923,6 +923,11 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | CPY091 | generator.throw() 3-argument form deprecated in Python 3.12 | cpython |
 | CPY092 | logging.warn() removed in Python 3.13 — use logging.warning() | cpython |
 | CPY093 | glob.glob0() / glob.glob1() removed in Python 3.15 | cpython |
+| CPY094 | abc.abstractclassmethod / abstractstaticmethod / abstractproperty deprecated in 3.14 | cpython |
+| CPY095 | argparse.BooleanOptionalAction: type/choices/metavar removed in Python 3.14 | cpython |
+| CPY096 | threading.RLock() with arguments raises TypeError in Python 3.15 | cpython |
+| CPY097 | wave mark methods (getmark/setmark/getmarkers) removed in Python 3.15 | cpython |
+| CPY098 | calendar.January / calendar.February deprecated in Python 3.13 | cpython |
 | PPY001 | Relying on __del__ for resource cleanup breaks on PyPy | pypy |
 | PPY002 | ctypes usage may differ on PyPy | pypy |
 | PPY003 | sys.getrefcount() is meaningless on PyPy | pypy |
@@ -971,6 +976,11 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | PPY051 | code.__lnotab__ deprecated on PyPy too | pypy |
 | PPY052 | importlib.abc resource classes may differ on PyPy | pypy |
 | PPY053 | functools.lru_cache thread safety differs on PyPy | pypy |
+| PPY054 | memoryview over bytearray/BytesIO resize behaviour differs on PyPy | pypy |
+| PPY055 | sys.setprofile() / sys.getprofile() not reliably supported on PyPy | pypy |
+| PPY056 | __slots__ class missing '__weakref__' slot: weakref failure timing differs on PyPy | pypy |
+| PPY057 | copyreg.dispatch_table / pickle.dispatch_table mutation differs on PyPy | pypy |
+| PPY058 | type.__mro__ / type.mro() order may differ for C-extension bases on PyPy | pypy |
 <!-- END GENERATED RULE INDEX -->
 
 

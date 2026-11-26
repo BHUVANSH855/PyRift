@@ -112,6 +112,17 @@ from .rules.cpython.cpy090_profile_deprecated import ProfileDeprecatedRule
 from .rules.cpython.cpy091_generator_throw_args import GeneratorThrowArgsRule
 from .rules.cpython.cpy092_logging_warn import LoggingWarnRule
 from .rules.cpython.cpy093_glob_removed import GlobRemovedRule
+from .rules.cpython.cpy094_abc_deprecated_decorators import AbcDeprecatedDecoratorsRule
+from .rules.cpython.cpy095_argparse_boolean_optional_removed import (
+    ArgparseBooleanOptionalRemovedRule,
+)
+from .rules.cpython.cpy096_threading_rlock_args_removed import (
+    ThreadingRLockArgsRemovedRule,
+)
+from .rules.cpython.cpy097_wave_mark_methods_removed import WaveMarkMethodsRemovedRule
+from .rules.cpython.cpy098_calendar_deprecated_constants import (
+    CalendarDeprecatedConstantsRule,
+)
 from .rules.pypy.ppy001_gc_finalizer import GcFinalizerRule
 from .rules.pypy.ppy002_ctypes import CtypesRule
 from .rules.pypy.ppy003_getrefcount import GetRefcountRule
@@ -160,6 +171,11 @@ from .rules.pypy.ppy049_gc_behavior import GcBehaviorRule
 from .rules.pypy.ppy051_co_lnotab import CoLnotabPyPyRule
 from .rules.pypy.ppy052_importlib_abc import ImportlibAbcPyPyRule
 from .rules.pypy.ppy053_lru_cache_thread_safety import LruCacheThreadSafetyRule
+from .rules.pypy.ppy054_memoryview_buffer_error import MemoryviewBufferErrorRule
+from .rules.pypy.ppy055_sys_setprofile import SysSetprofileRule
+from .rules.pypy.ppy056_weakref_slotted import WeakrefSlottedRule
+from .rules.pypy.ppy057_copyreg_dispatch_table import CopyregDispatchTableRule
+from .rules.pypy.ppy058_type_mro_c_ext import TypeMroCExtRule
 from .targets import PerPathConfig, TargetConfig, load_project_targets
 
 logger = logging.getLogger(__name__)
@@ -252,6 +268,11 @@ _BUILTIN_RULES: list[BaseRule] = [
     GeneratorThrowArgsRule(),
     LoggingWarnRule(),
     GlobRemovedRule(),
+    AbcDeprecatedDecoratorsRule(),
+    ArgparseBooleanOptionalRemovedRule(),
+    ThreadingRLockArgsRemovedRule(),
+    WaveMarkMethodsRemovedRule(),
+    CalendarDeprecatedConstantsRule(),
     # PyPy rules (sorted by rule ID)
     GcFinalizerRule(),
     CtypesRule(),
@@ -301,6 +322,11 @@ _BUILTIN_RULES: list[BaseRule] = [
     CoLnotabPyPyRule(),
     ImportlibAbcPyPyRule(),
     LruCacheThreadSafetyRule(),
+    MemoryviewBufferErrorRule(),
+    SysSetprofileRule(),
+    WeakrefSlottedRule(),
+    CopyregDispatchTableRule(),
+    TypeMroCExtRule(),
 ]
 
 
