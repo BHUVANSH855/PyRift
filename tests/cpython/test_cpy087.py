@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+from urllib.parse import urlparse
 
 from pyrift.rules.cpython.cpy087_ssl_deprecated_protocols import (
     SslDeprecatedProtocolsRule,
@@ -133,7 +134,8 @@ def test_docs_url_points_to_ssl():
     src = "import ssl\nssl.PROTOCOL_TLS\n"
     f = _findings(src)
     assert "ssl" in f[0].docs_url
-    assert "python.org" in f[0].docs_url
+    host = urlparse(f[0].docs_url).hostname
+    assert host and (host == "python.org" or host.endswith(".python.org"))
 
 
 def test_rule_id_is_cpy087():
