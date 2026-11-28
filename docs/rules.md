@@ -749,13 +749,13 @@ These rules detect code that behaves differently across CPython versions.
 **Contract:** Removed | **Basis:** Documented
 
 ---
-### CPY067 — typing.NamedTuple keyword syntax removed in Python 3.15
+### CPY067 — typing.NamedTuple keyword syntax deprecated in 3.13, removed in 3.15
 
 **Severity:** Error | **Confidence:** High | **Runtime:** CPython
 
-**Affected versions:** `>=3.13,<3.15`
+**Affected versions:** `>=3.13`
 
-**References:** [What's New 3.13](https://docs.python.org/3/whatsnew/3.13.html#typing) · [cpython #105566](https://github.com/python/cpython/issues/105566)
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #105566](https://github.com/python/cpython/issues/105566)
 
 **Contract:** Removed | **Basis:** Deprecation
 
@@ -764,110 +764,110 @@ These rules detect code that behaves differently across CPython versions.
 
 **Severity:** Warning | **Confidence:** High | **Runtime:** CPython
 
-**Affected versions:** `>=3.13,<3.15`
+**Affected versions:** `>=3.13`
 
-**References:** [What's New 3.13](https://docs.python.org/3/whatsnew/3.13.html#typing) · [cpython #106309](https://github.com/python/cpython/issues/106309)
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #106309](https://github.com/python/cpython/issues/106309)
 
 **Contract:** Removed | **Basis:** Deprecation
 
 ---
-### CPY069 — asyncio.iscoroutinefunction() deprecated in Python 3.14
+### CPY069 — asyncio.iscoroutinefunction() deprecated in 3.14, removed in 3.16
 
 **Severity:** Warning | **Confidence:** High | **Runtime:** CPython
 
-**Affected versions:** `>=3.14`
+**Affected versions:** `>=3.14,<3.17`
 
-**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#asyncio) · [cpython #122858](https://github.com/python/cpython/issues/122858)
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#deprecated) · [cpython #122875](https://github.com/python/cpython/issues/122875)
 
-**Contract:** Deprecated | **Basis:** Deprecation
+**Contract:** Removed | **Basis:** Deprecation
 
 ---
-### CPY070 — asyncio event loop policy deprecated in Python 3.14
+### CPY070 — asyncio event loop policy deprecated in 3.14, removed in 3.16
 
 **Severity:** Warning | **Confidence:** High | **Runtime:** CPython
 
-**Affected versions:** `>=3.14`
+**Affected versions:** `>=3.14,<3.17`
 
-**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#asyncio) · [cpython #127949](https://github.com/python/cpython/issues/127949)
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#deprecated) · [cpython #127949](https://github.com/python/cpython/issues/127949)
 
-**Contract:** Deprecated | **Basis:** Deprecation
+**Contract:** Removed | **Basis:** Deprecation
 
 ---
 ### CPY071 — pty.master_open()/slave_open() removed in Python 3.14
 
 **Severity:** Error | **Confidence:** High | **Runtime:** CPython
 
-**Affected versions:** `>=3.14`
+**Affected versions:** `>=3.12`
 
-**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#pty) · [cpython #118824](https://github.com/python/cpython/issues/118824)
-
-**Contract:** Removed | **Basis:** Documented
-
----
-### CPY072 — importlib.abc resource classes removed in Python 3.14
-
-**Severity:** Error | **Confidence:** High | **Runtime:** CPython
-
-**Affected versions:** `>=3.14`
-
-**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#importlib-abc) · [cpython #93963](https://github.com/python/cpython/issues/93963)
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#removed) · [cpython #85984](https://github.com/python/cpython/issues/85984)
 
 **Contract:** Removed | **Basis:** Documented
 
 ---
-### CPY073 — sqlite3.version/version_info removed in Python 3.14
-
-**Severity:** Error | **Confidence:** High | **Runtime:** CPython
-
-**Affected versions:** `>=3.14`
-
-**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#sqlite3) · [cpython #118924](https://github.com/python/cpython/issues/118924)
-
-**Contract:** Removed | **Basis:** Documented
-
----
-### CPY074 — code.__lnotab__ deprecated since Python 3.10 (PEP 626)
-
-**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
-
-**Affected versions:** `>=3.10`
-
-**References:** [What's New 3.10](https://docs.python.org/3/whatsnew/3.10.html#pep-626-precise-line-numbers-for-debugging-and-other-tools) · [cpython #33418](https://github.com/python/cpython/issues/33418)
-
-**Contract:** Deprecated | **Basis:** Documented
-
----
-### CPY075 — http.server.CGIHTTPRequestHandler deprecated in 3.13, removed in 3.15
-
-**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
-
-**Affected versions:** `>=3.13,<3.15`
-
-**References:** [What's New 3.13](https://docs.python.org/3/whatsnew/3.13.html#http-server) · [cpython #109096](https://github.com/python/cpython/issues/109096)
-
-**Contract:** Removed | **Basis:** Deprecation
-
----
-### CPY076 — ssl.wrap_socket() removed in Python 3.12
+### CPY072 — importlib.abc resource classes deprecated 3.12, removed 3.14
 
 **Severity:** Error | **Confidence:** High | **Runtime:** CPython
 
 **Affected versions:** `>=3.12`
 
-**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#removed) · [cpython #94199](https://github.com/python/cpython/issues/94199)
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#removed) · [cpython #93963](https://github.com/python/cpython/issues/93963)
+
+**Contract:** Removed | **Basis:** Deprecation
+
+---
+### CPY073 — sqlite3.version/version_info deprecated 3.12, removed 3.14
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.12`
+
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#removed) · [cpython #93370](https://github.com/python/cpython/issues/93370)
+
+**Contract:** Removed | **Basis:** Deprecation
+
+---
+### CPY074 — code.co_lnotab deprecated 3.10 (PEP 626), removed in 3.15
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.10`
+
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #134690](https://github.com/python/cpython/issues/134690)
 
 **Contract:** Removed | **Basis:** Documented
 
 ---
-### CPY077 — typing.TypedDict zero-field syntax removed in Python 3.15
+### CPY075 — http.server.CGIHTTPRequestHandler deprecated 3.13, removed in 3.15
 
 **Severity:** Error | **Confidence:** High | **Runtime:** CPython
 
-**Affected versions:** `>=3.13,<3.15`
+**Affected versions:** `>=3.13`
 
-**References:** [What's New 3.13](https://docs.python.org/3/whatsnew/3.13.html#typing) · [cpython #105570](https://github.com/python/cpython/issues/105570)
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #133810](https://github.com/python/cpython/issues/133810)
 
-**Contract:** Removed | **Basis:** Deprecation
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY076 — ssl.wrap_socket() deprecated 3.7, removed 3.12
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.7`
+
+**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#ssl) · [cpython #94199](https://github.com/python/cpython/issues/94199)
+
+**Contract:** Removed | **Basis:** Documented
+
+---
+### CPY077 — typing.TypedDict zero/None-field syntax deprecated 3.13, removed 3.15
+
+**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+
+**Affected versions:** `>=3.13`
+
+**References:** [What's New 3.15](https://docs.python.org/3/whatsnew/3.15.html#removed) · [cpython #133823](https://github.com/python/cpython/issues/133823)
+
+**Contract:** Removed | **Basis:** Documented
 
 ---
 ### CPY078 — functools.reduce() keyword arguments deprecated, removal scheduled for 3.16
@@ -878,51 +878,51 @@ These rules detect code that behaves differently across CPython versions.
 
 **References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#new-deprecations) · [cpython #121676](https://github.com/python/cpython/issues/121676)
 
-**Contract:** Deprecated | **Basis:** Documented
+**Contract:** Deprecated | **Basis:** Deprecation
 
 ---
-### CPY079 — typing.ByteString / collections.abc.ByteString deprecated (3.12), removed (3.15)
+### CPY079 — typing.ByteString / collections.abc.ByteString deprecated, removed in Python 3.17
 
 **Severity:** Warning | **Confidence:** High | **Runtime:** CPython
 
-**Affected versions:** `>=3.12,<3.15`
+**Affected versions:** `>=3.9,<3.18`
 
-**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#deprecated) · [cpython #91896](https://github.com/python/cpython/issues/91896)
+**References:** [What's New 3.17](https://docs.python.org/3/whatsnew/3.17.html#pending-removal) · [cpython #91896](https://github.com/python/cpython/issues/91896)
 
 **Contract:** Removed | **Basis:** Documented
 
 ---
-### CPY080 — shutil.rmtree(onerror=...) removed in 3.14, use onexc=
+### CPY080 — shutil.rmtree(onerror=...) deprecated in 3.12, use onexc= instead
 
-**Severity:** Error | **Confidence:** High | **Runtime:** CPython
+**Severity:** Warning | **Confidence:** Medium | **Runtime:** CPython
 
-**Affected versions:** `>=3.12,<3.14`
+**Affected versions:** `>=3.12`
 
 **References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#shutil) · [cpython #102828](https://github.com/python/cpython/issues/102828)
 
-**Contract:** Removed | **Basis:** Documented
+**Contract:** Deprecated | **Basis:** Deprecation
 
 ---
 ### CPY081 — sys.last_type/value/traceback deprecated (3.12), use sys.last_exc
 
-**Severity:** Warning | **Confidence:** High | **Runtime:** CPython
+**Severity:** Warning | **Confidence:** Medium | **Runtime:** CPython
 
 **Affected versions:** `>=3.12`
 
-**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#deprecated) · [cpython #102093](https://github.com/python/cpython/issues/102093)
+**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#deprecated) · [cpython #102778](https://github.com/python/cpython/issues/102778)
 
-**Contract:** Deprecated | **Basis:** Documented
+**Contract:** Deprecated | **Basis:** Deprecation
 
 ---
-### CPY082 — tarfile extraction without filter= is a security risk (deprecated 3.12)
+### CPY082 — tarfile extraction without filter= deprecated 3.12–3.13 (CVE-2007-4559)
 
 **Severity:** Warning | **Confidence:** High | **Runtime:** CPython
 
-**Affected versions:** `>=3.12`
+**Affected versions:** `>=3.12,<3.14`
 
-**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#tarfile-extraction-filter) · [cpython #59999](https://github.com/python/cpython/issues/59999)
+**References:** [What's New 3.12](https://docs.python.org/3/whatsnew/3.12.html#tarfile-extraction-filter) · [cpython #102950](https://github.com/python/cpython/issues/102950)
 
-**Contract:** Documented | **Basis:** Documented
+**Contract:** Deprecated | **Basis:** Deprecation
 
 ---
 ### CPY083 — array.array('u', ...) type code deprecated (3.13), use 'w'
@@ -933,7 +933,7 @@ These rules detect code that behaves differently across CPython versions.
 
 **References:** [What's New 3.13](https://docs.python.org/3/whatsnew/3.13.html#deprecated) · [cpython #80480](https://github.com/python/cpython/issues/80480)
 
-**Contract:** Removed | **Basis:** Documented
+**Contract:** Removed | **Basis:** Deprecation
 
 ---
 ### CPY084 — urllib.request.URLopener / FancyURLopener removed in Python 3.14
@@ -942,7 +942,7 @@ These rules detect code that behaves differently across CPython versions.
 
 **Affected versions:** `>=3.14`
 
-**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#removed) · [cpython #85993](https://github.com/python/cpython/issues/85993)
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#removed) · [cpython #84850](https://github.com/python/cpython/issues/84850)
 
 **Contract:** Removed | **Basis:** Documented
 
@@ -953,18 +953,18 @@ These rules detect code that behaves differently across CPython versions.
 
 **Affected versions:** `>=3.14`
 
-**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#deprecated) · [cpython #82837](https://github.com/python/cpython/issues/82837)
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#deprecated) · [cpython #133036](https://github.com/python/cpython/issues/133036)
 
-**Contract:** Deprecated | **Basis:** Documented
+**Contract:** Deprecated | **Basis:** Deprecation
 
 ---
-### CPY086 — os.popen() and os.spawn*() soft-deprecated in Python 3.14
+### CPY086 — os.popen(), os.system(), and os.spawn*() soft-deprecated in Python 3.14
 
 **Severity:** Warning | **Confidence:** Medium | **Runtime:** CPython
 
 **Affected versions:** `>=3.14`
 
-**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#deprecated) · [cpython #120804](https://github.com/python/cpython/issues/120804)
+**References:** [What's New 3.14](https://docs.python.org/3/whatsnew/3.14.html#deprecated) · [cpython #120743](https://github.com/python/cpython/issues/120743)
 
 **Contract:** Deprecated | **Basis:** Documented
 
@@ -975,9 +975,9 @@ These rules detect code that behaves differently across CPython versions.
 
 **Affected versions:** `>=3.10`
 
-**References:** [What's New 3.10](https://docs.python.org/3/whatsnew/3.10.html#ssl) · [cpython #83089](https://github.com/python/cpython/issues/83089)
+**References:** [What's New 3.10](https://docs.python.org/3/whatsnew/3.10.html#ssl) · [cpython #43880](https://github.com/python/cpython/issues/43880)
 
-**Contract:** Deprecated | **Basis:** Documented
+**Contract:** Deprecated | **Basis:** Deprecation
 
 ---
 ### CPY088 — sre_compile / sre_constants / sre_parse removed in Python 3.15
