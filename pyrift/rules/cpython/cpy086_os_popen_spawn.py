@@ -1,12 +1,14 @@
 """
-CPY086 -- os.popen() and os.spawn*() soft-deprecated (3.14)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``os.popen()`` and the ``os.spawn*()`` family of functions were
-soft-deprecated in Python 3.14. The ``subprocess`` module is the
-recommended replacement for all process management.
+CPY086 -- os.popen(), os.spawn*(), and os.system() soft-deprecated (3.14)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``os.popen()``, the ``os.spawn*()`` family of functions, and
+``os.system()`` were soft-deprecated in Python 3.14 (gh-120743).
+The ``subprocess`` module is the recommended replacement for all
+process management.
 
-    os.popen('ls')                            # soft-deprecated 3.14
-    os.spawnl(os.P_WAIT, path, *args)        # soft-deprecated 3.14
+    os.popen('ls')                               # soft-deprecated 3.14
+    os.system('ls')                              # soft-deprecated 3.14
+    os.spawnl(os.P_WAIT, path, *args)           # soft-deprecated 3.14
     subprocess.run(['ls'], capture_output=True)  # correct
 """
 from __future__ import annotations
@@ -17,7 +19,9 @@ from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 from pyrift.targets import TargetConfig
 
-_SPAWN_FUNCS = frozenset({
+_DEPRECATED_FUNCS = frozenset({
+    "popen",
+    "system",
     "spawnl", "spawnle", "spawnlp", "spawnlpe",
     "spawnv", "spawnve", "spawnvp", "spawnvpe",
 })
@@ -25,7 +29,7 @@ _SPAWN_FUNCS = frozenset({
 
 class OsPopenSpawnRule(BaseRule):
     rule_id = "CPY086"
-    title = "os.popen() and os.spawn*() soft-deprecated in Python 3.14"
+    title = "os.popen(), os.system(), and os.spawn*() soft-deprecated in Python 3.14"
     runtime = "cpython"
     severity = Severity.WARNING
 
@@ -45,7 +49,7 @@ class OsPopenSpawnRule(BaseRule):
             if not (isinstance(func.value, ast.Name) and func.value.id == "os"):
                 continue
             attr = func.attr
-            if attr != "popen" and attr not in _SPAWN_FUNCS:
+            if attr not in _DEPRECATED_FUNCS:
                 continue
             findings.append(Finding(
                 file=filename,
@@ -54,18 +58,19 @@ class OsPopenSpawnRule(BaseRule):
                 rule_id=self.rule_id,
                 title=self.title,
                 description=(
-                    f"os.{attr}() was soft-deprecated in Python 3.14. "
-                    "The subprocess module provides a safer, more "
-                    "powerful interface for process management."
+                    f"os.{attr}() was soft-deprecated in Python 3.14 "
+                    "(gh-120743). The subprocess module provides a "
+                    "safer, more powerful interface for process "
+                    "management."
                 ),
                 severity=Severity.WARNING,
                 runtime=Runtime.CPYTHON,
                 affected_from="3.14",
                 suggestion=(
-                    "Replace os.popen() with subprocess.run() or "
-                    "subprocess.Popen(). Replace os.spawn*() with "
-                    "subprocess.run() or subprocess.Popen() with "
-                    "appropriate arguments."
+                    "Replace os.popen() and os.system() with "
+                    "subprocess.run() or subprocess.Popen(). "
+                    "Replace os.spawn*() with subprocess.run() or "
+                    "subprocess.Popen() with appropriate arguments."
                 ),
                 docs_url=(
                     "https://docs.python.org/3/library/subprocess.html"

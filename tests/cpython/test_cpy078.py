@@ -1,3 +1,4 @@
+"""Tests for CPY078 — functools.reduce() keyword arguments deprecated 3.14, removal scheduled 3.16."""
 import ast
 import textwrap
 
@@ -17,6 +18,10 @@ def run(rule, src):
 
 class TestCPY078:
     rule = FunctoolsReduceKeywordArgsRule()
+
+    # ------------------------------------------------------------------ #
+    # Detection                                                            #
+    # ------------------------------------------------------------------ #
 
     def test_detects_function_and_sequence_as_keywords(self):
         findings = run(
@@ -44,6 +49,34 @@ class TestCPY078:
         )
         assert len(findings) == 1
 
+    def test_aliased_import_still_detected(self):
+        """import functools as ft — alias tracking via collect_calls."""
+        findings = run(
+            self.rule,
+            "import functools as ft\nft.reduce(function=f, sequence=xs)",
+        )
+        assert len(findings) == 1
+
+    def test_function_keyword_alone(self):
+        findings = run(
+            self.rule,
+            "import functools\nfunctools.reduce(function=f, sequence=xs)",
+        )
+        assert len(findings) == 1
+        assert "function" in findings[0].description
+
+    def test_sequence_keyword_alone_description(self):
+        findings = run(
+            self.rule,
+            "import functools\nfunctools.reduce(f, sequence=xs)",
+        )
+        assert len(findings) == 1
+        assert "sequence" in findings[0].description
+
+    # ------------------------------------------------------------------ #
+    # Negative cases                                                       #
+    # ------------------------------------------------------------------ #
+
     def test_clean_positional_call(self):
         findings = run(
             self.rule,
@@ -58,15 +91,16 @@ class TestCPY078:
         )
         assert len(findings) == 0
 
-    def test_aliased_import_still_detected(self):
-        """Exercises the symbol-resolution integration (item #7)."""
+    def test_clean_initial_as_keyword_is_ok(self):
+        """'initial' is NOT in the deprecated list — only 'function'/'sequence'."""
         findings = run(
             self.rule,
-            "import functools as ft\nft.reduce(function=f, sequence=xs)",
+            "import functools\nfunctools.reduce(f, xs, initial=0)",
         )
-        assert len(findings) == 1
+        assert len(findings) == 0
 
     def test_unrelated_bare_reduce_not_flagged(self):
+        """Bare reduce() (not from functools) must not fire."""
         findings = run(
             self.rule,
             "reduce(function=f, sequence=xs)",
@@ -82,6 +116,21 @@ class TestCPY078:
         )
         assert len(findings) == 0
 
+    def test_clean_unrelated_module_reduce_call(self):
+        findings = run(
+            self.rule,
+            "import mylib\nmylib.reduce(function=f, sequence=xs)",
+        )
+        assert len(findings) == 0
+
+    def test_clean_empty_file(self):
+        findings = run(self.rule, "")
+        assert len(findings) == 0
+
+    # ------------------------------------------------------------------ #
+    # Suggestion / metadata correctness                                    #
+    # ------------------------------------------------------------------ #
+
     def test_suggestion_mentions_positional(self):
         findings = run(
             self.rule,
@@ -95,3 +144,41 @@ class TestCPY078:
             "import functools\nfunctools.reduce(function=f, sequence=xs)",
         )
         assert "pending-removal-in-3.16" in findings[0].docs_url
+
+    def test_description_names_offending_kwargs(self):
+        findings = run(
+            self.rule,
+            "import functools\nfunctools.reduce(function=f, sequence=xs)",
+        )
+        desc = findings[0].description
+        assert "function" in desc and "sequence" in desc
+
+    def test_description_names_single_offending_kwarg(self):
+        findings = run(
+            self.rule,
+            "import functools\nfunctools.reduce(f, sequence=xs)",
+        )
+        assert "sequence" in findings[0].description
+
+    def test_severity_is_warning(self):
+        """Still pending — severity is WARNING, not ERROR."""
+        findings = run(
+            self.rule,
+            "import functools\nfunctools.reduce(function=f, sequence=xs)",
+        )
+        assert findings[0].severity == Severity.WARNING
+
+    def test_affected_from_is_3_14(self):
+        findings = run(
+            self.rule,
+            "import functools\nfunctools.reduce(function=f, sequence=xs)",
+        )
+        assert findings[0].affected_from == "3.14"
+
+    def test_affected_until_is_3_16(self):
+        """Scheduled for removal in 3.16 — fires through 3.16 inclusive."""
+        findings = run(
+            self.rule,
+            "import functools\nfunctools.reduce(function=f, sequence=xs)",
+        )
+        assert findings[0].affected_until == "3.16"
