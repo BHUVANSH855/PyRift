@@ -1,3 +1,4 @@
+"""Tests for CPY069 — asyncio.iscoroutinefunction() deprecated 3.14, removed 3.16."""
 import ast
 import textwrap
 
@@ -17,6 +18,10 @@ def run(rule, src):
 
 class TestCPY069:
     rule = AsyncioIscoroutinefunctionRule()
+
+    # ------------------------------------------------------------------
+    # True-positive: import detection
+    # ------------------------------------------------------------------
 
     def test_detects_import(self):
         findings = run(self.rule, "from asyncio import iscoroutinefunction")
@@ -45,6 +50,10 @@ class TestCPY069:
         )
         assert len(findings) == 1
 
+    # ------------------------------------------------------------------
+    # True-negative: shadowing at module level
+    # ------------------------------------------------------------------
+
     def test_ignores_shadowed_asyncio_module(self):
         findings = run(
             self.rule,
@@ -53,24 +62,6 @@ class TestCPY069:
             "asyncio.iscoroutinefunction(func)",
         )
         assert len(findings) == 0
-
-    def test_ignores_function_local_shadowing(self):
-        findings = run(
-            self.rule,
-            "import asyncio\n"
-            "\n"
-            "def check():\n"
-            "    asyncio = FakeAsyncio()\n"
-            "    asyncio.iscoroutinefunction(func)\n",
-        )
-        assert len(findings) == 0
-
-    def test_detects_function_local_asyncio_import(self):
-        findings = run(
-            self.rule,
-            "def check():\n    import asyncio\n    asyncio.iscoroutinefunction(func)\n",
-        )
-        assert len(findings) == 1
 
     def test_ignores_shadowed_from_import(self):
         findings = run(
@@ -82,44 +73,27 @@ class TestCPY069:
         )
         assert len(findings) == 0
 
-    def test_detects_nested_function_using_module_import(self):
-        findings = run(
-            self.rule,
-            "import asyncio\n"
-            "\n"
-            "def outer():\n"
-            "    def inner():\n"
-            "        asyncio.iscoroutinefunction(func)\n",
-        )
-        assert len(findings) == 1
-
-    def test_clean_unrelated_attribute(self):
-        findings = run(
-            self.rule,
-            "other.iscoroutinefunction(func)",
-        )
-        assert len(findings) == 0
-
-    def test_clean_inspect_iscoroutinefunction(self):
-        findings = run(
-            self.rule,
-            "import inspect\ninspect.iscoroutinefunction(func)",
-        )
-        assert len(findings) == 0
-
-    def test_suggestion_mentions_inspect(self):
-        findings = run(
-            self.rule,
-            "import asyncio\nasyncio.iscoroutinefunction(func)",
-        )
-        assert "inspect" in findings[0].suggestion
-
     def test_ignores_module_level_rebinding(self):
         findings = run(
             self.rule,
             "from asyncio import iscoroutinefunction\n"
             "iscoroutinefunction = fake_function\n"
             "iscoroutinefunction(func)\n",
+        )
+        assert len(findings) == 0
+
+    # ------------------------------------------------------------------
+    # True-negative: shadowing inside function scope
+    # ------------------------------------------------------------------
+
+    def test_ignores_function_local_shadowing(self):
+        findings = run(
+            self.rule,
+            "import asyncio\n"
+            "\n"
+            "def check():\n"
+            "    asyncio = FakeAsyncio()\n"
+            "    asyncio.iscoroutinefunction(func)\n",
         )
         assert len(findings) == 0
 
@@ -144,6 +118,38 @@ class TestCPY069:
         )
         assert len(findings) == 0
 
+    def test_ignores_nested_function_shadowing(self):
+        findings = run(
+            self.rule,
+            "import asyncio\n"
+            "\n"
+            "def outer():\n"
+            "    def inner(asyncio):\n"
+            "        asyncio.iscoroutinefunction(func)\n",
+        )
+        assert len(findings) == 0
+
+    def test_import_then_rebind_inside_function_is_ignored(self):
+        findings = run(
+            self.rule,
+            "def check():\n"
+            "    from asyncio import iscoroutinefunction\n"
+            "    iscoroutinefunction = fake_function\n"
+            "    iscoroutinefunction(func)\n",
+        )
+        assert len(findings) == 0
+
+    # ------------------------------------------------------------------
+    # True-positive: local import inside function
+    # ------------------------------------------------------------------
+
+    def test_detects_function_local_asyncio_import(self):
+        findings = run(
+            self.rule,
+            "def check():\n    import asyncio\n    asyncio.iscoroutinefunction(func)\n",
+        )
+        assert len(findings) == 1
+
     def test_detects_function_local_module_alias(self):
         findings = run(
             self.rule,
@@ -162,30 +168,20 @@ class TestCPY069:
         )
         assert len(findings) == 1
 
-    def test_ignores_inspect_symbol(self):
-        findings = run(
-            self.rule,
-            "from inspect import iscoroutinefunction\niscoroutinefunction(func)\n",
-        )
-        assert len(findings) == 0
+    # ------------------------------------------------------------------
+    # True-positive: nested functions inherit module-level import
+    # ------------------------------------------------------------------
 
-    def test_ignores_unrelated_asyncio_import(self):
-        findings = run(
-            self.rule,
-            "from asyncio import create_task\ncreate_task(func)\n",
-        )
-        assert len(findings) == 0
-
-    def test_ignores_nested_function_shadowing(self):
+    def test_detects_nested_function_using_module_import(self):
         findings = run(
             self.rule,
             "import asyncio\n"
             "\n"
             "def outer():\n"
-            "    def inner(asyncio):\n"
+            "    def inner():\n"
             "        asyncio.iscoroutinefunction(func)\n",
         )
-        assert len(findings) == 0
+        assert len(findings) == 1
 
     def test_detects_outer_module_alias_inside_nested_function(self):
         findings = run(
@@ -197,6 +193,10 @@ class TestCPY069:
             "        asyncio.iscoroutinefunction(func)\n",
         )
         assert len(findings) == 1
+
+    # ------------------------------------------------------------------
+    # True-negative / True-positive: class scope
+    # ------------------------------------------------------------------
 
     def test_ignores_class_attribute_shadowing(self):
         findings = run(
@@ -216,12 +216,74 @@ class TestCPY069:
         )
         assert len(findings) == 1
 
-    def test_import_then_rebind_inside_function_is_ignored(self):
+    # ------------------------------------------------------------------
+    # True-negative: unrelated calls
+    # ------------------------------------------------------------------
+
+    def test_clean_unrelated_attribute(self):
         findings = run(
             self.rule,
-            "def check():\n"
-            "    from asyncio import iscoroutinefunction\n"
-            "    iscoroutinefunction = fake_function\n"
-            "    iscoroutinefunction(func)\n",
+            "other.iscoroutinefunction(func)",
         )
         assert len(findings) == 0
+
+    def test_clean_inspect_iscoroutinefunction(self):
+        findings = run(
+            self.rule,
+            "import inspect\ninspect.iscoroutinefunction(func)",
+        )
+        assert len(findings) == 0
+
+    def test_ignores_inspect_symbol(self):
+        findings = run(
+            self.rule,
+            "from inspect import iscoroutinefunction\niscoroutinefunction(func)\n",
+        )
+        assert len(findings) == 0
+
+    def test_ignores_unrelated_asyncio_import(self):
+        findings = run(
+            self.rule,
+            "from asyncio import create_task\ncreate_task(func)\n",
+        )
+        assert len(findings) == 0
+
+    # ------------------------------------------------------------------
+    # Suggestion / description checks
+    # ------------------------------------------------------------------
+
+    def test_suggestion_mentions_inspect(self):
+        findings = run(
+            self.rule,
+            "import asyncio\nasyncio.iscoroutinefunction(func)",
+        )
+        assert "inspect" in findings[0].suggestion
+
+    def test_description_mentions_deprecated_version(self):
+        findings = run(self.rule, "from asyncio import iscoroutinefunction")
+        assert "3.14" in findings[0].description
+
+    def test_description_mentions_removal_version(self):
+        findings = run(self.rule, "from asyncio import iscoroutinefunction")
+        assert "3.16" in findings[0].description
+
+    def test_docs_url_points_to_whatsnew_3_14(self):
+        findings = run(self.rule, "from asyncio import iscoroutinefunction")
+        assert "3.14" in findings[0].docs_url
+
+    # ------------------------------------------------------------------
+    # Metadata
+    # ------------------------------------------------------------------
+
+    def test_affected_from_is_3_14(self):
+        findings = run(self.rule, "from asyncio import iscoroutinefunction")
+        assert findings[0].affected_from == "3.14"
+
+    def test_affected_until_is_3_16(self):
+        """Deprecated in 3.14, removed in 3.16 — fires through 3.16 inclusive."""
+        findings = run(self.rule, "from asyncio import iscoroutinefunction")
+        assert findings[0].affected_until == "3.16"
+
+    def test_severity_is_warning(self):
+        findings = run(self.rule, "from asyncio import iscoroutinefunction")
+        assert findings[0].severity == Severity.WARNING

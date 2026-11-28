@@ -1,5 +1,5 @@
 {
-  "_comment": "Golden benchmark \u2014 expected finding counts per rule. CI fails if exceeded.",
+  "_comment": "Golden benchmark — expected finding counts per rule. CI fails if exceeded.",
   "_format": "rule_id: {min_tp, max_fp, confidence, evidence}",
   "rules": {
     "CPY001": {
@@ -518,6 +518,36 @@
       "confidence": "high",
       "evidence": "official_docs"
     },
+    "CPY094": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY095": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY096": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY097": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "CPY098": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "deprecation_warn"
+    },
     "PPY001": {
       "min_true_positives": 1,
       "max_false_positives": 0,
@@ -805,6 +835,36 @@
       "max_false_positives": 0,
       "confidence": "low",
       "evidence": "observed"
+    },
+    "PPY054": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "medium",
+      "evidence": "official_docs"
+    },
+    "PPY055": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "high",
+      "evidence": "official_docs"
+    },
+    "PPY056": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "medium",
+      "evidence": "official_docs"
+    },
+    "PPY057": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "medium",
+      "evidence": "observed"
+    },
+    "PPY058": {
+      "min_true_positives": 1,
+      "max_false_positives": 0,
+      "confidence": "low",
+      "evidence": "official_docs"
     }
   }
 }

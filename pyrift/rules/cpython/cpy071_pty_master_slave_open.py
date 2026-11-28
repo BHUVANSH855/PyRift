@@ -1,15 +1,23 @@
 """
-CPY071 — pty.master_open()/slave_open() removed in Python 3.14
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-pty.master_open() and pty.slave_open() were deprecated in Python 3.12
-and removed in Python 3.14. Use pty.openpty() instead, which returns
-a (master_fd, slave_fd) tuple.
+CPY071 — pty.master_open()/slave_open() deprecated 3.12, removed 3.14
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pty.master_open() and pty.slave_open() were undocumented functions
+deprecated since Python 2 (docstring only).  Python 3.12 added a proper
+DeprecationWarning (gh-85984, PR #92365).  Both were removed entirely in
+Python 3.14.  On 3.14+ calling them raises AttributeError; importing
+them from pty raises ImportError.
+
+Use pty.openpty() instead, which returns a (master_fd, slave_fd) tuple.
 
 Detects:
   pty.master_open()
   pty.slave_open()
   from pty import master_open
   from pty import slave_open
+
+Evidence:
+  - Deprecated 3.12 (DeprecationWarning): https://github.com/python/cpython/issues/85984
+  - Removed   3.14: https://docs.python.org/3/whatsnew/3.14.html#removed
 """
 from __future__ import annotations
 
@@ -66,16 +74,17 @@ class PtyMasterSlaveOpenRule(BaseRule):
             file=filename, line=line, col=col,
             rule_id=self.rule_id, title=self.title,
             description=(
-                f"pty.{func_name}() was deprecated in Python 3.12 and removed "
-                "in Python 3.14. It was a legacy function from the original "
-                "pty module implementation."
+                f"pty.{func_name}() was deprecated since Python 2 (docstring) "
+                "and gained a formal DeprecationWarning in Python 3.12. "
+                "It was removed entirely in Python 3.14. "
+                "On 3.14+ it raises ImportError/AttributeError at runtime."
             ),
             severity=Severity.ERROR,
             runtime=Runtime.CPYTHON,
-            affected_from="3.14",
+            affected_from="3.12",
             suggestion=(
                 "Use pty.openpty() which returns a (master_fd, slave_fd) tuple. "
                 "For slave file naming, use os.ttyname(slave_fd)."
             ),
-            docs_url="https://docs.python.org/3/whatsnew/3.14.html",
+            docs_url="https://docs.python.org/3/whatsnew/3.14.html#removed",
         )

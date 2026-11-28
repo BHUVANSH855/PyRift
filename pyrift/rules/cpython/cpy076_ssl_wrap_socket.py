@@ -1,13 +1,21 @@
 """
-CPY076 — ssl.wrap_socket() removed in Python 3.12
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ssl.wrap_socket() was deprecated in Python 3.7 and removed in Python 3.12.
-It was a convenience function that created an SSL-wrapped socket. Use
-SSLContext.wrap_socket() instead.
+CPY076 — ssl.wrap_socket() deprecated 3.7, removed 3.12
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ssl.wrap_socket() was deprecated in Python 3.7 and hard-removed in
+Python 3.12. The function sends no SNI TLS extension and performs no
+hostname validation, making it both API-broken and insecure.
 
 Detects:
-  ssl.wrap_socket(...)
   from ssl import wrap_socket
+  ssl.wrap_socket(...)       (attribute-access call)
+
+Does NOT detect bare ``wrap_socket(...)`` Name calls to avoid false
+positives from local aliases; the import and attribute-access forms are
+the unambiguous signal.
+
+References:
+  gh-94199  https://github.com/python/cpython/issues/94199
+  What's New 3.12 (removed): https://docs.python.org/3/whatsnew/3.12.html#ssl
 """
 from __future__ import annotations
 
@@ -20,7 +28,7 @@ from pyrift.targets import TargetConfig
 
 class SslWrapSocketRule(BaseRule):
     rule_id = "CPY076"
-    title   = "ssl.wrap_socket() removed in Python 3.12"
+    title   = "ssl.wrap_socket() deprecated 3.7, removed 3.12"
     runtime = "cpython"
     severity = Severity.ERROR
 
@@ -36,18 +44,23 @@ class SslWrapSocketRule(BaseRule):
             if isinstance(n, ast.ImportFrom) and n.module == "ssl":
                 for alias in n.names:
                     if alias.name == "wrap_socket":
-                        findings.append(self._make(filename, n.lineno, n.col_offset))
+                        findings.append(
+                            self._make(filename, alias.lineno, alias.col_offset)
+                        )
 
-            # ssl.wrap_socket(...)
-            if isinstance(n, ast.Call):
+            # ssl.wrap_socket(...)  — attribute-access call form
+            elif isinstance(n, ast.Call):
                 func = n.func
-                if (isinstance(func, ast.Attribute)
-                        and func.attr == "wrap_socket"
-                        and isinstance(func.value, ast.Name)
-                        and func.value.id == "ssl"):
+                if (
+                    isinstance(func, ast.Attribute)
+                    and func.attr == "wrap_socket"
+                    and isinstance(func.value, ast.Name)
+                    and func.value.id == "ssl"
+                ):
                     findings.append(self._make(filename, n.lineno, n.col_offset))
 
-        # Deduplicate
+        # Deduplicate by (line, col) — alias-level positions are unique so
+        # multi-import statements produce one finding per alias.
         seen: set[tuple[int, int]] = set()
         unique: list[Finding] = []
         for f in findings:
@@ -63,16 +76,20 @@ class SslWrapSocketRule(BaseRule):
             rule_id=self.rule_id, title=self.title,
             description=(
                 "ssl.wrap_socket() was deprecated in Python 3.7 and removed "
-                "in Python 3.12. It was a convenience function that bypassed "
-                "proper SSL context configuration."
+                "in Python 3.12. The function sends no SNI TLS extension and "
+                "performs no hostname validation, making it insecure. "
+                "Any code still using it is broken on Python 3.12+."
             ),
             severity=Severity.ERROR,
             runtime=Runtime.CPYTHON,
-            affected_from="3.12",
+            affected_from="3.7",
             suggestion=(
-                "Create an SSLContext and use context.wrap_socket() instead: "
+                "Create an ssl.SSLContext and call its wrap_socket() method: "
                 "ctx = ssl.create_default_context(); "
-                "ctx.wrap_socket(sock, server_hostname=hostname)"
+                "wrapped = ctx.wrap_socket(sock, server_hostname=hostname). "
+                "For server-side sockets: ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); "
+                "ctx.load_cert_chain(certfile, keyfile); "
+                "wrapped = ctx.wrap_socket(sock, server_side=True)."
             ),
-            docs_url="https://docs.python.org/3/whatsnew/3.12.html",
+            docs_url="https://docs.python.org/3/whatsnew/3.12.html#ssl",
         )

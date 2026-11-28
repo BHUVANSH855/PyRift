@@ -690,8 +690,8 @@ Lists the compatibility rules and their documented behavior.
 ### Project status
 
 - **Version:** 0.9.2
-- **Rules:** 134 total (86 CPython + 47 PyPy + 1 cross-runtime)
-- **Tests:** 1960 passing
+- **Rules:** 144 total (91 CPython + 52 PyPy + 1 cross-runtime)
+- **Tests:** 2386 passing
 - **Dependencies:** zero
 - **Python:** 3.10+
 
@@ -896,26 +896,26 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | CPY064 | Deprecated AST node types removed in Python 3.14 | cpython |
 | CPY065 | pkgutil.find_loader()/get_loader() removed in Python 3.14 | cpython |
 | CPY066 | asyncio child watcher classes removed in Python 3.14 | cpython |
-| CPY067 | typing.NamedTuple keyword syntax removed in Python 3.15 | cpython |
+| CPY067 | typing.NamedTuple keyword syntax deprecated in 3.13, removed in 3.15 | cpython |
 | CPY068 | typing.no_type_check_decorator deprecated in 3.13, removed in 3.15 | cpython |
-| CPY069 | asyncio.iscoroutinefunction() deprecated in Python 3.14 | cpython |
-| CPY070 | asyncio event loop policy deprecated in Python 3.14 | cpython |
+| CPY069 | asyncio.iscoroutinefunction() deprecated in 3.14, removed in 3.16 | cpython |
+| CPY070 | asyncio event loop policy deprecated in 3.14, removed in 3.16 | cpython |
 | CPY071 | pty.master_open()/slave_open() removed in Python 3.14 | cpython |
-| CPY072 | importlib.abc resource classes removed in Python 3.14 | cpython |
-| CPY073 | sqlite3.version/version_info removed in Python 3.14 | cpython |
-| CPY074 | code.__lnotab__ deprecated since Python 3.10 (PEP 626) | cpython |
-| CPY075 | http.server.CGIHTTPRequestHandler deprecated in 3.13, removed in 3.15 | cpython |
-| CPY076 | ssl.wrap_socket() removed in Python 3.12 | cpython |
-| CPY077 | typing.TypedDict zero-field syntax removed in Python 3.15 | cpython |
+| CPY072 | importlib.abc resource classes deprecated 3.12, removed 3.14 | cpython |
+| CPY073 | sqlite3.version/version_info deprecated 3.12, removed 3.14 | cpython |
+| CPY074 | code.co_lnotab deprecated 3.10 (PEP 626), removed in 3.15 | cpython |
+| CPY075 | http.server.CGIHTTPRequestHandler deprecated 3.13, removed in 3.15 | cpython |
+| CPY076 | ssl.wrap_socket() deprecated 3.7, removed 3.12 | cpython |
+| CPY077 | typing.TypedDict zero/None-field syntax deprecated 3.13, removed 3.15 | cpython |
 | CPY078 | functools.reduce() keyword arguments deprecated, removal scheduled for 3.16 | cpython |
-| CPY079 | typing.ByteString / collections.abc.ByteString deprecated (3.12), removed (3.15) | cpython |
-| CPY080 | shutil.rmtree(onerror=...) removed in 3.14, use onexc= | cpython |
+| CPY079 | typing.ByteString / collections.abc.ByteString deprecated, removed in Python 3.17 | cpython |
+| CPY080 | shutil.rmtree(onerror=...) deprecated in 3.12, use onexc= instead | cpython |
 | CPY081 | sys.last_type/value/traceback deprecated (3.12), use sys.last_exc | cpython |
-| CPY082 | tarfile extraction without filter= is a security risk (deprecated 3.12) | cpython |
+| CPY082 | tarfile extraction without filter= deprecated 3.12–3.13 (CVE-2007-4559) | cpython |
 | CPY083 | array.array('u', ...) type code deprecated (3.13), use 'w' | cpython |
 | CPY084 | urllib.request.URLopener / FancyURLopener removed in Python 3.14 | cpython |
 | CPY085 | codecs.open() deprecated in Python 3.14, use open() with encoding= | cpython |
-| CPY086 | os.popen() and os.spawn*() soft-deprecated in Python 3.14 | cpython |
+| CPY086 | os.popen(), os.system(), and os.spawn*() soft-deprecated in Python 3.14 | cpython |
 | CPY087 | ssl deprecated protocol constants pending removal | cpython |
 | CPY088 | sre_compile / sre_constants / sre_parse removed in Python 3.15 | cpython |
 | CPY089 | platform.java_ver() removed in Python 3.15 | cpython |
@@ -923,6 +923,11 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | CPY091 | generator.throw() 3-argument form deprecated in Python 3.12 | cpython |
 | CPY092 | logging.warn() removed in Python 3.13 — use logging.warning() | cpython |
 | CPY093 | glob.glob0() / glob.glob1() removed in Python 3.15 | cpython |
+| CPY094 | abc.abstractclassmethod / abstractstaticmethod / abstractproperty deprecated in 3.14 | cpython |
+| CPY095 | argparse.BooleanOptionalAction: type/choices/metavar removed in Python 3.14 | cpython |
+| CPY096 | threading.RLock() with arguments raises TypeError in Python 3.15 | cpython |
+| CPY097 | wave mark methods (getmark/setmark/getmarkers) removed in Python 3.15 | cpython |
+| CPY098 | calendar.January / calendar.February deprecated in Python 3.13 | cpython |
 | PPY001 | Relying on __del__ for resource cleanup breaks on PyPy | pypy |
 | PPY002 | ctypes usage may differ on PyPy | pypy |
 | PPY003 | sys.getrefcount() is meaningless on PyPy | pypy |
@@ -971,6 +976,11 @@ GitHub Issues and Pull Requests are the preferred place for project discussion a
 | PPY051 | code.__lnotab__ deprecated on PyPy too | pypy |
 | PPY052 | importlib.abc resource classes may differ on PyPy | pypy |
 | PPY053 | functools.lru_cache thread safety differs on PyPy | pypy |
+| PPY054 | memoryview over bytearray/BytesIO resize behaviour differs on PyPy | pypy |
+| PPY055 | sys.setprofile() / sys.getprofile() not reliably supported on PyPy | pypy |
+| PPY056 | __slots__ class missing '__weakref__' slot: weakref failure timing differs on PyPy | pypy |
+| PPY057 | copyreg.dispatch_table / pickle.dispatch_table mutation differs on PyPy | pypy |
+| PPY058 | type.__mro__ / type.mro() order may differ for C-extension bases on PyPy | pypy |
 <!-- END GENERATED RULE INDEX -->
 
 

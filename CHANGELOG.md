@@ -10,7 +10,7 @@
   `BaseRule` interface reference.
 
 ### Verification
-- 1960 tests total
+- 2386 tests total
 ## [0.9.1] - 2026-11-09
 
 ### Added

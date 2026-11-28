@@ -1,14 +1,25 @@
 """
-CPY069 — asyncio.iscoroutinefunction() deprecated in 3.14
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-asyncio.iscoroutinefunction() was deprecated in Python 3.14 in favor of
-inspect.iscoroutinefunction(). It is scheduled for removal in Python 3.16.
+CPY069 — asyncio.iscoroutinefunction() deprecated in 3.14, removed in 3.16
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+asyncio.iscoroutinefunction() was deprecated in Python 3.14 (gh-122875,
+commit bc9d92c, contributed by Jiahao Li and Kumar Aditya) in favour of
+inspect.iscoroutinefunction().  A DeprecationWarning fires when the
+function is *called*:
+
+    'asyncio.iscoroutinefunction' is deprecated and slated for removal
+    in Python 3.16; use inspect.iscoroutinefunction() instead
+
+It is scheduled for removal in Python 3.16.
 
 Detects:
   asyncio.iscoroutinefunction(func)
   import asyncio as aio; aio.iscoroutinefunction(func)
   from asyncio import iscoroutinefunction
   from asyncio import iscoroutinefunction as is_cf
+
+Evidence:
+  - Deprecated 3.14: https://github.com/python/cpython/issues/122875
+  - Removal 3.16:    https://docs.python.org/3/deprecations/pending-removal-in-3.16.html
 """
 
 from __future__ import annotations
@@ -521,7 +532,7 @@ class _Resolver(ast.NodeVisitor):
 
 class AsyncioIscoroutinefunctionRule(BaseRule):
     rule_id = "CPY069"
-    title = "asyncio.iscoroutinefunction() deprecated in Python 3.14"
+    title = "asyncio.iscoroutinefunction() deprecated in 3.14, removed in 3.16"
     runtime = "cpython"
     severity = Severity.WARNING
 
@@ -569,15 +580,20 @@ class AsyncioIscoroutinefunctionRule(BaseRule):
             rule_id=self.rule_id,
             title=self.title,
             description=(
-                "asyncio.iscoroutinefunction() is deprecated since Python 3.14. "
-                "Use inspect.iscoroutinefunction() instead."
+                "asyncio.iscoroutinefunction() was deprecated in Python 3.14 "
+                "and is scheduled for removal in Python 3.16. "
+                "It raises DeprecationWarning on every call in 3.14 and 3.15. "
+                "Use inspect.iscoroutinefunction() instead, which correctly "
+                "handles both native coroutines and @asyncio.coroutine-decorated "
+                "functions."
             ),
             severity=Severity.WARNING,
             runtime=Runtime.CPYTHON,
             affected_from="3.14",
+            affected_until="3.16",
             suggestion=(
                 "Replace asyncio.iscoroutinefunction(func) with "
                 "inspect.iscoroutinefunction(func)."
             ),
-            docs_url="https://docs.python.org/3/whatsnew/3.14.html",
+            docs_url="https://docs.python.org/3/whatsnew/3.14.html#deprecated",
         )

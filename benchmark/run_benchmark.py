@@ -877,7 +877,28 @@ GOLDEN = {
         ("import glob\nglob.glob1('/tmp', '*.py')", True, "glob1 removed"),
         ("import glob\nglob.glob('/tmp/*.py')", False, "glob.glob ok"),
     ],
-
+    "CPY094": [
+        ("import abc\nclass F:\n    @abc.abstractclassmethod\n    def m(cls): ...", True, "abstractclassmethod deprecated"),
+        ("import abc\nclass F:\n    @abc.abstractstaticmethod\n    def m(): ...", True, "abstractstaticmethod deprecated"),
+        ("import abc\nclass F:\n    @abc.abstractmethod\n    def m(self): ...", False, "abstractmethod ok"),
+    ],
+    "CPY095": [
+        ("import argparse\np=argparse.ArgumentParser()\np.add_argument('--f', action='BooleanOptionalAction', type=int)", True, "type removed"),
+        ("import argparse\np=argparse.ArgumentParser()\np.add_argument('--f', action='BooleanOptionalAction')", False, "no bad kwargs"),
+    ],
+    "CPY096": [
+        ("import threading\nthreading.RLock(verbose=0)", True, "RLock with kwargs"),
+        ("import threading\nthreading.RLock()", False, "RLock no args ok"),
+    ],
+    "CPY097": [
+        ("import wave\nwr = wave.open('a.wav')\nwr.getmarkers()", True, "getmarkers removed"),
+        ("import wave\nwr = wave.open('a.wav')\nwr.readframes(1024)", False, "readframes ok"),
+    ],
+    "CPY098": [
+        ("import calendar\nx = calendar.January", True, "calendar.January deprecated"),
+        ("import calendar\nx = calendar.February", True, "calendar.February deprecated"),
+        ("import calendar\nx = calendar.JANUARY", False, "calendar.JANUARY ok"),
+    ],
     "PPY049": [
         ("import gc\ngc.collect()", True, "gc.collect"),
         ("import gc\ngc.get_threshold()", False, "get_threshold ok"),
@@ -893,6 +914,27 @@ GOLDEN = {
     "PPY053": [
         ("@functools.lru_cache\ndef f(): pass", True, "lru_cache"),
         ("@functools.lru_cache(maxsize=128)\ndef f(): pass", True, "lru_cache with maxsize"),
+    ],
+    "PPY054": [
+        ("buf = bytearray(b'x')\nmv = memoryview(buf)\n", True, "memoryview of bytearray"),
+        ("mv = memoryview(b'literal')\n", False, "literal not flagged"),
+    ],
+    "PPY055": [
+        ("import sys\nsys.setprofile(my_profiler)\n", True, "setprofile"),
+        ("import sys\nsys.getprofile()\n", True, "getprofile"),
+        ("import sys\nsys.settrace(None)\n", False, "settrace not PPY055"),
+    ],
+    "PPY056": [
+        ("class Foo:\n    __slots__ = ('x', 'y')\n", True, "slots without weakref"),
+        ("class Foo:\n    __slots__ = ('x', '__weakref__')\n", False, "slots with weakref"),
+    ],
+    "PPY057": [
+        ("import copyreg\ncopyreg.dispatch_table[MyClass] = r\n", True, "dispatch_table mutation"),
+        ("import copyreg\nx = copyreg.dispatch_table\n", False, "read only ok"),
+    ],
+    "PPY058": [
+        ("mro = Cls.__mro__\n", True, "__mro__ access"),
+        ("order = Cls.mro()\n", True, "mro() call"),
     ],
 }
 

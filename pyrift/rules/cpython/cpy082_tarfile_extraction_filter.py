@@ -1,19 +1,20 @@
 """
-CPY082 -- tarfile extraction without filter= (security, 3.12+)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Calling ``TarFile.extract()``, ``TarFile.extractall()``, or
-``TarFile.extractfile()`` without an explicit ``filter=`` argument is
-deprecated since Python 3.12 and will change its default from
-``'fully_trusted'`` to ``'data'`` in a future version.
+CPY082 -- tarfile extraction without filter= (deprecated 3.12–3.13)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Calling ``TarFile.extract()`` or ``TarFile.extractall()`` without an explicit
+``filter=`` argument emits a ``DeprecationWarning`` on Python 3.12 and 3.13.
+In Python 3.14 the default changed to ``'data'`` and the warning was removed.
 
-The ``'fully_trusted'`` default allows extracted files to overwrite
-arbitrary paths on the filesystem (a path traversal / "zip slip"
-vulnerability).
+The old ``'fully_trusted'`` default allowed extracted files to overwrite
+arbitrary paths on the filesystem (path traversal / "zip slip", CVE-2007-4559).
 
-    tf.extractall(path)                     # unsafe default, deprecated
-    tf.extract(member, path)                # unsafe default, deprecated
-    tf.extractall(path, filter='data')      # safe
+    tf.extractall(path)                     # DeprecationWarning on 3.12–3.13
+    tf.extract(member, path)                # DeprecationWarning on 3.12–3.13
+    tf.extractall(path, filter='data')      # safe, explicit
     tf.extractall(path, filter='tar')       # explicit (less safe)
+
+Note: ``extractfile()`` has no ``filter=`` parameter — it returns a file-like
+object and never writes to disk.
 """
 from __future__ import annotations
 
@@ -23,12 +24,12 @@ from pyrift.base_rule import BaseRule
 from pyrift.finding import Finding, Runtime, Severity
 from pyrift.targets import TargetConfig
 
-_EXTRACT_METHODS = frozenset({"extract", "extractall", "extractfile"})
+_EXTRACT_METHODS = frozenset({"extract", "extractall"})
 
 
 class TarfileExtractionFilterRule(BaseRule):
     rule_id = "CPY082"
-    title = "tarfile extraction without filter= is a security risk (deprecated 3.12)"
+    title = "tarfile extraction without filter= deprecated 3.12–3.13 (CVE-2007-4559)"
     runtime = "cpython"
     severity = Severity.WARNING
 
@@ -58,15 +59,17 @@ class TarfileExtractionFilterRule(BaseRule):
                 title=self.title,
                 description=(
                     f"TarFile.{func.attr}() called without 'filter=' "
-                    "argument. The default 'fully_trusted' filter allows "
-                    "extracted files to overwrite arbitrary paths "
-                    "(path traversal / zip-slip vulnerability). "
-                    "This was deprecated in Python 3.12 and the default "
-                    "will change to 'data' in a future release."
+                    "argument. On Python 3.12–3.13 this emits a "
+                    "DeprecationWarning because the default "
+                    "'fully_trusted' filter allows extracted files to "
+                    "overwrite arbitrary paths (path traversal / "
+                    "zip-slip, CVE-2007-4559). In Python 3.14 the "
+                    "default changed to 'data'."
                 ),
                 severity=Severity.WARNING,
                 runtime=Runtime.CPYTHON,
                 affected_from="3.12",
+                affected_until="3.13",
                 suggestion=(
                     "Add filter='data' for safe extraction of "
                     "untrusted archives, or filter='tar' to preserve "
