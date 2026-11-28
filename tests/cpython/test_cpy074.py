@@ -66,10 +66,10 @@ class TestCPY074:
         findings = run(self.rule, "obj.lnotab")
         assert len(findings) == 0
 
-    def test_old_wrong_name_does_not_fire(self):
-        """__lnotab__ (with dunders) is NOT the real attribute name — must not fire."""
+    def test_lnotab_dunder_form_fires(self):
+        """__lnotab__ dunder alias is used by some inspector/debugger tools and must fire."""
         findings = run(self.rule, "code_obj.__lnotab__")
-        assert len(findings) == 0
+        assert len(findings) == 1
 
     def test_clean_no_attribute_access(self):
         findings = run(self.rule, "x = 1 + 2")

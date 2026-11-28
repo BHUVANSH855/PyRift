@@ -16,6 +16,7 @@ Replacements (all available since 3.10):
 
 Detects:
   code_obj.co_lnotab      # any attribute access named co_lnotab
+  code_obj.__lnotab__     # dunder alias used in some inspectors / tools
 """
 from __future__ import annotations
 
@@ -39,8 +40,9 @@ class CoLnotabDeprecatedRule(BaseRule):
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
         findings: list[Finding] = []
+        _LNOTAB_ATTRS = frozenset({"co_lnotab", "__lnotab__"})
         for n in ast.walk(node):
-            if isinstance(n, ast.Attribute) and n.attr == "co_lnotab":
+            if isinstance(n, ast.Attribute) and n.attr in _LNOTAB_ATTRS:
                 findings.append(Finding(
                     file=filename, line=n.lineno, col=n.col_offset,
                     rule_id=self.rule_id, title=self.title,
