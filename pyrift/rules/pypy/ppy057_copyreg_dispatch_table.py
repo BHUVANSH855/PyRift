@@ -1,9 +1,21 @@
 """
 PPY057 -- copyreg.dispatch_table / pickle.dispatch_table behaves differently on PyPy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-On CPython, Pickler accesses copyreg.dispatch_table live. On PyPy's
-pure-Python pickle implementation, the table may be read at a different time,
-so mutations mid-stream produce different results than on CPython.
+On CPython, ``pickle.Pickler`` uses ``copyreg.dispatch_table`` as a fallback
+class-level dispatch table for custom pickling.  Mutations to
+``copyreg.dispatch_table`` after a ``Pickler`` has been created are
+immediately visible to that pickler (because CPython's C implementation
+accesses the dict live).
+
+On PyPy, the pure-Python ``pickle`` implementation may read the table at
+construction time or behave differently when the table is mutated during
+pickling.  Code that modifies ``copyreg.dispatch_table`` or
+``pickle.Pickler.dispatch_table`` mid-stream and expects consistent
+cross-runtime behaviour will have subtle bugs on PyPy.
+
+Additionally, using the per-instance ``pickle.Pickler.dispatch_table``
+attribute (available since Python 3.3) is the preferred pattern and avoids
+the global-state issue entirely.
 
 Documentation:
   https://doc.pypy.org/en/latest/cpython_differences.html
@@ -19,6 +31,9 @@ from pyrift.targets import TargetConfig
 
 
 def _is_dispatch_table_mutation(node: ast.stmt) -> tuple[bool, str]:
+    """Return (True, description) if this statement mutates dispatch_table."""
+    # copyreg.dispatch_table[...] = ...  or  copyreg.dispatch_table = ...
+    # pickle.dispatch_table[...] = ...  or  pickle.dispatch_table = ...
     if isinstance(node, ast.Assign):
         for target in node.targets:
             if (
@@ -65,12 +80,13 @@ class CopyregDispatchTableRule(BaseRule):
         target_config: TargetConfig | None = None,
     ) -> list[Finding]:
         findings: list[Finding] = []
-        for n in ast.walk(node):
-            for stmt in ast.walk(n) if isinstance(n, ast.Module) else []:
-                is_mutation, table_name = _is_dispatch_table_mutation(stmt)
-                if not is_mutation:
-                    continue
-                findings.append(Finding(
+        for stmt in ast.walk(node):
+            if not isinstance(stmt, ast.stmt):
+                continue
+            is_mutation, table_name = _is_dispatch_table_mutation(stmt)
+            if not is_mutation:
+                continue
+            findings.append(Finding(
                     file=filename,
                     line=stmt.lineno,
                     col=stmt.col_offset,
