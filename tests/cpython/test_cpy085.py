@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+from urllib.parse import urlparse
 
 from pyrift.rules.cpython.cpy085_codecs_open import CodecsOpenRule
 
@@ -109,7 +110,8 @@ def test_docs_url_is_set():
     src = "import codecs\ncodecs.open('f', 'r', 'utf-8')\n"
     f = _findings(src)
     assert f[0].docs_url
-    assert "python.org" in f[0].docs_url
+    host = urlparse(f[0].docs_url).hostname
+    assert host and (host == "python.org" or host.endswith(".python.org"))
 
 
 def test_rule_id_is_cpy085():
